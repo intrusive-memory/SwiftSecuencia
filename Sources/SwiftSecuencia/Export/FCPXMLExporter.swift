@@ -8,7 +8,6 @@
 import Foundation
 import SwiftData
 import SwiftCompartido
-import FoundationXML
 
 /// Exports Timeline objects to FCPXML XML documents.
 ///

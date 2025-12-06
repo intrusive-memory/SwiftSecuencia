@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import FoundationXML
 
 /// A standard marker that annotates a specific point or range in the timeline.
 ///
@@ -76,6 +75,8 @@ public struct Marker: Sendable, Equatable, Hashable, Codable {
         self.note = note
         self.completed = completed
     }
+
+    // MARK: - XML Generation
 
     /// Generates the FCPXML element for this marker.
     public func xmlElement() -> XMLElement {

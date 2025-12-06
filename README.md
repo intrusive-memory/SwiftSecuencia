@@ -9,8 +9,10 @@ SwiftSecuencia provides a type-safe, Swift-native API for creating FCPXML docume
 ## Requirements
 
 - Swift 6.2+
-- macOS 26.0+ / iOS 26.0+
+- macOS 26.0+
 - [SwiftCompartido](https://github.com/intrusive-memory/SwiftCompartido) (dependency)
+
+**Note:** SwiftSecuencia is macOS-only because Final Cut Pro for iPad does not support FCPXML import/export. The .fcpxmld bundle format is exclusive to Final Cut Pro for Mac.
 
 ## Installation
 
