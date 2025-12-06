@@ -7,6 +7,10 @@
 
 import Foundation
 
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
+
 /// A chapter marker for defining video chapters.
 ///
 /// Chapter markers create navigable chapters in exported videos and are visible
