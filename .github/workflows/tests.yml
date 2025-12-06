@@ -21,6 +21,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: |
+          echo "🔍 Running SwiftLint with strict mode..."
+          swiftlint lint --strict
+          echo "✅ SwiftLint passed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify Platform Configuration
+        run: |
+          echo "🔍 Verifying Package.swift platform configuration..."
+          if grep -E "platforms.*\.(macOS|iOS)\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
+            echo "❌ Package.swift contains platform version < 26"
+            exit 1
+          fi
+          echo "✅ Platform configuration verified (macOS 26+)" >> $GITHUB_STEP_SUMMARY
+
       - name: Check for TODOs in committed code
         shell: bash {0}
         run: |

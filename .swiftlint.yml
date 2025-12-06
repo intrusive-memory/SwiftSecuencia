@@ -1,0 +1,54 @@
+# SwiftLint Configuration for SwiftSecuencia
+# Enforces macOS 26.0+ minimum deployment target
+
+excluded:
+  - .build
+  - DerivedData
+  - .swiftpm
+  - Tests/SwiftSecuenciaTests/Resources
+
+# Disabled rules (to focus on platform enforcement, not code style)
+disabled_rules:
+  - identifier_name
+  - force_cast
+  - trailing_comma
+  - redundant_string_enum_value
+  - function_parameter_count
+  - function_body_length
+  - type_body_length
+  - file_length
+  - line_length
+  - cyclomatic_complexity
+  - for_where
+  - shorthand_operator
+
+opt_in_rules:
+  - unavailable_function
+
+custom_rules:
+  # Prevent @available with macOS versions < 26
+  no_old_macos_availability_attribute:
+    regex: '@available\s*\(\s*macOS\s+([0-9]|1[0-9]|2[0-5])(\.[0-9]+)?\s*,'
+    match_kinds:
+      - attribute.builtin
+    message: "Use @available(macOS 26.0, *) or higher. macOS versions < 26 are not supported."
+    severity: error
+
+  # Prevent #available with macOS versions < 26
+  no_old_macos_availability_check:
+    regex: '#available\s*\(\s*macOS\s+([0-9]|1[0-9]|2[0-5])(\.[0-9]+)?'
+    message: "Use #available(macOS 26, *) or higher. macOS versions < 26 are not supported."
+    severity: error
+
+  # Prevent #unavailable with macOS versions < 26
+  no_old_macos_unavailability_check:
+    regex: '#unavailable\s*\(\s*macOS\s+([0-9]|1[0-9]|2[0-5])(\.[0-9]+)?'
+    message: "Use #unavailable(macOS 26, *) or higher. macOS versions < 26 are not supported."
+    severity: error
+
+  # Prevent iOS references entirely (this library is macOS-only)
+  no_ios_availability:
+    regex: '(@available|#available|#unavailable)\s*\([^)]*iOS'
+    message: "SwiftSecuencia is macOS 26.0+ only. Do not use iOS availability checks."
+    severity: error
+

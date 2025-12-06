@@ -23,7 +23,11 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
             ],
-            path: "Sources/SwiftSecuencia"
+            path: "Sources/SwiftSecuencia",
+            swiftSettings: [
+                // Treat availability warnings as errors
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
         ),
         .testTarget(
             name: "SwiftSecuenciaTests",
@@ -31,7 +35,10 @@ let package = Package(
                 "SwiftSecuencia",
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
             ],
-            path: "Tests/SwiftSecuenciaTests"
+            path: "Tests/SwiftSecuenciaTests",
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]
