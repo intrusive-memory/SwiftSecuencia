@@ -5,6 +5,28 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-12-06
+
+### Added
+- **SwiftFijos dependency**: Test fixture management library
+  - Intelligent fixture discovery across dev, Xcode, and CI environments
+  - Centralized `Fixtures/` directory at project root
+  - Replaced manual DTD file discovery with `Fijos.getFixture()`
+
+### Changed
+- **DTD file location**: Moved from `Tests/SwiftSecuenciaTests/Resources/DTD/` to `Fixtures/`
+- **FCPXMLDTDValidator**: Now uses SwiftFijos for robust fixture loading
+- **SwiftLint rules**: Improved regex patterns for platform availability checks
+  - Added word boundaries to prevent false positives on macOS 26+
+  - Support for `introduced:` label syntax
+  - Support for multiple platforms in any order
+- **Package.swift**: Removed invalid test Resources reference
+- **Branch protection**: Removed iOS Unit Tests requirement (macOS-only library)
+
+### Fixed
+- Fixture discovery now works reliably across all execution environments
+- Version number synchronized with git tags (was 0.1.0, now 1.0.2)
+
 ## [1.0.1] - 2025-12-06
 
 ### Changed
@@ -110,4 +132,6 @@ SwiftSecuencia v1.0.0 is **production-ready** for generating Final Cut Pro timel
 - Confirm audio plays and mixes properly
 - Report any issues on GitHub
 
+[1.0.2]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.2
+[1.0.1]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.1
 [1.0.0]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.0
