@@ -571,32 +571,15 @@ try await exporter.export(to: url, options: options)
 
 ---
 
-## Milestones
+## Implementation Phases
 
-### M1: Core Types (v0.1.0)
-- Timecode type with FCPXML formatting
-- VideoFormat presets
-- Timeline data structure
-- Basic clip management
+See [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) for detailed phased implementation with quality gates.
 
-### M2: TypedDataStorage Integration (v0.2.0)
-- Asset creation from TypedDataStorage
-- Media metadata extraction
-- SwiftCompartido dependency wired up
-
-### M3: FCPXML Generation (v0.3.0)
-- Complete FCPXML document generation
-- All required elements (resources, library, event, project, sequence, spine)
-- Asset-clip elements with proper timing
-
-### M4: Bundle Export (v0.4.0)
-- .fcpbundle package creation
-- Media file copying
-- Info.plist generation
-- Async export with progress
-
-### M5: Validation & Polish (v1.0.0)
-- Document validation
-- Error handling refinement
-- Documentation
-- Final Cut Pro import testing
+| Phase | Version | Key Deliverable |
+|-------|---------|-----------------|
+| 1 | v0.1.0-alpha.1 | Timecode, VideoFormat, FrameRate |
+| 2 | v0.1.0-alpha.2 | Timeline with clip operations (append, insert, ripple) |
+| 3 | v0.2.0-alpha.1 | TypedDataStorage integration, Asset management |
+| 4 | v0.3.0-alpha.1 | FCPXML document generation |
+| 5 | v0.4.0-alpha.1 | .fcpbundle export with embedded media |
+| 6 | v1.0.0 | Validation, error handling, FCP testing |
