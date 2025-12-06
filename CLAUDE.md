@@ -4,6 +4,44 @@
 
 SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X timelines via FCPXML. The library provides type-safe Swift APIs that model the FCPXML document structure.
 
+**Platform**: macOS 26.0+ only
+
+## ⚠️ CRITICAL: Platform Version Enforcement
+
+**This library ONLY supports macOS 26.0+. NEVER add code that supports older platforms or iOS.**
+
+### Rules for Platform Versions
+
+1. **NEVER add `@available` attributes** for versions below macOS 26.0
+   - ❌ WRONG: `@available(macOS 12.0, *)`
+   - ✅ CORRECT: No `@available` needed (package enforces macOS 26)
+
+2. **NEVER add `#available` runtime checks** for versions below macOS 26.0
+   - ❌ WRONG: `if #available(macOS 15.0, *) { ... }`
+   - ✅ CORRECT: No runtime checks needed (package enforces minimum version)
+
+3. **NEVER add iOS support** - this library is macOS-only
+   - ❌ WRONG: `@available(iOS 26.0, *)`
+   - ❌ WRONG: `#if os(iOS)`
+   - ✅ CORRECT: macOS-only code (Final Cut Pro for iPad does not support FCPXML)
+
+4. **Package.swift must always specify macOS 26 only**
+   ```swift
+   platforms: [
+       .macOS(.v26)
+   ]
+   ```
+
+5. **User-facing messages** must reflect macOS 26 requirements
+   - ❌ WRONG: "Requires macOS 15"
+   - ✅ CORRECT: "Requires macOS 26"
+
+### Why This Matters
+
+Final Cut Pro for iPad does not support FCPXML import/export. The .fcpxmld bundle format is exclusive to Final Cut Pro for Mac.
+
+**DO NOT lower the platform requirements. SwiftSecuencia is intentionally macOS 26+ only.**
+
 ## Architecture
 
 ### Directory Structure
