@@ -6,8 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftSecuencia",
     platforms: [
-        .macOS(.v26),
-        .iOS(.v26)
+        .macOS(.v26)
     ],
     products: [
         .library(

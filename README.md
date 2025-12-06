@@ -9,8 +9,10 @@ SwiftSecuencia provides a type-safe, Swift-native API for creating FCPXML docume
 ## Requirements
 
 - Swift 6.2+
-- macOS 26.0+ / iOS 26.0+
+- macOS 26.0+
 - [SwiftCompartido](https://github.com/intrusive-memory/SwiftCompartido) (dependency)
+
+**Note:** SwiftSecuencia is macOS-only because Final Cut Pro for iPad does not support FCPXML import/export. The .fcpxmld bundle format is exclusive to Final Cut Pro for Mac.
 
 ## Installation
 
@@ -212,7 +214,7 @@ clip.adjustVolume?.keyframes = [
 ### Markers and Keywords
 
 ```swift
-// Add a marker
+// Add standard markers to clips
 clip.markers.append(
     Marker(
         start: Timecode(seconds: 5),
@@ -221,7 +223,16 @@ clip.markers.append(
     )
 )
 
-// Add keywords
+// Add chapter markers to timeline
+timeline.chapterMarkers.append(
+    ChapterMarker(
+        start: Timecode.zero,
+        value: "Introduction",
+        posterOffset: Timecode(seconds: 2)
+    )
+)
+
+// Add keywords for organization
 clip.keywords.append(
     Keyword(
         start: .zero,
@@ -229,6 +240,80 @@ clip.keywords.append(
         value: "Interview"
     )
 )
+
+// Mark favorite clips
+clip.ratings.append(
+    Rating(
+        start: .zero,
+        duration: Timecode(seconds: 30),
+        value: .favorite,
+        note: "Best take"
+    )
+)
+
+// Add custom metadata
+var metadata = Metadata()
+metadata.setReel("A001")
+metadata.setScene("1")
+metadata.setTake("3")
+metadata.setDescription("Interview with subject")
+clip.metadata = metadata
+```
+
+## App Intents & Shortcuts Integration
+
+SwiftSecuencia provides App Intents for integration with Apple Shortcuts, enabling automated workflows from screenplay to Final Cut Pro.
+
+### Generate FCPXML Bundle Intent
+
+Create a complete Final Cut Pro bundle (.fcpxmld) from screenplay elements with audio:
+
+**Example Shortcuts Workflow:**
+
+1. Parse Screenplay File (from SwiftCompartido) → ScreenplayElementsReference
+2. Generate FCPXML Bundle → .fcpxmld bundle
+3. Save to Files app
+4. Import into Final Cut Pro
+
+**Parameters:**
+- `elementsReference`: Screenplay elements from Parse Screenplay File intent
+- `outputDirectory`: Where to save the .fcpxmld bundle
+- `projectName`: Optional FCP project name (defaults to screenplay title)
+- `defaultClipDuration`: Duration for clips without audio (default: 3.0 seconds)
+- `frameRate`: Timeline frame rate (default: 23.98 fps)
+
+**Requirements:**
+- Screenplay elements must have audio files generated via voice generation workflow
+- Audio files stored in TypedDataStorage with matching element text in prompts
+
+**Swift Usage:**
+
+```swift
+import SwiftSecuencia
+import AppIntents
+
+let intent = GenerateFCPXMLBundleIntent(
+    elementsReference: screenplayElements,
+    outputDirectory: URL(fileURLWithPath: "/path/to/output"),
+    projectName: "My Screenplay",
+    defaultClipDuration: 3.0,
+    frameRate: 23.98
+)
+
+let result = try await intent.perform()
+let bundleFile = result.value  // IntentFile pointing to .fcpxmld bundle
+```
+
+**Output Structure:**
+
+```
+MyScreenplay.fcpxmld/
+├── Info.plist           # Bundle metadata
+├── Info.fcpxml          # Timeline with audio clips
+└── Media/
+    ├── [uuid1].wav      # Audio for dialogue 1
+    ├── [uuid2].wav      # Audio for dialogue 2
+    └── ...
 ```
 
 ## Documentation
