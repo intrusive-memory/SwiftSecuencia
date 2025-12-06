@@ -18,7 +18,7 @@ SwiftLint catches old `@available`, `#available`, and `#unavailable` statements 
 custom_rules:
   # Prevent @available with macOS versions < 26
   no_old_macos_availability_attribute:
-    regex: '@available\s*\(\s*macOS\s+([0-9]|1[0-9]|2[0-5])(\.[0-9]+)?\s*,'
+    regex: '@available\s*\([^)]*macOS\s*(?:,\s*introduced:\s*)?([0-9]|1[0-9]|2[0-5])(?:\.[0-9]+)?'
     match_kinds:
       - attribute.builtin
     message: "Use @available(macOS 26.0, *) or higher. macOS versions < 26 are not supported."
@@ -26,7 +26,7 @@ custom_rules:
 
   # Prevent #available with macOS versions < 26
   no_old_macos_availability_check:
-    regex: '#available\s*\(\s*macOS\s+([0-9]|1[0-9]|2[0-5])(\.[0-9]+)?'
+    regex: '#available\s*\([^)]*macOS\s*(?:,\s*introduced:\s*)?([0-9]|1[0-9]|2[0-5])(?:\.[0-9]+)?'
     message: "Use #available(macOS 26, *) or higher. macOS versions < 26 are not supported."
     severity: error
 
@@ -35,7 +35,6 @@ custom_rules:
     regex: '(@available|#available|#unavailable)\s*\([^)]*iOS'
     message: "This library is macOS 26.0+ only. Do not use iOS availability checks."
     severity: error
-```
 
 **Run locally**:
 ```bash
