@@ -184,6 +184,168 @@ Final Cut Pro import verification (not automated).
 }
 ```
 
+#### UT-3.4: Insert at Specific Timecode
+```swift
+@Test func insertAtSpecificTime() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage = try await createMockStorage(duration: 10.0)
+
+    let placement = try timeline.insert(storage, at: Timecode(seconds: 30))
+
+    #expect(placement.offset.seconds == 30.0)
+    #expect(placement.duration.seconds == 10.0)
+    #expect(placement.endTime.seconds == 40.0)
+}
+
+@Test func insertAtZero() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage = try await createMockStorage(duration: 5.0)
+
+    let placement = try timeline.insert(storage, at: Timecode.zero)
+
+    #expect(placement.offset == .zero)
+    #expect(placement.lane == 0)  // Default to primary storyline
+}
+
+@Test func insertOnSpecificLane() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage = try await createMockStorage(duration: 10.0)
+
+    let placement = try timeline.insert(storage, at: Timecode.zero, lane: -1)
+
+    #expect(placement.lane == -1)
+}
+```
+
+#### UT-3.5: Overlapping Clips
+```swift
+@Test func overlappingClipsOnDifferentLanes() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage1 = try await createMockStorage(duration: 30.0)
+    let storage2 = try await createMockStorage(duration: 30.0)
+
+    // Both start at t=0 but on different lanes
+    let placement1 = try timeline.insert(storage1, at: Timecode.zero, lane: 0)
+    let placement2 = try timeline.insert(storage2, at: Timecode.zero, lane: -1)
+
+    #expect(placement1.offset == placement2.offset)
+    #expect(placement1.lane == 0)
+    #expect(placement2.lane == -1)
+    #expect(timeline.clips.count == 2)
+}
+
+@Test func autoAssignLaneForOverlap() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage1 = try await createMockStorage(duration: 30.0)
+    let storage2 = try await createMockStorage(duration: 30.0)
+
+    // First clip on lane 0
+    _ = try timeline.insert(storage1, at: Timecode.zero, lane: 0)
+    // Second clip at same time, no lane specified - should auto-assign
+    let placement2 = try timeline.insert(storage2, at: Timecode.zero)
+
+    #expect(placement2.lane != 0)  // Should be assigned different lane
+}
+
+@Test func multipleOverlappingClips() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Create 5 clips all starting at t=0 on different lanes
+    for lane in -2...2 {
+        let storage = try await createMockStorage(duration: 10.0)
+        let placement = try timeline.insert(storage, at: Timecode.zero, lane: lane)
+        #expect(placement.lane == lane)
+    }
+
+    #expect(timeline.clips.count == 5)
+    #expect(timeline.laneRange == -2...2)
+}
+```
+
+#### UT-3.6: Query Clip Information
+```swift
+@Test func queryByClipID() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage = try await createMockStorage(duration: 10.0)
+    let placement = try timeline.append(storage)
+
+    let queried = timeline.placement(for: placement.clipID)
+
+    #expect(queried != nil)
+    #expect(queried?.offset == placement.offset)
+    #expect(queried?.duration == placement.duration)
+}
+
+@Test func queryByStorageID() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    let storage = try await createMockStorage(duration: 10.0)
+    let storageID = storage.id
+    _ = try timeline.append(storage)
+
+    let queried = timeline.placement(for: storageID)
+
+    #expect(queried != nil)
+    #expect(queried?.storageID == storageID)
+}
+
+@Test func queryNonexistentClip() async throws {
+    let timeline = Timeline(format: .hd1080p24)
+
+    let queried = timeline.placement(for: "nonexistent-id")
+
+    #expect(queried == nil)
+}
+```
+
+#### UT-3.7: List and Filter Clips
+```swift
+@Test func allPlacements() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+    for _ in 0..<5 {
+        let storage = try await createMockStorage(duration: 10.0)
+        _ = try timeline.append(storage)
+    }
+
+    let all = timeline.allPlacements()
+
+    #expect(all.count == 5)
+}
+
+@Test func placementsByLane() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Add clips to different lanes
+    for lane in [-1, 0, 0, 0, 1] {
+        let storage = try await createMockStorage(duration: 10.0)
+        _ = try timeline.insert(storage, at: Timecode(seconds: Double(lane + 2) * 10), lane: lane)
+    }
+
+    let lane0Clips = timeline.placements(inLane: 0)
+    let laneNeg1Clips = timeline.placements(inLane: -1)
+    let lane1Clips = timeline.placements(inLane: 1)
+
+    #expect(lane0Clips.count == 3)
+    #expect(laneNeg1Clips.count == 1)
+    #expect(lane1Clips.count == 1)
+}
+
+@Test func placementsOverlappingRange() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Clips at: 0-10, 10-20, 20-30, 30-40
+    for i in 0..<4 {
+        let storage = try await createMockStorage(duration: 10.0)
+        _ = try timeline.insert(storage, at: Timecode(seconds: Double(i) * 10), lane: 0)
+    }
+
+    // Range 5-25 should overlap clips at 0-10, 10-20, 20-30
+    let range = Timecode(seconds: 5)..<Timecode(seconds: 25)
+    let overlapping = timeline.placements(overlapping: range)
+
+    #expect(overlapping.count == 3)
+}
+```
+
 ---
 
 ### UT-4: Asset Creation
