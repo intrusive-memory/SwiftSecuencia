@@ -30,7 +30,6 @@ import SwiftCompartido
 /// **Requirements**:
 /// - Screenplay elements must have audio files generated (via voice generation workflow)
 /// - Audio files stored in TypedDataStorage with matching element IDs
-@available(macOS 26.0, *)
 public struct GenerateFCPXMLBundleIntent: AppIntent {
 
     public static let title: LocalizedStringResource = "Generate FCPXML Bundle"

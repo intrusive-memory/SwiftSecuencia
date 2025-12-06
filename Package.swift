@@ -15,13 +15,13 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", .branch("development")),
+        .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
     ],
     targets: [
         .target(
             name: "SwiftSecuencia",
             dependencies: [
-                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
+                .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftSecuencia",
             swiftSettings: [
@@ -33,7 +33,7 @@ let package = Package(
             name: "SwiftSecuenciaTests",
             dependencies: [
                 "SwiftSecuencia",
-                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
+                .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
             ],
             path: "Tests/SwiftSecuenciaTests",
             swiftSettings: [
