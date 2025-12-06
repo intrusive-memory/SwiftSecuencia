@@ -6,7 +6,7 @@ import SwiftCompartido
 
 // MARK: - Bundle Structure Tests
 
-@Test func exportBundleCreatesCorrectStructure() async throws {
+@Test @MainActor func exportBundleCreatesCorrectStructure() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -50,7 +50,7 @@ import SwiftCompartido
     #expect(isMediaDirectory.boolValue == true)
 }
 
-@Test func exportBundleWithCustomName() async throws {
+@Test @MainActor func exportBundleWithCustomName() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -75,7 +75,7 @@ import SwiftCompartido
 
 // MARK: - Info.plist Tests
 
-@Test func exportBundleGeneratesValidInfoPlist() async throws {
+@Test @MainActor func exportBundleGeneratesValidInfoPlist() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -111,7 +111,7 @@ import SwiftCompartido
 
 // MARK: - Media Export Tests
 
-@Test func exportBundleIncludesMediaFiles() async throws {
+@Test @MainActor func exportBundleIncludesMediaFiles() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -182,7 +182,7 @@ import SwiftCompartido
     }
 }
 
-@Test func exportBundleWithoutMediaDoesNotCopyFiles() async throws {
+@Test @MainActor func exportBundleWithoutMediaDoesNotCopyFiles() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -220,7 +220,7 @@ import SwiftCompartido
 
 // MARK: - FCPXML Content Tests
 
-@Test func exportBundleGeneratesValidFCPXML() async throws {
+@Test @MainActor func exportBundleGeneratesValidFCPXML() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -269,7 +269,7 @@ import SwiftCompartido
     #expect(xmlString.contains("<asset-clip"))
 }
 
-@Test func exportBundleUsesRelativeMediaPaths() async throws {
+@Test @MainActor func exportBundleUsesRelativeMediaPaths() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -310,7 +310,7 @@ import SwiftCompartido
 
 // MARK: - File Extension Tests
 
-@Test func exportBundleUsesCorrectFileExtensions() async throws {
+@Test @MainActor func exportBundleUsesCorrectFileExtensions() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -363,7 +363,7 @@ import SwiftCompartido
 
 // MARK: - Overwrite Tests
 
-@Test func exportBundleOverwritesExistingBundle() async throws {
+@Test @MainActor func exportBundleOverwritesExistingBundle() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)
@@ -397,7 +397,7 @@ import SwiftCompartido
 
 // MARK: - Integration Tests
 
-@Test func exportBundleWithMultipleClipsAndLanes() async throws {
+@Test @MainActor func exportBundleWithMultipleClipsAndLanes() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
     let context = ModelContext(container)

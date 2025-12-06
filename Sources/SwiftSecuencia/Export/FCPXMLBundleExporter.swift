@@ -69,6 +69,7 @@ public struct FCPXMLBundleExporter {
     ///   - projectName: Name for the project (default: timeline name).
     /// - Returns: URL of the created bundle.
     /// - Throws: Export errors if bundle creation fails.
+    @MainActor
     public mutating func exportBundle(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
@@ -142,6 +143,7 @@ public struct FCPXMLBundleExporter {
     ///   - modelContext: The model context to fetch assets from.
     ///   - bundleURL: The bundle URL.
     /// - Returns: Dictionary mapping asset IDs to relative file paths.
+    @MainActor
     private func exportMedia(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
@@ -198,6 +200,7 @@ public struct FCPXMLBundleExporter {
     // MARK: - FCPXML Generation
 
     /// Generates FCPXML string with asset references.
+    @MainActor
     private mutating func generateFCPXML(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
@@ -232,6 +235,7 @@ public struct FCPXMLBundleExporter {
     }
 
     /// Generates FCPXML with relative media paths for bundle.
+    @MainActor
     private mutating func generateBundleFCPXML(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
