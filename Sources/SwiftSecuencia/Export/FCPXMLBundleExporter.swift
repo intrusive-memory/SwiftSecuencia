@@ -358,10 +358,6 @@ public struct FCPXMLBundleExporter {
             element.addAttribute(XMLNode.attribute(withName: "name", stringValue: prompt) as! XMLNode)
         }
 
-        // Use relative path if provided, otherwise placeholder
-        let srcURL = relativePath ?? "file:///placeholder/\(asset.id.uuidString)"
-        element.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
-
         // Add duration if available
         if let duration = asset.durationSeconds {
             let timecode = Timecode(seconds: duration)
@@ -378,6 +374,13 @@ public struct FCPXMLBundleExporter {
         } else if mimeType.hasPrefix("image/") {
             element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
         }
+
+        // Add required media-rep child element
+        let srcURL = relativePath ?? "file:///placeholder/\(asset.id.uuidString)"
+        let mediaRep = XMLElement(name: "media-rep")
+        mediaRep.addAttribute(XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
+        mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
+        element.addChild(mediaRep)
 
         return element
     }
