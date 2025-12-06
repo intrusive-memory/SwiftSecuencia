@@ -35,8 +35,7 @@ import Foundation
 ///     colorSpace: .rec709
 /// )
 ///
-/// // FCPXML format ID
-/// let formatId = customFormat.fcpxmlFormatId  // "r1"
+/// // FCPXML format name
 /// let formatName = customFormat.fcpxmlFormatName  // "FFVideoFormat1080p24"
 /// ```
 public struct VideoFormat: Sendable, Equatable, Hashable, Codable {
