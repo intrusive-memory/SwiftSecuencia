@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationXML)
-import FoundationXML
-#endif
-
 /// A rating for marking clips as favorites or rejected.
 ///
 /// Ratings are used to mark content quality and organization in Final Cut Pro.

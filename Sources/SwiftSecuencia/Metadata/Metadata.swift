@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationXML)
-import FoundationXML
-#endif
-
 /// A container for custom metadata key-value pairs.
 ///
 /// The Metadata type stores arbitrary key-value metadata that can be attached

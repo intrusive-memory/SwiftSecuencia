@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationXML)
-import FoundationXML
-#endif
-
 /// A standard marker that annotates a specific point or range in the timeline.
 ///
 /// Markers are used to add notes, reminders, or annotations to clips and timelines.

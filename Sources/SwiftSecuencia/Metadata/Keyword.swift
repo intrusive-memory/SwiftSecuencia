@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationXML)
-import FoundationXML
-#endif
-
 /// A keyword for tagging clips and ranges in the timeline.
 ///
 /// Keywords are used to organize and search content in Final Cut Pro.

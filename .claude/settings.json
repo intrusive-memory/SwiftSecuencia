@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Bash(git :*)",
+      "Bash(gh :*)",
+      "Bash(swift :*)",
+      "Bash(xcodebuild :*)",
+      "Bash(xcrun :*)",
+      "Bash(./build.sh :*)",
+      "Bash(mkdir :*)",
+      "Bash(cp :*)",
+      "Bash(mv :*)",
+      "Bash(rm :*)",
+      "Bash(cat :*)",
+      "Bash(ls :*)",
+      "Bash(pwd)",
+      "Bash(cd :*)",
+      "Bash(find :*)",
+      "Bash(grep :*)",
+      "Bash(open :*)",
+      "Bash(defaults :*)",
+      "Bash(plutil :*)",
+      "Bash(pod :*)",
+      "Bash(carthage :*)",
+      "Bash(yarn :*)",
+      "Bash(npm :*)",
+      "Bash(make :*)",
+      "Bash(bundle :*)",
+      "Bash(fastlane :*)",
+      "Bash(xcode-select :*)",
+      "Read(//private/tmp/**)",
+      "Read(//Users/stovak/Library/Developer/Xcode/DerivedData/**)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "model": "claude-sonnet-4-5"
+}
