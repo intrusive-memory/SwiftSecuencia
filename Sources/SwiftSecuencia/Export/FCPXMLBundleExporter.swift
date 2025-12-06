@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftCompartido
+import Pipeline
 
 /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
 ///
@@ -42,7 +43,7 @@ import SwiftCompartido
 public struct FCPXMLBundleExporter {
 
     /// FCPXML version to generate.
-    public let version: String
+    public let version: FCPXMLVersion
 
     /// Whether to copy media files into the bundle.
     public let includeMedia: Bool
@@ -50,9 +51,9 @@ public struct FCPXMLBundleExporter {
     /// Creates an FCPXML bundle exporter.
     ///
     /// - Parameters:
-    ///   - version: FCPXML version string (default: "1.11").
+    ///   - version: FCPXML version (default: .default, which is the latest version).
     ///   - includeMedia: Whether to copy media files into the bundle (default: true).
-    public init(version: String = "1.11", includeMedia: Bool = true) {
+    public init(version: FCPXMLVersion = .default, includeMedia: Bool = true) {
         self.version = version
         self.includeMedia = includeMedia
     }
@@ -245,27 +246,17 @@ public struct FCPXMLBundleExporter {
         projectName: String?,
         exporter: inout FCPXMLExporter
     ) throws -> String {
-        // Create root XML document
-        let doc = XMLDocument(rootElement: nil)
-        doc.version = "1.0"
-        doc.characterEncoding = "UTF-8"
-
-        // Create root fcpxml element
-        let fcpxml = XMLElement(name: "fcpxml")
-        fcpxml.addAttribute(XMLNode.attribute(withName: "version", stringValue: version) as! XMLNode)
-        doc.setRootElement(fcpxml)
-
         // Collect all assets and formats
         var resourceMap = ResourceMap()
         let assets = timeline.allAssets(in: modelContext)
 
-        // Generate resources section
-        let resources = XMLElement(name: "resources")
+        // Generate resources
+        var resourceElements: [XMLElement] = []
 
         // Add format resource
         let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
         let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
-        resources.addChild(formatElement)
+        resourceElements.append(formatElement)
 
         // Add asset resources with relative paths
         for asset in assets {
@@ -274,14 +265,10 @@ public struct FCPXMLBundleExporter {
                 relativePath: assetURLMap[asset.id],
                 resourceMap: &resourceMap
             )
-            resources.addChild(assetElement)
+            resourceElements.append(assetElement)
         }
 
-        fcpxml.addChild(resources)
-
         // Generate library > event > project > sequence > spine structure
-        let library = XMLElement(name: "library")
-
         let event = XMLElement(name: "event")
         event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
 
@@ -298,16 +285,16 @@ public struct FCPXMLBundleExporter {
 
         project.addChild(sequence)
         event.addChild(project)
-        library.addChild(event)
-        fcpxml.addChild(library)
 
-        // Generate XML string
-        let xmlData = doc.xmlData(options: [.nodePrettyPrint])
-        guard let xmlString = String(data: xmlData, encoding: .utf8) else {
-            throw FCPXMLExportError.xmlGenerationFailed
-        }
+        // Create FCPXML document using Pipeline's initializer
+        let doc = XMLDocument(
+            resources: resourceElements,
+            events: [event],
+            fcpxmlVersion: version
+        )
 
-        return xmlString
+        // Return formatted XML string
+        return doc.fcpxmlString
     }
 
     // MARK: - XML Element Generation

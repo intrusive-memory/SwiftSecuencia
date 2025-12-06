@@ -259,7 +259,7 @@ import SwiftCompartido
     let xmlString = try String(contentsOf: fcpxmlURL, encoding: .utf8)
 
     // Verify structure
-    #expect(xmlString.contains("<fcpxml version=\"1.11\">"))
+    #expect(xmlString.contains("<fcpxml version=\"1.13\">"))
     #expect(xmlString.contains("<resources>"))
     #expect(xmlString.contains("<library>"))
     #expect(xmlString.contains("<event name=\"Test Event\">"))

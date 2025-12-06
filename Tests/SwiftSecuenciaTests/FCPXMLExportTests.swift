@@ -14,7 +14,7 @@ import SwiftCompartido
     let timeline = Timeline(name: "Empty Timeline")
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context,
@@ -59,7 +59,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: .zero, lane: 0)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -105,7 +105,7 @@ import SwiftCompartido
     timeline.appendClip(TimelineClip(assetStorageId: asset2.id, duration: Timecode(seconds: 15)))
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -130,7 +130,7 @@ import SwiftCompartido
     timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify format resource
@@ -176,7 +176,7 @@ import SwiftCompartido
     timeline.insertClip(TimelineClip(assetStorageId: audioAsset.id, duration: Timecode(seconds: 30)), at: .zero, lane: -1)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify asset resources
@@ -218,7 +218,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: .zero, lane: 0)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify start attribute
@@ -252,7 +252,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: .zero, lane: 0)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify name attribute
@@ -285,7 +285,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: Timecode(seconds: 10), lane: 2)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify lane attribute
@@ -302,7 +302,7 @@ import SwiftCompartido
     let timeline = Timeline(name: "Test")
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify XML can be parsed
@@ -343,7 +343,7 @@ import SwiftCompartido
     let timeline = Timeline(name: "Timeline Name")
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context,
@@ -363,7 +363,7 @@ import SwiftCompartido
     let timeline = Timeline(name: "My Timeline")
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
     // Verify timeline name is used as project name

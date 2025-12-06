@@ -2,6 +2,7 @@ import Testing
 import Foundation
 import SwiftData
 import SwiftCompartido
+import Pipeline
 @testable import SwiftSecuencia
 
 // MARK: - DTD Validation Tests
@@ -20,7 +21,7 @@ import SwiftCompartido
     let timeline = Timeline(name: "Empty Timeline")
     context.insert(timeline)
 
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -28,7 +29,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -63,7 +64,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: .zero, lane: 0)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -71,7 +72,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -124,7 +125,7 @@ import SwiftCompartido
     timeline.appendClip(TimelineClip(assetStorageId: asset3.id, duration: Timecode(seconds: 20)))
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -132,7 +133,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -180,7 +181,7 @@ import SwiftCompartido
     timeline.insertClip(TimelineClip(assetStorageId: videoAsset.id, duration: Timecode(seconds: 20)), at: Timecode(seconds: 10), lane: 1)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -188,7 +189,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -224,7 +225,7 @@ import SwiftCompartido
     timeline.insertClip(clip, at: .zero, lane: 0)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -232,7 +233,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -274,7 +275,7 @@ import SwiftCompartido
     timeline.insertClip(clip2, at: Timecode(seconds: 2), lane: 1)
 
     // Export
-    var exporter = FCPXMLExporter(version: "1.11")
+    var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(
         timeline: timeline,
         modelContext: context
@@ -282,7 +283,7 @@ import SwiftCompartido
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: "1.11")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -322,11 +323,11 @@ import SwiftCompartido
 
         timeline.appendClip(TimelineClip(assetStorageId: asset.id, duration: Timecode(seconds: 10)))
 
-        var exporter = FCPXMLExporter(version: "1.11")
+        var exporter = FCPXMLExporter(version: .v1_11)
         let xml = try exporter.export(timeline: timeline, modelContext: context)
 
         let validator = FCPXMLDTDValidator()
-        let result = try validator.validate(xmlContent: xml, version: "1.11")
+        let result = try validator.validate(xmlContent: xml, version: .v1_11)
 
         if !result.isValid {
             Issue.record("DTD validation failed for format \(format.fcpxmlFormatName):\n\(result.errors.joined(separator: "\n"))")
@@ -361,7 +362,7 @@ import SwiftCompartido
     // Test against multiple DTD versions
     // Note: Only test versions 1.9+ as earlier versions have different DTD requirements
     // (e.g., v1.8 doesn't support media-rep element)
-    let versions = ["1.9", "1.10", "1.11", "1.12", "1.13"]
+    let versions: [FCPXMLVersion] = [.v1_9, .v1_10, .v1_11, .v1_12, .v1_13]
 
     for version in versions {
         var exporter = FCPXMLExporter(version: version)
@@ -370,10 +371,11 @@ import SwiftCompartido
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(xmlContent: xml, version: version)
 
+        let versionStr = version.stringValue
         if !result.isValid {
-            Issue.record("DTD validation failed for version \(version):\n\(result.errors.joined(separator: "\n"))")
+            Issue.record("DTD validation failed for version \(versionStr):\n\(result.errors.joined(separator: "\n"))")
         }
-        #expect(result.isValid, "FCPXML version \(version) must pass DTD validation")
+        #expect(result.isValid, "FCPXML version \(versionStr) must pass DTD validation")
     }
 }
 
@@ -401,7 +403,7 @@ import SwiftCompartido
     """
 
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: malformedXML, version: "1.11")
+    let result = try validator.validate(xmlContent: malformedXML, version: .v1_11)
 
     #expect(!result.isValid, "Malformed XML should fail validation")
     #expect(!result.errors.isEmpty, "Should provide error messages")

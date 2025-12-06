@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftFijos
+import Pipeline
 
 /// Validates FCPXML documents against DTD specifications using xmllint.
 ///
@@ -20,7 +21,7 @@ import SwiftFijos
 /// let validator = FCPXMLDTDValidator()
 /// let result = try validator.validate(
 ///     xmlContent: fcpxmlString,
-///     version: "1.11"
+///     version: .v1_13
 /// )
 ///
 /// if result.isValid {
@@ -60,13 +61,13 @@ public struct FCPXMLDTDValidator {
     ///
     /// - Parameters:
     ///   - xmlContent: The FCPXML document content as a string.
-    ///   - version: The FCPXML version (e.g., "1.11", "1.10").
+    ///   - version: The FCPXML version.
     ///   - dtdURL: Optional custom DTD file URL. If nil, uses bundled DTD.
     /// - Returns: DTD validation result with errors if invalid.
     /// - Throws: DTDValidationError if DTD not found or xmllint fails.
     public func validate(
         xmlContent: String,
-        version: String,
+        version: FCPXMLVersion,
         dtdURL: URL? = nil
     ) throws -> DTDValidationResult {
         // Resolve DTD URL
@@ -127,13 +128,13 @@ public struct FCPXMLDTDValidator {
     ///
     /// - Parameters:
     ///   - fileURL: URL to the FCPXML file.
-    ///   - version: The FCPXML version (e.g., "1.11", "1.10").
+    ///   - version: The FCPXML version.
     ///   - dtdURL: Optional custom DTD file URL. If nil, uses bundled DTD.
     /// - Returns: DTD validation result with errors if invalid.
     /// - Throws: DTDValidationError if file cannot be read or DTD not found.
     public func validate(
         fileURL: URL,
-        version: String,
+        version: FCPXMLVersion,
         dtdURL: URL? = nil
     ) throws -> DTDValidationResult {
         let xmlContent = try String(contentsOf: fileURL, encoding: .utf8)
@@ -143,17 +144,15 @@ public struct FCPXMLDTDValidator {
     // MARK: - Private Helpers
 
     /// Resolves the DTD file URL for a given FCPXML version.
-    private func resolveDTDURL(version: String) throws -> URL {
-        // Normalize version string (remove dots)
-        let normalizedVersion = version.replacingOccurrences(of: ".", with: "_")
-        let dtdFilename = "FCPXMLv\(normalizedVersion).dtd"
+    private func resolveDTDURL(version: FCPXMLVersion) throws -> URL {
+        let dtdFilename = version.dtdFilenameWithExtension
 
         // Use SwiftFijos to locate the DTD file in the Fixtures directory
         do {
             return try Fijos.getFixture(dtdFilename)
         } catch {
             throw DTDValidationError.dtdNotFound(
-                version: version,
+                version: version.stringValue,
                 searchedPaths: [dtdFilename]
             )
         }

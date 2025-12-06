@@ -32,7 +32,7 @@ extension XMLDocument {
 	///   - resources: Resources an array of XMLElement objects
 	///   - events: Events as an array of XMLElement objects
 	///   - fcpxmlVersion: The FCPXML version of the document to use.
-	public convenience init(resources: [XMLElement], events: [XMLElement], fcpxmlVersion: String) {
+	public convenience init(resources: [XMLElement], events: [XMLElement], fcpxmlVersion: FCPXMLVersion = .default) {
 
 		self.init()
 		self.documentContentKind = XMLDocument.ContentKind.xml
@@ -44,7 +44,7 @@ extension XMLDocument {
 		self.isStandalone = false
 
 		self.setRootElement(XMLElement(name: "fcpxml"))
-		self.fcpxmlVersion = fcpxmlVersion
+		self.fcpxmlVersion = fcpxmlVersion.stringValue
 
 		self.add(resourceElements: resources)
 		self.add(events: events)
@@ -606,8 +606,22 @@ extension XMLDocument {
 
 	/// Verifies that this document's FCPXML version number is at minimum the specified version.
 	///
-	/// - Parameter minimum: A String of the minimum version. E.g. 1.7.1
+	/// - Parameter minimum: The minimum FCPXML version.
 	/// - Returns: True if the document is at least the specified minimum version number.
+	public func versionIs(atMinimum minimum: FCPXMLVersion) -> Bool {
+		guard let versionString = self.fcpxmlVersion,
+		      let currentVersion = FCPXMLVersion(string: versionString) else {
+			return false
+		}
+
+		return currentVersion.isAtLeast(minimum)
+	}
+
+	/// Verifies that this document's FCPXML version number is at minimum the specified version.
+	///
+	/// - Parameter minimum: A String of the minimum version. E.g. "1.11"
+	/// - Returns: True if the document is at least the specified minimum version number.
+	@available(*, deprecated, message: "Use versionIs(atMinimum:FCPXMLVersion) instead")
 	public func versionIs(atMinimum minimum: String) -> Bool {
 		guard let version = self.fcpxmlVersion else {
 			return false
@@ -639,7 +653,7 @@ extension XMLDocument {
 	/// - Throws: An error describing the reason for the XML being invalid or another error, such as not being able to read or set the associated DTD file.
 	public func validateFCPXMLAgainstLatestVersion() throws {
 		do {
-			try self.validateFCPXMLAgainst(version: "1.8")
+			try self.validateFCPXMLAgainst(version: .default)
 		} catch {
 			throw error
 		}
@@ -647,9 +661,9 @@ extension XMLDocument {
 
 	/// Validates the XMLDocument against the DTD of the FCPXML version specified. The version number must match a DTD resource included in the bundle. The XMLDocument is valid if no error is thrown.
 	///
-	/// - Parameter version: A String of the version number.
+	/// - Parameter version: The FCPXML version to validate against.
 	/// - Throws: An error describing the reason for the XML being invalid or another error, such as not being able to read or set the associated DTD file.
-	public func validateFCPXMLAgainst(version: String) throws {
+	public func validateFCPXMLAgainst(version: FCPXMLVersion) throws {
 		do {
 			try self.setDTDToFCPXML(version: version)
 		} catch {
@@ -661,27 +675,24 @@ extension XMLDocument {
 		do {
 			try self.validate()
 		} catch {
-			print("The document is invalid. It does not conform to the FCPXML v\(version) Document Type Definition.")
+			print("The document is invalid. It does not conform to the FCPXML v\(version.stringValue) Document Type Definition.")
 			self.dtd = nil
 			throw error
 		}
 
-		print("The document conforms to the FCPXML v\(version) Document Type Definition.")
+		print("The document conforms to the FCPXML v\(version.stringValue) Document Type Definition.")
 		self.dtd = nil
 	}
 
 	/// Sets the XMLDocument's DTD to the specified FCPXML version number. The version number must match a DTD resource included in the bundle.
 	///
-	/// - Parameter version: The version number as a String.
+	/// - Parameter version: The FCPXML version.
 	/// - Throws: If the DTD file cannot be read properly, an error is thrown describing the issue.
-	private func setDTDToFCPXML(version: String) throws {
+	private func setDTDToFCPXML(version: FCPXMLVersion) throws {
 		do {
-			let resourceName = self.fcpxmlDTDFilename(fromVersion: version, withExtension: false)
-			do {
-				try self.setDTDToBundleResource(named: resourceName)
-			} catch {
-				throw error
-			}
+			try self.setDTDToBundleResource(named: version.dtdFilename)
+		} catch {
+			throw error
 		}
 	}
 
