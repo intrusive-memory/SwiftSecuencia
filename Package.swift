@@ -36,6 +36,9 @@ let package = Package(
                 .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
             ],
             path: "Tests/SwiftSecuenciaTests",
+            resources: [
+                .copy("Resources")
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]

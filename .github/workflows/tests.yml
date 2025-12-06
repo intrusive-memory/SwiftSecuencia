@@ -89,11 +89,28 @@ jobs:
             -quiet \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Run unit tests on macOS
+      - name: Run FCPXML DTD validation tests
+        run: |
+          echo "🔍 Running FCPXML DTD validation tests..."
+          swift test --filter FCPXMLDTDValidation 2>&1 | tee dtd_validation_output.txt
+
+          if grep -q "Test run with .* tests in .* suites passed" dtd_validation_output.txt; then
+            echo "✅ All FCPXML DTD validation tests passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### DTD Validation Results" >> $GITHUB_STEP_SUMMARY
+            echo "- Validates generated FCPXML against official DTD files (v1.9-v1.13)" >> $GITHUB_STEP_SUMMARY
+            echo "- Ensures compliance with Apple's FCPXML specification" >> $GITHUB_STEP_SUMMARY
+            echo "- Tests empty timelines, single/multi-clip, multi-lane, and various video formats" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ FCPXML DTD validation failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Run all unit tests on macOS
         run: |
           set +e
 
-          echo "🧪 Running unit tests on macOS"
+          echo "🧪 Running all unit tests on macOS"
 
           xcodebuild test \
             -scheme SwiftSecuencia \
