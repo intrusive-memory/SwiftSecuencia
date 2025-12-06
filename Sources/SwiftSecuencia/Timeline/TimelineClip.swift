@@ -259,3 +259,91 @@ extension TimelineClip {
         }
     }
 }
+
+// MARK: - Asset Validation
+
+extension TimelineClip {
+    /// Validates that the referenced asset exists and is compatible with this clip.
+    ///
+    /// - Parameter modelContext: The model context to fetch the asset from.
+    /// - Returns: The validated TypedDataStorage record.
+    /// - Throws: `TimelineError` if validation fails.
+    public func validateAsset(in modelContext: SwiftData.ModelContext) throws -> TypedDataStorage {
+        // Fetch the asset
+        let descriptor = FetchDescriptor<TypedDataStorage>(
+            predicate: #Predicate { $0.id == assetStorageId }
+        )
+
+        guard let asset = try modelContext.fetch(descriptor).first else {
+            throw TimelineError.invalidAssetReference(storageId: assetStorageId, reason: "Asset not found")
+        }
+
+        // Validate MIME type
+        let mimeType = asset.mimeType
+
+        // Check that MIME type is compatible with lane
+        if lane < 0 {
+            // Negative lanes should be audio
+            guard mimeType.hasPrefix("audio/") else {
+                throw TimelineError.invalidFormat(
+                    reason: "Clip on lane \(lane) expects audio/* but asset has MIME type '\(mimeType)'"
+                )
+            }
+        } else {
+            // Non-negative lanes should be video, image, or audio
+            guard mimeType.hasPrefix("video/") ||
+                  mimeType.hasPrefix("image/") ||
+                  mimeType.hasPrefix("audio/") else {
+                throw TimelineError.invalidFormat(
+                    reason: "Clip on lane \(lane) expects video/*, image/*, or audio/* but asset has MIME type '\(mimeType)'"
+                )
+            }
+        }
+
+        return asset
+    }
+
+    /// Returns the asset if it exists, or nil if not found.
+    ///
+    /// - Parameter modelContext: The model context to fetch the asset from.
+    /// - Returns: The TypedDataStorage record, or nil if not found.
+    public func fetchAsset(in modelContext: SwiftData.ModelContext) -> TypedDataStorage? {
+        let descriptor = FetchDescriptor<TypedDataStorage>(
+            predicate: #Predicate { $0.id == assetStorageId }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    /// Checks if the referenced asset is audio content.
+    ///
+    /// - Parameter modelContext: The model context to fetch the asset from.
+    /// - Returns: True if the asset has an audio/* MIME type.
+    public func isAudioClip(in modelContext: SwiftData.ModelContext) -> Bool {
+        guard let asset = fetchAsset(in: modelContext) else {
+            return false
+        }
+        return asset.mimeType.hasPrefix("audio/")
+    }
+
+    /// Checks if the referenced asset is video content.
+    ///
+    /// - Parameter modelContext: The model context to fetch the asset from.
+    /// - Returns: True if the asset has a video/* MIME type.
+    public func isVideoClip(in modelContext: SwiftData.ModelContext) -> Bool {
+        guard let asset = fetchAsset(in: modelContext) else {
+            return false
+        }
+        return asset.mimeType.hasPrefix("video/")
+    }
+
+    /// Checks if the referenced asset is image content.
+    ///
+    /// - Parameter modelContext: The model context to fetch the asset from.
+    /// - Returns: True if the asset has an image/* MIME type.
+    public func isImageClip(in modelContext: SwiftData.ModelContext) -> Bool {
+        guard let asset = fetchAsset(in: modelContext) else {
+            return false
+        }
+        return asset.mimeType.hasPrefix("image/")
+    }
+}

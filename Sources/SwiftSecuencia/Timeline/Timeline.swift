@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftCompartido
 
 /// A persisted timeline that holds clips for FCPXML export.
 ///
@@ -496,6 +497,80 @@ public final class Timeline {
                 lane: clip.lane
             )
         }
+    }
+
+    // MARK: - Asset Query Helpers
+
+    /// Returns all unique assets referenced by clips on this timeline.
+    ///
+    /// - Parameter modelContext: The model context to fetch assets from.
+    /// - Returns: Array of TypedDataStorage records used by this timeline.
+    public func allAssets(in modelContext: SwiftData.ModelContext) -> [TypedDataStorage] {
+        let assetIds = Set(clips.map { $0.assetStorageId })
+
+        let descriptor = FetchDescriptor<TypedDataStorage>(
+            predicate: #Predicate { asset in
+                assetIds.contains(asset.id)
+            }
+        )
+
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    /// Returns all audio assets referenced by clips on this timeline.
+    ///
+    /// - Parameter modelContext: The model context to fetch assets from.
+    /// - Returns: Array of TypedDataStorage records with audio/* MIME type.
+    public func audioAssets(in modelContext: SwiftData.ModelContext) -> [TypedDataStorage] {
+        allAssets(in: modelContext).filter { asset in
+            asset.mimeType.hasPrefix("audio/")
+        }
+    }
+
+    /// Returns all video assets referenced by clips on this timeline.
+    ///
+    /// - Parameter modelContext: The model context to fetch assets from.
+    /// - Returns: Array of TypedDataStorage records with video/* MIME type.
+    public func videoAssets(in modelContext: SwiftData.ModelContext) -> [TypedDataStorage] {
+        allAssets(in: modelContext).filter { asset in
+            asset.mimeType.hasPrefix("video/")
+        }
+    }
+
+    /// Returns all image assets referenced by clips on this timeline.
+    ///
+    /// - Parameter modelContext: The model context to fetch assets from.
+    /// - Returns: Array of TypedDataStorage records with image/* MIME type.
+    public func imageAssets(in modelContext: SwiftData.ModelContext) -> [TypedDataStorage] {
+        allAssets(in: modelContext).filter { asset in
+            asset.mimeType.hasPrefix("image/")
+        }
+    }
+
+    /// Validates all clips on the timeline have valid asset references.
+    ///
+    /// - Parameter modelContext: The model context to validate against.
+    /// - Returns: Array of clip IDs that have invalid or missing assets.
+    public func validateAllAssets(in modelContext: SwiftData.ModelContext) -> [UUID] {
+        var invalidClipIds: [UUID] = []
+
+        for clip in clips {
+            do {
+                _ = try clip.validateAsset(in: modelContext)
+            } catch {
+                invalidClipIds.append(clip.id)
+            }
+        }
+
+        return invalidClipIds
+    }
+
+    /// Returns clips that reference a specific asset.
+    ///
+    /// - Parameter assetId: The TypedDataStorage ID to search for.
+    /// - Returns: Array of clips referencing the asset.
+    public func clips(withAssetId assetId: UUID) -> [TimelineClip] {
+        clips.filter { $0.assetStorageId == assetId }
     }
 
     // MARK: - Helpers
