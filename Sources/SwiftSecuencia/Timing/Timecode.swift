@@ -159,14 +159,53 @@ public struct Timecode: Sendable, Equatable, Hashable, Codable {
     }
 }
 
+// MARK: - Equatable & Hashable
+
+extension Timecode {
+    public static func == (lhs: Timecode, rhs: Timecode) -> Bool {
+        // Compare semantically: two timecodes are equal if they represent the same time
+        // Separate integer and fractional parts to avoid overflow in cross-multiplication.
+        let lhsQuotient = lhs.value / Int64(lhs.timescale)
+        let lhsRemainder = lhs.value % Int64(lhs.timescale)
+
+        let rhsQuotient = rhs.value / Int64(rhs.timescale)
+        let rhsRemainder = rhs.value % Int64(rhs.timescale)
+
+        if lhsQuotient != rhsQuotient {
+            return false
+        }
+
+        // Integer parts are equal, so compare fractional parts.
+        // This cross-multiplication is safe from overflow because remainders are smaller than timescales.
+        return lhsRemainder * Int64(rhs.timescale) == rhsRemainder * Int64(lhs.timescale)
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        // Hash the simplified form to ensure equal timecodes have equal hashes
+        let (simplifiedValue, simplifiedTimescale) = simplified
+        hasher.combine(simplifiedValue)
+        hasher.combine(simplifiedTimescale)
+    }
+}
+
 // MARK: - Comparable
 
 extension Timecode: Comparable {
     public static func < (lhs: Timecode, rhs: Timecode) -> Bool {
-        // Cross-multiply to compare without losing precision
-        let lhsNumerator = lhs.value * Int64(rhs.timescale)
-        let rhsNumerator = rhs.value * Int64(lhs.timescale)
-        return lhsNumerator < rhsNumerator
+        // Separate integer and fractional parts to avoid overflow in cross-multiplication.
+        let lhsQuotient = lhs.value / Int64(lhs.timescale)
+        let lhsRemainder = lhs.value % Int64(lhs.timescale)
+
+        let rhsQuotient = rhs.value / Int64(rhs.timescale)
+        let rhsRemainder = rhs.value % Int64(rhs.timescale)
+
+        if lhsQuotient != rhsQuotient {
+            return lhsQuotient < rhsQuotient
+        }
+
+        // Integer parts are equal, so compare fractional parts.
+        // This cross-multiplication is safe from overflow because remainders are smaller than timescales.
+        return lhsRemainder * Int64(rhs.timescale) < rhsRemainder * Int64(lhs.timescale)
     }
 }
 

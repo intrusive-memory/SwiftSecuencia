@@ -102,22 +102,47 @@ public final class Timeline {
     /// Calculated as the maximum end time of all clips on lane 0 (primary storyline).
     public var duration: Timecode {
         // Find the maximum end time on the primary storyline (lane 0)
-        let primaryClips = clips.filter { $0.lane == 0 }
-        guard !primaryClips.isEmpty else { return .zero }
-
-        var maxEnd = Timecode.zero
-        for clip in primaryClips {
-            let clipEnd = clip.offset + clip.duration
-            if clipEnd > maxEnd {
-                maxEnd = clipEnd
-            }
-        }
-        return maxEnd
+        clips
+            .filter { $0.lane == 0 }
+            .map { $0.offset + $0.duration }
+            .max() ?? .zero
     }
 
     /// The end timecode of the last clip on the timeline.
     public var endTime: Timecode {
         duration
+    }
+
+    /// The start timecode of the timeline (always zero for now).
+    public var startTime: Timecode {
+        .zero
+    }
+
+    /// The number of clips on the timeline.
+    public var clipCount: Int {
+        clips.count
+    }
+
+    /// Whether the timeline has no clips.
+    public var isEmpty: Bool {
+        clips.isEmpty
+    }
+
+    /// The range of lanes used by clips on this timeline.
+    ///
+    /// Returns nil if the timeline is empty.
+    public var laneRange: ClosedRange<Int>? {
+        guard !clips.isEmpty else { return nil }
+
+        var minLane = Int.max
+        var maxLane = Int.min
+
+        for clip in clips {
+            minLane = min(minLane, clip.lane)
+            maxLane = max(maxLane, clip.lane)
+        }
+
+        return minLane...maxLane
     }
 
     // MARK: - Timestamps
@@ -201,6 +226,96 @@ public final class Timeline {
             duration: clip.duration,
             lane: clip.lane
         )
+    }
+
+    /// Inserts a clip at a specific timecode, automatically assigning a lane if needed.
+    ///
+    /// If `autoAssignLane` is true and the clip would overlap with existing clips
+    /// on the target lane, a new lane will be automatically assigned.
+    ///
+    /// - Parameters:
+    ///   - clip: The clip to insert.
+    ///   - offset: The timecode position for insertion.
+    ///   - preferredLane: The preferred lane (default: 0).
+    ///   - autoAssignLane: Whether to auto-assign a lane on conflict (default: true).
+    /// - Returns: The placement information for the inserted clip.
+    /// - Throws: `TimelineError.noAvailableLane` if auto-assign is disabled and there's a conflict.
+    @discardableResult
+    public func insertClipAutoLane(
+        _ clip: TimelineClip,
+        at offset: Timecode,
+        preferredLane: Int = 0,
+        autoAssignLane: Bool = true
+    ) throws -> ClipPlacement {
+        let clipEnd = offset + clip.duration
+
+        // Check for conflicts on the preferred lane
+        let hasConflict = clips.contains { existingClip in
+            guard existingClip.lane == preferredLane else { return false }
+            let existingEnd = existingClip.offset + existingClip.duration
+            // Check for overlap
+            return offset < existingEnd && clipEnd > existingClip.offset
+        }
+
+        if !hasConflict {
+            return insertClip(clip, at: offset, lane: preferredLane)
+        }
+
+        guard autoAssignLane else {
+            throw TimelineError.noAvailableLane(at: offset, duration: clip.duration)
+        }
+
+        // Find an available lane
+        let assignedLane = findAvailableLane(at: offset, duration: clip.duration, startingFrom: preferredLane)
+        return insertClip(clip, at: offset, lane: assignedLane)
+    }
+
+    /// Finds an available lane for a clip at the given position.
+    ///
+    /// Searches outward from the starting lane (positive lanes first, then negative).
+    ///
+    /// - Parameters:
+    ///   - offset: The clip's start position.
+    ///   - duration: The clip's duration.
+    ///   - startingFrom: The lane to start searching from.
+    /// - Returns: An available lane number.
+    public func findAvailableLane(at offset: Timecode, duration: Timecode, startingFrom: Int = 0) -> Int {
+        let clipEnd = offset + duration
+
+        // Check if a lane is available
+        func isLaneAvailable(_ lane: Int) -> Bool {
+            !clips.contains { existingClip in
+                guard existingClip.lane == lane else { return false }
+                let existingEnd = existingClip.offset + existingClip.duration
+                return offset < existingEnd && clipEnd > existingClip.offset
+            }
+        }
+
+        // Try the starting lane first
+        if isLaneAvailable(startingFrom) {
+            return startingFrom
+        }
+
+        // Search outward from the starting lane
+        var distance = 1
+        while distance < 1000 { // Reasonable upper limit
+            // Try positive lane
+            let positiveLane = startingFrom + distance
+            if isLaneAvailable(positiveLane) {
+                return positiveLane
+            }
+
+            // Try negative lane
+            let negativeLane = startingFrom - distance
+            if isLaneAvailable(negativeLane) {
+                return negativeLane
+            }
+
+            distance += 1
+        }
+
+        // Fallback (should never reach here)
+        return startingFrom + 1000
     }
 
     /// Inserts a clip with ripple effect, shifting subsequent clips forward.
@@ -334,6 +449,52 @@ public final class Timeline {
                 return lhs.offset < rhs.offset
             }
             return lhs.lane < rhs.lane
+        }
+    }
+
+    /// Returns placement information for all clips.
+    ///
+    /// - Returns: Array of clip placements, sorted by offset then lane.
+    public func allPlacements() -> [ClipPlacement] {
+        sortedClips.map { clip in
+            ClipPlacement(
+                clipId: clip.id,
+                offset: clip.offset,
+                duration: clip.duration,
+                lane: clip.lane
+            )
+        }
+    }
+
+    /// Returns placements for clips on a specific lane.
+    ///
+    /// - Parameter lane: The lane to filter by.
+    /// - Returns: Array of clip placements on the specified lane, sorted by offset.
+    public func placements(onLane lane: Int) -> [ClipPlacement] {
+        clips(onLane: lane).map { clip in
+            ClipPlacement(
+                clipId: clip.id,
+                offset: clip.offset,
+                duration: clip.duration,
+                lane: clip.lane
+            )
+        }
+    }
+
+    /// Returns placements for clips overlapping a time range.
+    ///
+    /// - Parameters:
+    ///   - start: Start of the time range.
+    ///   - end: End of the time range.
+    /// - Returns: Array of clip placements overlapping the range.
+    public func placements(inRange start: Timecode, end: Timecode) -> [ClipPlacement] {
+        clips(inRange: start, end: end).map { clip in
+            ClipPlacement(
+                clipId: clip.id,
+                offset: clip.offset,
+                duration: clip.duration,
+                lane: clip.lane
+            )
         }
     }
 
