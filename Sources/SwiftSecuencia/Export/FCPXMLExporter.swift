@@ -186,11 +186,6 @@ public struct FCPXMLExporter {
             element.addAttribute(XMLNode.attribute(withName: "name", stringValue: prompt) as! XMLNode)
         }
 
-        // Generate src URL from asset
-        // For now, use a placeholder - real implementation would resolve file path from TypedDataStorage
-        let srcURL = "file:///placeholder/\(asset.id.uuidString)"
-        element.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
-
         // Add duration if available
         if let duration = asset.durationSeconds {
             let timecode = Timecode(seconds: duration)
@@ -207,6 +202,16 @@ public struct FCPXMLExporter {
         } else if mimeType.hasPrefix("image/") {
             element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
         }
+
+        // Generate src URL from asset
+        // For now, use a placeholder - real implementation would resolve file path from TypedDataStorage
+        let srcURL = "file:///placeholder/\(asset.id.uuidString)"
+
+        // Add required media-rep child element
+        let mediaRep = XMLElement(name: "media-rep")
+        mediaRep.addAttribute(XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
+        mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
+        element.addChild(mediaRep)
 
         return element
     }
