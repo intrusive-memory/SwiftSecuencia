@@ -174,43 +174,72 @@ Implemented complete FCPXML export functionality:
 | 2 | TimelineErrorTests.swift | 12 | ✅ Pass |
 | 3 | AssetIntegrationTests.swift | 15 | ✅ Pass |
 | 4 | FCPXMLExportTests.swift | 11 | ✅ Pass |
-| **Total** | | **165** | **✅ Pass** |
+| 5 | FCPXMLBundleExportTests.swift | 10 | ✅ Pass |
+| **Total** | | **175** | **✅ Pass** |
 
 ---
 
-## Next Steps
+### ✅ Phase 5: Bundle Export (COMPLETED)
+**Commit**: 7026d46
+**Date**: 2025-12-05
 
-### Phase 5: Bundle Export (Planned)
+Implemented complete `.fcpxmld` bundle format for Final Cut Pro import with embedded media:
 
-Implement `.fcpxmld` bundle format for Final Cut Pro import with embedded media:
+- **FCPXMLBundleExporter**:
+  - Creates self-contained .fcpxmld bundles
+  - Async media file export from TypedDataStorage
+  - Info.plist generation with CFBundle* metadata
+  - Relative asset path generation (Media/filename)
 
 - **Bundle Structure**:
   ```
   Timeline.fcpxmld/
-  ├── Info.plist
-  ├── Timeline.fcpxml
+  ├── Info.plist           # CFBundleName, CFBundleIdentifier, etc.
+  ├── Info.fcpxml          # FCPXML document with relative paths
   └── Media/
-      ├── video1.mov
-      ├── video2.mov
-      └── audio1.wav
+      ├── {uuid}.mp4       # Exported video files
+      ├── {uuid}.wav       # Exported audio files
+      └── ...
   ```
 
 - **Features**:
-  - Generate Info.plist with bundle metadata
-  - Copy/export media files to Media folder
-  - Update asset src URLs to relative paths
-  - Resolve file paths from TypedDataStorage
+  - **Media Export**: Copies binary data from TypedDataStorage to Media folder
+  - **File Extension Mapping**: Detects extensions from MIME types (mp4, mov, wav, mp3, png, jpg)
+  - **Relative Paths**: Asset src attributes use "Media/filename.ext" format
+  - **Info.plist**: Complete bundle metadata (CFBundleName, CFBundleIdentifier, CFBundlePackageType: "FCPB")
+  - **Optional Media**: `includeMedia` parameter to control media embedding
+  - **Safe Overwrite**: Removes existing bundles before creating new ones
 
-- **API Design**:
+- **API**:
   ```swift
-  var exporter = FCPXMLBundleExporter()
-  try await exporter.exportBundle(
+  var exporter = FCPXMLBundleExporter(includeMedia: true)
+  let bundleURL = try await exporter.exportBundle(
       timeline: myTimeline,
       modelContext: context,
-      to: outputURL,
-      includeMedia: true
+      to: outputDirectory,
+      bundleName: "My Project"  // Optional, defaults to timeline name
   )
+  // Creates: {outputDirectory}/My Project.fcpxmld/
   ```
+
+- **Info.plist Keys**:
+  - CFBundleName: Bundle display name
+  - CFBundleIdentifier: Reverse-DNS identifier (com.swiftsecuencia.{name})
+  - CFBundleVersion: "1.0"
+  - CFBundleShortVersionString: "1.0"
+  - CFBundlePackageType: "FCPB" (Final Cut Pro Bundle)
+  - CFBundleInfoDictionaryVersion: "6.0"
+  - NSHumanReadableCopyright: "Generated with SwiftSecuencia"
+
+**Tests**: 10 new bundle export tests (175 total passing)
+
+**Limitations**:
+- Binary data must be present in TypedDataStorage.binaryValue
+- File extensions limited to common formats (extensible via fileExtension method)
+
+---
+
+## Next Steps
 
 ### Phase 6: Advanced FCPXML Elements (Future)
 
@@ -265,7 +294,8 @@ SwiftSecuencia/
 │   ├── Errors/
 │   │   └── TimelineError.swift
 │   └── Export/
-│       └── FCPXMLExporter.swift
+│       ├── FCPXMLExporter.swift
+│       └── FCPXMLBundleExporter.swift
 ├── Tests/SwiftSecuenciaTests/
 │   ├── TimecodeTests.swift
 │   ├── FrameRateTests.swift
@@ -275,7 +305,8 @@ SwiftSecuencia/
 │   ├── TimelineErrorTests.swift
 │   ├── RippleInsertTests.swift
 │   ├── AssetIntegrationTests.swift
-│   └── FCPXMLExportTests.swift
+│   ├── FCPXMLExportTests.swift
+│   └── FCPXMLBundleExportTests.swift
 ├── Docs/
 │   ├── FCPXML-Reference.md
 │   └── FCPXML-Elements.md
@@ -333,12 +364,23 @@ let xmlString = try exporter.export(
     eventName: "Scene 1"
 )
 
-// Write to file
+// Export to standalone FCPXML file
 try xmlString.write(
     to: URL(fileURLWithPath: "output.fcpxml"),
     atomically: true,
     encoding: .utf8
 )
+
+// OR export to .fcpxmld bundle with embedded media
+var bundleExporter = FCPXMLBundleExporter(includeMedia: true)
+let bundleURL = try await bundleExporter.exportBundle(
+    timeline: timeline,
+    modelContext: context,
+    to: URL(fileURLWithPath: "/path/to/output/directory"),
+    libraryName: "AI Generated Content",
+    eventName: "Scene 1"
+)
+// Creates: /path/to/output/directory/My Documentary.fcpxmld/
 ```
 
 ---

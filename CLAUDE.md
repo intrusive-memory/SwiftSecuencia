@@ -198,12 +198,17 @@ extension AssetClip: FCPXMLElement {
 - [x] 165 total tests passing
 - **Status**: Merged to development (commit: 4fa91cb)
 
-### Phase 5: Bundle Export (Planned)
-- [ ] `.fcpxmld` bundle structure
-- [ ] Embedded media support
-- [ ] Media folder organization
-- [ ] Info.plist generation
-- [ ] File path resolution from TypedDataStorage
+### Phase 5: Bundle Export (✅ COMPLETED)
+- [x] `.fcpxmld` bundle structure (Info.plist + Info.fcpxml + Media/)
+- [x] Embedded media support with async file export
+- [x] Media folder organization with UUID-based filenames
+- [x] Info.plist generation with CFBundle* metadata
+- [x] File extension mapping from MIME types
+- [x] Relative asset path generation (Media/filename)
+- [x] Optional media inclusion (includeMedia parameter)
+- [x] 10 comprehensive bundle export tests
+- [x] 175 total tests passing
+- **Status**: Merged to development (commit: 7026d46)
 
 ### Phase 6: Advanced FCPXML Elements (Planned)
 - [ ] Transitions and effects
