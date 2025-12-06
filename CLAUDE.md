@@ -2,9 +2,13 @@
 
 ## Project Overview
 
-SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X timelines via FCPXML. The library provides type-safe Swift APIs that model the FCPXML document structure.
+SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X timelines via FCPXML. The library provides type-safe Swift APIs that model the FCPXML document structure and includes FCPXML manipulation capabilities from the Pipeline library.
 
 **Platform**: macOS 26.0+ only
+
+## Pipeline Integration
+
+SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipeline) project by Reuel Kim (MIT License). Pipeline's FCPXML manipulation code has been integrated into the `Sources/Pipeline/` directory with modifications for Swift 6.2 and macOS 26.0+ compatibility. See `PIPELINE-LICENSE.md` for full attribution.
 
 ## ⚠️ CRITICAL: Platform Version Enforcement
 

@@ -334,3 +334,11 @@ MIT License - See [LICENSE](LICENSE) for details.
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
+
+## Credits
+
+### Pipeline
+
+SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipeline) project by Reuel Kim, licensed under the MIT License. Pipeline provides FCPXML document manipulation capabilities that have been integrated and adapted for Swift 6.2 and macOS 26.0+.
+
+See [PIPELINE-LICENSE.md](PIPELINE-LICENSE.md) for the full Pipeline license.
