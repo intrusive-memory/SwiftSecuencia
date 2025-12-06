@@ -128,11 +128,11 @@ import SwiftCompartido
     videoAsset.prompt = "Video Clip"
     context.insert(videoAsset)
 
-    let audioData = Data("mock audio data".utf8)
+    let audioData = try TestUtilities.generateAudioData(text: "Audio track for testing")
     let audioAsset = TypedDataStorage(
         providerId: "test",
         requestorID: "a1",
-        mimeType: "audio/mpeg",
+        mimeType: "audio/x-aiff",
         binaryValue: audioData,
         durationSeconds: 60.0
     )
@@ -167,7 +167,7 @@ import SwiftCompartido
     // Verify file extensions
     let extensions = mediaFiles.map { $0.pathExtension }.sorted()
     #expect(extensions.contains("mp4"))
-    #expect(extensions.contains("mp3"))
+    #expect(extensions.contains("m4a"))  // Audio files are converted to m4a
 
     // Verify file contents
     for fileURL in mediaFiles {
@@ -318,8 +318,8 @@ import SwiftCompartido
     // Create assets with different MIME types
     let mp4Asset = TypedDataStorage(providerId: "test", requestorID: "1", mimeType: "video/mp4", binaryValue: Data("1".utf8))
     let movAsset = TypedDataStorage(providerId: "test", requestorID: "2", mimeType: "video/quicktime", binaryValue: Data("2".utf8))
-    let wavAsset = TypedDataStorage(providerId: "test", requestorID: "3", mimeType: "audio/wav", binaryValue: Data("3".utf8))
-    let mp3Asset = TypedDataStorage(providerId: "test", requestorID: "4", mimeType: "audio/mpeg", binaryValue: Data("4".utf8))
+    let wavAsset = TypedDataStorage(providerId: "test", requestorID: "3", mimeType: "audio/wav", binaryValue: try TestUtilities.generateAudioData(text: "WAV audio"))
+    let mp3Asset = TypedDataStorage(providerId: "test", requestorID: "4", mimeType: "audio/x-aiff", binaryValue: try TestUtilities.generateAudioData(text: "AIFF audio"))
     let pngAsset = TypedDataStorage(providerId: "test", requestorID: "5", mimeType: "image/png", binaryValue: Data("5".utf8))
 
     context.insert(mp4Asset)
@@ -356,8 +356,7 @@ import SwiftCompartido
 
     #expect(extensions.contains("mp4"))
     #expect(extensions.contains("mov"))
-    #expect(extensions.contains("wav"))
-    #expect(extensions.contains("mp3"))
+    #expect(extensions.contains("m4a"))  // Audio files are converted to m4a
     #expect(extensions.contains("png"))
 }
 
@@ -405,7 +404,7 @@ import SwiftCompartido
     // Create multiple assets
     let video1 = TypedDataStorage(providerId: "test", requestorID: "v1", mimeType: "video/mp4", binaryValue: Data("v1".utf8), durationSeconds: 30.0)
     let video2 = TypedDataStorage(providerId: "test", requestorID: "v2", mimeType: "video/mp4", binaryValue: Data("v2".utf8), durationSeconds: 20.0)
-    let audio = TypedDataStorage(providerId: "test", requestorID: "a1", mimeType: "audio/mpeg", binaryValue: Data("a1".utf8), durationSeconds: 50.0)
+    let audio = TypedDataStorage(providerId: "test", requestorID: "a1", mimeType: "audio/x-aiff", binaryValue: try TestUtilities.generateAudioData(text: "Background audio"), durationSeconds: 50.0)
 
     context.insert(video1)
     context.insert(video2)

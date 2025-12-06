@@ -47,8 +47,8 @@ import SwiftCompartido
     let asset = TypedDataStorage(
         providerId: "test-provider",
         requestorID: "test-requestor",
-        mimeType: "audio/wav",
-        binaryValue: Data([0x00, 0x01, 0x02]),
+        mimeType: "audio/x-aiff",
+        binaryValue: try TestUtilities.generateAudioData(text: "Test audio for markers"),
         prompt: "Test audio"
     )
     asset.durationSeconds = 30.0
@@ -130,8 +130,8 @@ import SwiftCompartido
     let asset = TypedDataStorage(
         providerId: "test-provider",
         requestorID: "test-requestor",
-        mimeType: "audio/wav",
-        binaryValue: Data([0x00, 0x01]),
+        mimeType: "audio/x-aiff",
+        binaryValue: try TestUtilities.generateAudioData(text: "Best take"),
         prompt: "Best take"
     )
     asset.durationSeconds = 60.0
@@ -221,8 +221,8 @@ import SwiftCompartido
     let asset1 = TypedDataStorage(
         providerId: "test-provider",
         requestorID: "test-requestor",
-        mimeType: "audio/wav",
-        binaryValue: Data([0x01]),
+        mimeType: "audio/x-aiff",
+        binaryValue: try TestUtilities.generateAudioData(text: "Question 1"),
         prompt: "Question 1"
     )
     asset1.durationSeconds = 30.0
@@ -231,8 +231,8 @@ import SwiftCompartido
     let asset2 = TypedDataStorage(
         providerId: "test-provider",
         requestorID: "test-requestor",
-        mimeType: "audio/wav",
-        binaryValue: Data([0x02]),
+        mimeType: "audio/x-aiff",
+        binaryValue: try TestUtilities.generateAudioData(text: "Question 2"),
         prompt: "Question 2"
     )
     asset2.durationSeconds = 40.0
@@ -322,8 +322,8 @@ import SwiftCompartido
     let asset = TypedDataStorage(
         providerId: "test-provider",
         requestorID: "test-requestor",
-        mimeType: "audio/wav",
-        binaryValue: Data([0x00]),
+        mimeType: "audio/x-aiff",
+        binaryValue: try TestUtilities.generateAudioData(text: "Plain audio"),
         prompt: "Plain audio"
     )
     asset.durationSeconds = 10.0

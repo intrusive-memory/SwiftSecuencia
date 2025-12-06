@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import SwiftCompartido
 import Pipeline
+import AVFoundation
 
 /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
 ///
@@ -156,21 +157,45 @@ public struct FCPXMLBundleExporter {
         let mediaURL = bundleURL.appendingPathComponent("Media")
 
         for asset in assets {
-            // Determine file extension from MIME type
-            let ext = fileExtension(for: asset.mimeType)
-
-            // Generate unique filename
-            let filename = "\(asset.id.uuidString).\(ext)"
-            let fileURL = mediaURL.appendingPathComponent(filename)
-
-            // Write binary data to file
             guard let binaryValue = asset.binaryValue else {
                 throw FCPXMLExportError.invalidTimeline(reason: "Asset \(asset.id) has no binary data")
             }
-            try binaryValue.write(to: fileURL, options: .atomic)
 
-            // Store relative path (Media/filename)
-            assetURLMap[asset.id] = "Media/\(filename)"
+            // Check if this is an audio file that needs conversion
+            let isAudio = asset.mimeType.hasPrefix("audio/")
+
+            if isAudio {
+                // Try to convert audio to m4a format
+                // If conversion fails (e.g., for test data or invalid audio), fall back to original format
+                let inputExt = fileExtension(for: asset.mimeType)
+
+                do {
+                    let filename = "\(asset.id.uuidString).m4a"
+                    let fileURL = mediaURL.appendingPathComponent(filename)
+
+                    try await Self.convertAudioToM4A(
+                        audioData: binaryValue,
+                        inputExtension: inputExt,
+                        outputURL: fileURL
+                    )
+
+                    assetURLMap[asset.id] = "Media/\(filename)"
+                } catch {
+                    // Conversion failed - write original audio file instead
+                    let filename = "\(asset.id.uuidString).\(inputExt)"
+                    let fileURL = mediaURL.appendingPathComponent(filename)
+                    try binaryValue.write(to: fileURL, options: .atomic)
+                    assetURLMap[asset.id] = "Media/\(filename)"
+                }
+            } else {
+                // For video and images, write directly without conversion
+                let ext = fileExtension(for: asset.mimeType)
+                let filename = "\(asset.id.uuidString).\(ext)"
+                let fileURL = mediaURL.appendingPathComponent(filename)
+
+                try binaryValue.write(to: fileURL, options: .atomic)
+                assetURLMap[asset.id] = "Media/\(filename)"
+            }
         }
 
         return assetURLMap
@@ -181,6 +206,7 @@ public struct FCPXMLBundleExporter {
         let components = mimeType.split(separator: "/")
         guard components.count == 2 else { return "dat" }
 
+        let type = String(components[0])
         let subtype = String(components[1])
 
         // Map common MIME types to extensions
@@ -189,12 +215,57 @@ public struct FCPXMLBundleExporter {
         case "quicktime": return "mov"
         case "mpeg": return "mp3"
         case "wav", "x-wav": return "wav"
+        case "aiff", "x-aiff": return "aiff"
         case "aac": return "aac"
         case "png": return "png"
         case "jpeg": return "jpg"
         case "gif": return "gif"
         case "webp": return "webp"
-        default: return subtype
+        default:
+            // For unknown audio types, use the subtype but clean it up
+            if type == "audio" && subtype.hasPrefix("x-") {
+                return String(subtype.dropFirst(2))
+            }
+            return subtype
+        }
+    }
+
+    /// Converts audio data to m4a format using AVFoundation.
+    ///
+    /// - Parameters:
+    ///   - audioData: Raw audio data to convert.
+    ///   - inputExtension: File extension for the input audio format.
+    ///   - outputURL: Destination URL for the m4a file.
+    private static func convertAudioToM4A(
+        audioData: Data,
+        inputExtension: String,
+        outputURL: URL
+    ) async throws {
+        // Create temporary input file
+        let tempDir = FileManager.default.temporaryDirectory
+        let inputURL = tempDir.appendingPathComponent(UUID().uuidString + "." + inputExtension)
+
+        // Write input data to temp file
+        try audioData.write(to: inputURL, options: .atomic)
+
+        defer {
+            // Clean up temp file
+            try? FileManager.default.removeItem(at: inputURL)
+        }
+
+        // Create asset from input file
+        let asset = AVURLAsset(url: inputURL)
+
+        // Create export session
+        guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            throw FCPXMLExportError.invalidTimeline(reason: "Could not create export session for audio conversion")
+        }
+
+        // Perform conversion using modern API
+        do {
+            try await exportSession.export(to: outputURL, as: .m4a)
+        } catch {
+            throw FCPXMLExportError.invalidTimeline(reason: "Audio conversion failed: \(error.localizedDescription)")
         }
     }
 
