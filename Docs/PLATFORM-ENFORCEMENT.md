@@ -86,33 +86,6 @@ Automated checks in CI prevent merging code with old platform references.
     echo "✅ Platform configuration verified (macOS 26+)" >> $GITHUB_STEP_SUMMARY
 ```
 
-### 4. Pre-commit Hook (Optional - Local Enforcement)
-
-**File**: `.git/hooks/pre-commit` (make executable with `chmod +x`)
-
-Catch issues before committing:
-
-```bash
-#!/bin/bash
-
-# Run SwiftLint if available
-if command -v swiftlint &> /dev/null; then
-    swiftlint lint --strict
-    if [ $? -ne 0 ]; then
-        echo "❌ SwiftLint failed. Fix errors before committing."
-        exit 1
-    fi
-fi
-
-# Check Package.swift for correct platform versions
-if grep -E "platforms.*\.(macOS|iOS)\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
-    echo "❌ Package.swift contains platform version < 26"
-    exit 1
-fi
-
-exit 0
-```
-
 ## Installation Steps
 
 ### For SwiftSecuencia (Already Implemented)
@@ -121,7 +94,6 @@ SwiftSecuencia already has all enforcement layers configured:
 1. ✅ `.swiftlint.yml` with custom rules
 2. ✅ `Package.swift` with `platforms: [.macOS(.v26)]`
 3. ✅ GitHub Actions workflow with SwiftLint and platform verification
-4. ⬜ Pre-commit hook (optional, install manually)
 
 ### For Other Libraries
 

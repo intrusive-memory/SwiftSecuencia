@@ -6,7 +6,7 @@ Copy this to apply macOS/iOS 26+ enforcement to all your libraries.
 
 ```bash
 # From your new library directory
-cp /path/to/SwiftSecuencia/.swiftlint.yml .
+cp /path/to/SourceLibrary/.swiftlint.yml .
 ```
 
 **For libraries supporting BOTH macOS and iOS**, edit `.swiftlint.yml`:
@@ -82,30 +82,6 @@ swiftlint lint --strict
 # Should pass with 0 violations for platform issues
 ```
 
-## 5. Optional: Pre-commit Hook
-
-```bash
-# Create hook file
-cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/bash
-if command -v swiftlint &> /dev/null; then
-    swiftlint lint --strict
-    if [ $? -ne 0 ]; then
-        echo "❌ SwiftLint failed. Fix errors before committing."
-        exit 1
-    fi
-fi
-if grep -E "platforms.*\.(macOS|iOS)\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
-    echo "❌ Package.swift contains platform version < 26"
-    exit 1
-fi
-exit 0
-EOF
-
-# Make executable
-chmod +x .git/hooks/pre-commit
-```
-
 ## What This Catches
 
 ```swift
@@ -141,7 +117,6 @@ See `Docs/PLATFORM-ENFORCEMENT.md` for complete details, troubleshooting, and ad
 - [ ] GitHub Actions workflow updated
 - [ ] `swiftlint lint --strict` passes locally
 - [ ] CI passes on PR
-- [ ] (Optional) Pre-commit hook installed
 
 ---
 
