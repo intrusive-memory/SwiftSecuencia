@@ -74,20 +74,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
       - name: Show Swift version
         run: swift --version
 
       - name: Build for macOS
         run: |
-          echo "🔨 Building for macOS (arm64)"
-          xcodebuild build \
-            -scheme SwiftSecuencia \
-            -destination 'platform=macOS' \
-            -quiet \
-            CODE_SIGNING_ALLOWED=NO
+          echo "🔨 Building for macOS"
+          swift build
 
       - name: Run FCPXML DTD validation tests
         run: |
@@ -108,24 +101,14 @@ jobs:
 
       - name: Run all unit tests on macOS
         run: |
-          set +e
-
           echo "🧪 Running all unit tests on macOS"
+          swift test --parallel 2>&1 | tee test_output_macos.txt
 
-          xcodebuild test \
-            -scheme SwiftSecuencia \
-            -destination 'platform=macOS' \
-            -enableCodeCoverage YES \
-            CODE_SIGNING_ALLOWED=NO \
-            > test_output_macos.txt 2>&1
-          TEST_EXIT_CODE=$?
-          cat test_output_macos.txt
-
-          # Check if tests passed
-          if grep -q "Test run with .* tests in .* suites passed\|TEST SUCCEEDED" test_output_macos.txt; then
-            echo "✅ All unit tests passed"
-            exit 0
+          if grep -q "Test run with .* tests in .* suites passed" test_output_macos.txt; then
+            echo "✅ All unit tests passed" >> $GITHUB_STEP_SUMMARY
+            TEST_COUNT=$(grep -o "[0-9]* tests" test_output_macos.txt | tail -1 | grep -o "[0-9]*")
+            echo "- Executed $TEST_COUNT tests successfully" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Unit tests failed"
-            exit $TEST_EXIT_CODE
+            echo "❌ Unit tests failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
           fi
