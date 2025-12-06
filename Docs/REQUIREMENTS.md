@@ -188,8 +188,8 @@ SwiftSecuencia is a Swift library for generating Final Cut Pro X timelines from 
 - No import warnings or errors for valid documents
 
 #### NFR-2.3: Platform Support
-- macOS 13.0+ (primary)
-- iOS 16.0+ (limited - no FCP but useful for generation)
+- macOS 26.0+ only
+- Final Cut Pro for iPad does not support FCPXML import/export
 
 ### NFR-3: Reliability
 
@@ -557,7 +557,7 @@ try await exporter.export(to: url, options: options)
 ### Business Constraints
 
 1. **No FCP Required**: Library must work without Final Cut Pro installed (generation only)
-2. **Cross-Platform Consideration**: Core types should work on iOS even though FCP is macOS-only
+2. **macOS-Only**: Library targets macOS 26.0+ exclusively (Final Cut Pro for iPad does not support FCPXML)
 
 ---
 

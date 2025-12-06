@@ -681,8 +681,7 @@ Each phase PR triggers:
 
 1. **Build Check**: `swift build` on macOS 26
 2. **Unit Tests**: All tests for current and previous phases
-3. **iOS Build**: Build for iOS simulator
-4. **Code Coverage**: Generate and check thresholds
+3. **Code Coverage**: Generate and check thresholds
 
 ### CI Configuration
 
