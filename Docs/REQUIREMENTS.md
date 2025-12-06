@@ -43,7 +43,7 @@ SwiftSecuencia is a Swift library for generating Final Cut Pro X timelines from 
   - Timeline end time extends to accommodate new clip
   - Returns the clip's position on timeline (offset, duration, lane)
 
-#### FR-1.3: Insert Clip at Specific Timecode
+#### FR-1.3: Insert Clip at Specific Timecode (Non-Ripple)
 - **Description**: Add a TypedDataStorage record at a specific position on the timeline
 - **Input**: TypedDataStorage record, target offset (Timecode), optional lane
 - **Output**: Updated timeline with clip at specified position; returns clip placement info
@@ -53,6 +53,20 @@ SwiftSecuencia is a Swift library for generating Final Cut Pro X timelines from 
   - Clips can overlap temporally (FCP handles audio mixing)
   - Does NOT shift existing clips - overlapping is allowed and expected
   - Returns the clip's position on timeline (offset, duration, lane)
+
+#### FR-1.3a: Insert Clip with Ripple Effect
+- **Description**: Insert a clip at a specific position, pushing subsequent clips forward
+- **Input**: TypedDataStorage record, target offset (Timecode), optional lane filter
+- **Output**: Updated timeline with clip inserted; subsequent clips shifted; returns clip placement info
+- **Behavior**:
+  - Clip is placed at the exact timecode specified
+  - All clips starting AT or AFTER the insertion point are shifted forward by the new clip's duration
+  - Lane filter options:
+    - `nil` (default): Ripple affects ALL lanes
+    - Specific lane: Only ripple clips on that lane
+    - Lane range: Ripple clips within lane range
+  - Returns the clip's position and a list of affected clips with their new positions
+  - Useful for inserting into a sequence without creating overlaps
 
 #### FR-1.4: Query Timeline State
 - **Description**: Get current timeline boundaries and statistics
@@ -217,12 +231,20 @@ public struct Timeline: Sendable {
     // Append to end of primary storyline (lane 0)
     public mutating func append(_ storage: TypedDataStorage) throws -> ClipPlacement
 
-    // Insert at specific timecode, optionally on specific lane
+    // Insert at specific timecode, optionally on specific lane (no ripple)
     public mutating func insert(
         _ storage: TypedDataStorage,
         at offset: Timecode,
         lane: Int? = nil  // nil = auto-assign to avoid conflicts
     ) throws -> ClipPlacement
+
+    // Insert with ripple - shifts subsequent clips forward
+    public mutating func insertWithRipple(
+        _ storage: TypedDataStorage,
+        at offset: Timecode,
+        lane: Int = 0,
+        rippleLanes: RippleLaneOption = .all
+    ) throws -> RippleInsertResult
 
     // Query clip by ID
     public func placement(for clipID: String) -> ClipPlacement?
@@ -262,6 +284,38 @@ public struct ClipPlacement: Sendable {
     public let timelineStart: Timecode
     public let timelineEnd: Timecode
     public let timelineDuration: Timecode
+}
+```
+
+### RippleLaneOption
+```swift
+public enum RippleLaneOption: Sendable {
+    case all                                 // Ripple all lanes
+    case single(Int)                         // Ripple only specified lane
+    case range(ClosedRange<Int>)             // Ripple lanes in range
+    case primaryOnly                         // Shorthand for .single(0)
+}
+```
+
+### RippleInsertResult
+```swift
+public struct RippleInsertResult: Sendable {
+    public let insertedClip: ClipPlacement   // The newly inserted clip
+    public let affectedClips: [ClipShift]    // Clips that were shifted
+    public let timelineStart: Timecode
+    public let timelineEnd: Timecode
+    public let timelineDuration: Timecode
+}
+```
+
+### ClipShift
+```swift
+public struct ClipShift: Sendable {
+    public let clipID: String
+    public let previousOffset: Timecode      // Where clip was before
+    public let newOffset: Timecode           // Where clip is now
+    public let shiftAmount: Timecode         // How much it moved (newOffset - previousOffset)
+    public let lane: Int
 }
 ```
 
@@ -405,6 +459,64 @@ let musicBed = try timeline.insert(
 //   Lane  0: [dialogue1]-------[dialogue2]-------
 //   Lane -1: [forestAmbient]---[cityAmbient]-----
 //   Lane -2: [=========backgroundScore=========]
+```
+
+### Ripple Insert (Shifting Subsequent Clips)
+
+```swift
+var timeline = Timeline(format: .hd1080p24)
+
+// Build initial sequence
+_ = try timeline.append(clip1)  // 0-10s
+_ = try timeline.append(clip2)  // 10-20s
+_ = try timeline.append(clip3)  // 20-30s
+
+// Insert new clip at 10s, pushing clip2 and clip3 forward
+let result = try timeline.insertWithRipple(
+    newClip,                        // 5 seconds long
+    at: Timecode(seconds: 10),
+    lane: 0,
+    rippleLanes: .primaryOnly       // Only shift lane 0
+)
+
+// Result:
+// - newClip inserted at 10-15s
+// - clip2 shifted from 10-20s to 15-25s
+// - clip3 shifted from 20-30s to 25-35s
+
+print("Inserted: \(result.insertedClip.offset) - \(result.insertedClip.endTime)")
+for shift in result.affectedClips {
+    print("\(shift.clipID): \(shift.previousOffset) → \(shift.newOffset)")
+}
+```
+
+### Ripple Insert - All Lanes vs Single Lane
+
+```swift
+var timeline = Timeline(format: .hd1080p24)
+
+// Primary storyline with dialogue
+_ = try timeline.insert(dialogue1, at: Timecode.zero, lane: 0)        // 0-10s
+_ = try timeline.insert(dialogue2, at: Timecode(seconds: 10), lane: 0) // 10-20s
+
+// Background music on lane -1 (runs entire duration)
+_ = try timeline.insert(musicBed, at: Timecode.zero, lane: -1)        // 0-20s
+
+// Insert with ripple on ALL lanes - music also shifts
+let result1 = try timeline.insertWithRipple(
+    newDialogue,
+    at: Timecode(seconds: 5),
+    rippleLanes: .all
+)
+// Both dialogue2 AND musicBed shift forward
+
+// OR: Insert with ripple on PRIMARY ONLY - music stays in place
+let result2 = try timeline.insertWithRipple(
+    newDialogue,
+    at: Timecode(seconds: 5),
+    rippleLanes: .primaryOnly
+)
+// Only dialogue clips shift; music stays at original position
 ```
 
 ### Configuration Options

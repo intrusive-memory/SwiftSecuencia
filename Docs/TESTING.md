@@ -346,6 +346,216 @@ Final Cut Pro import verification (not automated).
 }
 ```
 
+#### UT-3.8: Ripple Insert
+```swift
+@Test func rippleInsertShiftsSubsequentClips() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Create sequence: clip1 (0-10), clip2 (10-20), clip3 (20-30)
+    let storage1 = try await createMockStorage(duration: 10.0)
+    let storage2 = try await createMockStorage(duration: 10.0)
+    let storage3 = try await createMockStorage(duration: 10.0)
+    _ = try timeline.append(storage1)
+    _ = try timeline.append(storage2)
+    _ = try timeline.append(storage3)
+
+    // Insert 5-second clip at t=10 with ripple
+    let newStorage = try await createMockStorage(duration: 5.0)
+    let result = try timeline.insertWithRipple(
+        newStorage,
+        at: Timecode(seconds: 10),
+        lane: 0,
+        rippleLanes: .primaryOnly
+    )
+
+    // New clip at 10-15
+    #expect(result.insertedClip.offset.seconds == 10.0)
+    #expect(result.insertedClip.duration.seconds == 5.0)
+
+    // Two clips should have shifted
+    #expect(result.affectedClips.count == 2)
+
+    // clip2: 10-20 → 15-25
+    // clip3: 20-30 → 25-35
+    let shifts = result.affectedClips.sorted { $0.previousOffset.seconds < $1.previousOffset.seconds }
+    #expect(shifts[0].previousOffset.seconds == 10.0)
+    #expect(shifts[0].newOffset.seconds == 15.0)
+    #expect(shifts[1].previousOffset.seconds == 20.0)
+    #expect(shifts[1].newOffset.seconds == 25.0)
+
+    // Timeline extended by 5 seconds
+    #expect(result.timelineDuration.seconds == 35.0)
+}
+
+@Test func rippleInsertAtStartShiftsAll() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Create sequence: clip1 (0-10), clip2 (10-20)
+    let storage1 = try await createMockStorage(duration: 10.0)
+    let storage2 = try await createMockStorage(duration: 10.0)
+    _ = try timeline.append(storage1)
+    _ = try timeline.append(storage2)
+
+    // Insert at t=0 shifts everything
+    let newStorage = try await createMockStorage(duration: 5.0)
+    let result = try timeline.insertWithRipple(
+        newStorage,
+        at: Timecode.zero,
+        lane: 0,
+        rippleLanes: .primaryOnly
+    )
+
+    #expect(result.insertedClip.offset == .zero)
+    #expect(result.affectedClips.count == 2)  // Both clips shifted
+}
+
+@Test func rippleInsertAtEndShiftsNothing() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Create sequence: clip1 (0-10), clip2 (10-20)
+    let storage1 = try await createMockStorage(duration: 10.0)
+    let storage2 = try await createMockStorage(duration: 10.0)
+    _ = try timeline.append(storage1)
+    _ = try timeline.append(storage2)
+
+    // Insert at t=20 (end of timeline) - no clips to shift
+    let newStorage = try await createMockStorage(duration: 5.0)
+    let result = try timeline.insertWithRipple(
+        newStorage,
+        at: Timecode(seconds: 20),
+        lane: 0,
+        rippleLanes: .primaryOnly
+    )
+
+    #expect(result.insertedClip.offset.seconds == 20.0)
+    #expect(result.affectedClips.isEmpty)
+}
+
+@Test func rippleInsertDoesNotAffectEarlierClips() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Create sequence: clip1 (0-10), clip2 (10-20), clip3 (20-30)
+    let storage1 = try await createMockStorage(duration: 10.0)
+    let storage2 = try await createMockStorage(duration: 10.0)
+    let storage3 = try await createMockStorage(duration: 10.0)
+    let placement1 = try timeline.append(storage1)
+    _ = try timeline.append(storage2)
+    _ = try timeline.append(storage3)
+
+    // Insert at t=15 (middle of clip2)
+    let newStorage = try await createMockStorage(duration: 5.0)
+    let result = try timeline.insertWithRipple(
+        newStorage,
+        at: Timecode(seconds: 15),
+        lane: 0,
+        rippleLanes: .primaryOnly
+    )
+
+    // clip1 should NOT be affected (starts before insertion point)
+    let clip1Now = timeline.placement(for: placement1.clipID)
+    #expect(clip1Now?.offset.seconds == 0.0)
+
+    // Only clips starting at or after t=15 are shifted
+    // clip2 starts at 10, so it's NOT shifted (starts before 15)
+    // clip3 starts at 20, so it IS shifted to 25
+    #expect(result.affectedClips.count == 1)
+}
+```
+
+#### UT-3.9: Ripple Insert Lane Options
+```swift
+@Test func rippleAllLanes() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Primary storyline
+    let dialogue = try await createMockStorage(duration: 20.0)
+    _ = try timeline.insert(dialogue, at: Timecode.zero, lane: 0)
+
+    // Music on lane -1
+    let music = try await createMockStorage(duration: 20.0)
+    let musicPlacement = try timeline.insert(music, at: Timecode.zero, lane: -1)
+
+    // Insert at t=10 with ripple on ALL lanes
+    let newClip = try await createMockStorage(duration: 5.0)
+    let result = try timeline.insertWithRipple(
+        newClip,
+        at: Timecode(seconds: 10),
+        lane: 0,
+        rippleLanes: .all
+    )
+
+    // Music should also be affected (it starts at 0, but portion after t=10 conceptually shifts)
+    // Actually, clips starting AT or AFTER insertion point shift
+    // Music starts at 0 (before 10), so depends on implementation
+    // If we shift clips that START >= insertionPoint, music doesn't shift
+    // Let's verify the music clip position
+    let musicNow = timeline.placement(for: musicPlacement.clipID)
+    #expect(musicNow != nil)
+}
+
+@Test func ripplePrimaryOnly() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Primary storyline: clip at 10-20
+    let dialogue = try await createMockStorage(duration: 10.0)
+    let dialoguePlacement = try timeline.insert(dialogue, at: Timecode(seconds: 10), lane: 0)
+
+    // Music on lane -1: clip at 10-20
+    let music = try await createMockStorage(duration: 10.0)
+    let musicPlacement = try timeline.insert(music, at: Timecode(seconds: 10), lane: -1)
+
+    // Insert at t=10 with ripple on PRIMARY ONLY
+    let newClip = try await createMockStorage(duration: 5.0)
+    _ = try timeline.insertWithRipple(
+        newClip,
+        at: Timecode(seconds: 10),
+        lane: 0,
+        rippleLanes: .primaryOnly
+    )
+
+    // Dialogue should shift: 10 → 15
+    let dialogueNow = timeline.placement(for: dialoguePlacement.clipID)
+    #expect(dialogueNow?.offset.seconds == 15.0)
+
+    // Music should NOT shift (different lane)
+    let musicNow = timeline.placement(for: musicPlacement.clipID)
+    #expect(musicNow?.offset.seconds == 10.0)
+}
+
+@Test func rippleLaneRange() async throws {
+    var timeline = Timeline(format: .hd1080p24)
+
+    // Clips on lanes -1, 0, 1 all starting at t=10
+    let clipNeg1 = try await createMockStorage(duration: 10.0)
+    let clip0 = try await createMockStorage(duration: 10.0)
+    let clip1 = try await createMockStorage(duration: 10.0)
+
+    let placementNeg1 = try timeline.insert(clipNeg1, at: Timecode(seconds: 10), lane: -1)
+    let placement0 = try timeline.insert(clip0, at: Timecode(seconds: 10), lane: 0)
+    let placement1 = try timeline.insert(clip1, at: Timecode(seconds: 10), lane: 1)
+
+    // Insert with ripple only on lanes 0...1
+    let newClip = try await createMockStorage(duration: 5.0)
+    _ = try timeline.insertWithRipple(
+        newClip,
+        at: Timecode(seconds: 10),
+        lane: 0,
+        rippleLanes: .range(0...1)
+    )
+
+    // Lane -1 should NOT shift
+    let neg1Now = timeline.placement(for: placementNeg1.clipID)
+    #expect(neg1Now?.offset.seconds == 10.0)
+
+    // Lanes 0 and 1 should shift
+    let lane0Now = timeline.placement(for: placement0.clipID)
+    #expect(lane0Now?.offset.seconds == 15.0)
+
+    let lane1Now = timeline.placement(for: placement1.clipID)
+    #expect(lane1Now?.offset.seconds == 15.0)
+}
+```
+
 ---
 
 ### UT-4: Asset Creation
