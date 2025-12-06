@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationXML
 
 /// A rating for marking clips as favorites or rejected.
 ///

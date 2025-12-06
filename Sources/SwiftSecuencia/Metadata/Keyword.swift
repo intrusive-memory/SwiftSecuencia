@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationXML
 
 /// A keyword for tagging clips and ranges in the timeline.
 ///

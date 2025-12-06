@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationXML
 
 /// A standard marker that annotates a specific point or range in the timeline.
 ///

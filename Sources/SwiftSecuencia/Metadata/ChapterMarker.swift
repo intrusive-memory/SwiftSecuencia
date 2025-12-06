@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationXML
 
 /// A chapter marker for defining video chapters.
 ///

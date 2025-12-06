@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationXML
 
 /// A container for custom metadata key-value pairs.
 ///
