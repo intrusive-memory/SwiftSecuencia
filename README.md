@@ -212,7 +212,7 @@ clip.adjustVolume?.keyframes = [
 ### Markers and Keywords
 
 ```swift
-// Add a marker
+// Add standard markers to clips
 clip.markers.append(
     Marker(
         start: Timecode(seconds: 5),
@@ -221,7 +221,16 @@ clip.markers.append(
     )
 )
 
-// Add keywords
+// Add chapter markers to timeline
+timeline.chapterMarkers.append(
+    ChapterMarker(
+        start: Timecode.zero,
+        value: "Introduction",
+        posterOffset: Timecode(seconds: 2)
+    )
+)
+
+// Add keywords for organization
 clip.keywords.append(
     Keyword(
         start: .zero,
@@ -229,6 +238,24 @@ clip.keywords.append(
         value: "Interview"
     )
 )
+
+// Mark favorite clips
+clip.ratings.append(
+    Rating(
+        start: .zero,
+        duration: Timecode(seconds: 30),
+        value: .favorite,
+        note: "Best take"
+    )
+)
+
+// Add custom metadata
+var metadata = Metadata()
+metadata.setReel("A001")
+metadata.setScene("1")
+metadata.setTake("3")
+metadata.setDescription("Interview with subject")
+clip.metadata = metadata
 ```
 
 ## App Intents & Shortcuts Integration

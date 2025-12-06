@@ -396,6 +396,27 @@ public struct FCPXMLBundleExporter {
         element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timeline.duration.fcpxmlString) as! XMLNode)
         element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
 
+        // Add timeline-level metadata
+        if let metadata = timeline.metadata, !metadata.isEmpty {
+            element.addChild(metadata.xmlElement())
+        }
+
+        for marker in timeline.markers {
+            element.addChild(marker.xmlElement())
+        }
+
+        for chapterMarker in timeline.chapterMarkers {
+            element.addChild(chapterMarker.xmlElement())
+        }
+
+        for keyword in timeline.keywords {
+            element.addChild(keyword.xmlElement())
+        }
+
+        for rating in timeline.ratings {
+            element.addChild(rating.xmlElement())
+        }
+
         let spine = try generateSpineElement(timeline: timeline, modelContext: modelContext, resourceMap: resourceMap)
         element.addChild(spine)
 
@@ -447,6 +468,31 @@ public struct FCPXMLBundleExporter {
 
         if clip.isVideoDisabled {
             element.addAttribute(XMLNode.attribute(withName: "enabled", stringValue: "0") as! XMLNode)
+        }
+
+        // Add metadata child elements
+        if let metadata = clip.metadata, !metadata.isEmpty {
+            element.addChild(metadata.xmlElement())
+        }
+
+        // Add markers
+        for marker in clip.markers {
+            element.addChild(marker.xmlElement())
+        }
+
+        // Add chapter markers
+        for chapterMarker in clip.chapterMarkers {
+            element.addChild(chapterMarker.xmlElement())
+        }
+
+        // Add keywords
+        for keyword in clip.keywords {
+            element.addChild(keyword.xmlElement())
+        }
+
+        // Add ratings
+        for rating in clip.ratings {
+            element.addChild(rating.xmlElement())
         }
 
         return element

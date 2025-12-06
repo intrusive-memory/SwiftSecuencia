@@ -140,6 +140,34 @@ public final class TimelineClip {
     /// Whether this clip's video is disabled (audio only).
     public var isVideoDisabled: Bool
 
+    // MARK: - Metadata
+
+    /// Markers attached to this clip.
+    public var markers: [Marker]
+
+    /// Chapter markers attached to this clip.
+    public var chapterMarkers: [ChapterMarker]
+
+    /// Keywords tagging this clip.
+    public var keywords: [Keyword]
+
+    /// Ratings for this clip.
+    public var ratings: [Rating]
+
+    /// Custom metadata key-value pairs (stored as JSON Data).
+    private var metadataJSON: Data?
+
+    /// Custom metadata key-value pairs.
+    public var metadata: Metadata? {
+        get {
+            guard let data = metadataJSON else { return nil }
+            return try? JSONDecoder().decode(Metadata.self, from: data)
+        }
+        set {
+            metadataJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+
     // MARK: - Timestamps
 
     /// When this clip was created.
@@ -183,6 +211,11 @@ public final class TimelineClip {
         self.isMuted = false
         self.opacity = 1.0
         self.isVideoDisabled = false
+        self.markers = []
+        self.chapterMarkers = []
+        self.keywords = []
+        self.ratings = []
+        self.metadataJSON = nil
         self.createdAt = Date()
         self.modifiedAt = Date()
     }

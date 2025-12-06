@@ -146,6 +146,34 @@ public final class Timeline {
         return minLane...maxLane
     }
 
+    // MARK: - Metadata
+
+    /// Markers attached to the timeline (project-level).
+    public var markers: [Marker]
+
+    /// Chapter markers for the timeline.
+    public var chapterMarkers: [ChapterMarker]
+
+    /// Keywords for the entire timeline.
+    public var keywords: [Keyword]
+
+    /// Ratings for the timeline.
+    public var ratings: [Rating]
+
+    /// Custom metadata key-value pairs (stored as JSON Data).
+    private var metadataJSON: Data?
+
+    /// Custom metadata key-value pairs.
+    public var metadata: Metadata? {
+        get {
+            guard let data = metadataJSON else { return nil }
+            return try? JSONDecoder().decode(Metadata.self, from: data)
+        }
+        set {
+            metadataJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+
     // MARK: - Timestamps
 
     /// When this timeline was created.
@@ -177,6 +205,11 @@ public final class Timeline {
         self.audioLayoutRawValue = audioLayout.rawValue
         self.audioRateRawValue = audioRate.rawValue
         self.clips = []
+        self.markers = []
+        self.chapterMarkers = []
+        self.keywords = []
+        self.ratings = []
+        self.metadataJSON = nil
         self.createdAt = Date()
         self.modifiedAt = Date()
     }
