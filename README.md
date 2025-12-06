@@ -9,7 +9,8 @@ SwiftSecuencia provides a type-safe, Swift-native API for creating FCPXML docume
 ## Requirements
 
 - Swift 6.2+
-- macOS 13.0+ / iOS 16.0+ / tvOS 16.0+ / watchOS 9.0+ / visionOS 1.0+
+- macOS 26.0+ / iOS 26.0+
+- [SwiftCompartido](https://github.com/intrusive-memory/SwiftCompartido) (dependency)
 
 ## Installation
 

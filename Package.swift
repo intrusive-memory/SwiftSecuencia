@@ -6,11 +6,8 @@ import PackageDescription
 let package = Package(
     name: "SwiftSecuencia",
     platforms: [
-        .macOS(.v13),
-        .iOS(.v16),
-        .tvOS(.v16),
-        .watchOS(.v9),
-        .visionOS(.v1)
+        .macOS(.v26),
+        .iOS(.v26)
     ],
     products: [
         .library(
@@ -19,17 +16,22 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // No external dependencies - uses Foundation XML
+        .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "main"),
     ],
     targets: [
         .target(
             name: "SwiftSecuencia",
-            dependencies: [],
+            dependencies: [
+                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
+            ],
             path: "Sources/SwiftSecuencia"
         ),
         .testTarget(
             name: "SwiftSecuenciaTests",
-            dependencies: ["SwiftSecuencia"],
+            dependencies: [
+                "SwiftSecuencia",
+                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
+            ],
             path: "Tests/SwiftSecuenciaTests"
         ),
     ],
