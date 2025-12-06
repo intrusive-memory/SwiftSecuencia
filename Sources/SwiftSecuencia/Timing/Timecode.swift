@@ -133,6 +133,7 @@ public struct Timecode: Sendable, Equatable, Hashable, Codable {
     public static func + (lhs: Timecode, rhs: Timecode) -> Timecode {
         // Find common timescale (LCM)
         let commonTimescale = lcm(Int64(lhs.timescale), Int64(rhs.timescale))
+        precondition(commonTimescale <= Int64(Int32.max), "LCM of timescales exceeds Int32.max")
         let lhsScaled = lhs.value * (commonTimescale / Int64(lhs.timescale))
         let rhsScaled = rhs.value * (commonTimescale / Int64(rhs.timescale))
         return Timecode(value: lhsScaled + rhsScaled, timescale: Int32(commonTimescale))
