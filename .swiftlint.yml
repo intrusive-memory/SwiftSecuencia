@@ -1,16 +1,12 @@
 # SwiftLint Configuration for SwiftSecuencia
 # Enforces macOS 26.0+ minimum deployment target
 
-# YAML anchors for reusable patterns
-x-version-pattern: &version-below-26 '(1?[0-9]|2[0-5])'
-x-platforms: &macos-only 'macOS'
-x-min-version: &min-version '26'
-
 excluded:
   - .build
   - DerivedData
   - .swiftpm
   - Tests/SwiftSecuenciaTests/Resources
+  - Sources/Pipeline  # Third-party code from Pipeline library
 
 # Disabled rules (to focus on platform enforcement, not code style)
 disabled_rules:
