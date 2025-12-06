@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftFijos
 
 /// Validates FCPXML documents against DTD specifications using xmllint.
 ///
@@ -147,36 +148,15 @@ public struct FCPXMLDTDValidator {
         let normalizedVersion = version.replacingOccurrences(of: ".", with: "_")
         let dtdFilename = "FCPXMLv\(normalizedVersion).dtd"
 
-        // Try to find DTD in test bundle resources (SPM Bundle.module)
-        #if DEBUG
-        // In test context, look for test bundle
-        if let bundleURL = Bundle.allBundles.first(where: { $0.bundlePath.contains("SwiftSecuenciaTests") })?.resourceURL?.appendingPathComponent("Resources/DTD/\(dtdFilename)"),
-           FileManager.default.fileExists(atPath: bundleURL.path) {
-            return bundleURL
+        // Use SwiftFijos to locate the DTD file in the Fixtures directory
+        do {
+            return try Fijos.getFixture(dtdFilename)
+        } catch {
+            throw DTDValidationError.dtdNotFound(
+                version: version,
+                searchedPaths: [dtdFilename]
+            )
         }
-        #endif
-
-        // Try to find DTD in test resources (relative paths)
-        let possiblePaths = [
-            // Relative to current working directory
-            FileManager.default.currentDirectoryPath + "/Tests/SwiftSecuenciaTests/Resources/DTD/\(dtdFilename)",
-            // Relative to project root (for SPM)
-            URL(fileURLWithPath: #file)
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .appendingPathComponent("Tests/SwiftSecuenciaTests/Resources/DTD/\(dtdFilename)")
-                .path
-        ]
-
-        for path in possiblePaths {
-            let url = URL(fileURLWithPath: path)
-            if FileManager.default.fileExists(atPath: url.path) {
-                return url
-            }
-        }
-
-        throw DTDValidationError.dtdNotFound(version: version, searchedPaths: possiblePaths)
     }
 
     /// Parses validation errors from xmllint stderr output.

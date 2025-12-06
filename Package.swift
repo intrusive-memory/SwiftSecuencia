@@ -16,12 +16,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
+        .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
     ],
     targets: [
         .target(
             name: "SwiftSecuencia",
             dependencies: [
                 .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
             ],
             path: "Sources/SwiftSecuencia",
             swiftSettings: [
@@ -34,11 +36,9 @@ let package = Package(
             dependencies: [
                 "SwiftSecuencia",
                 .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
             ],
             path: "Tests/SwiftSecuenciaTests",
-            resources: [
-                .copy("Resources")
-            ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
