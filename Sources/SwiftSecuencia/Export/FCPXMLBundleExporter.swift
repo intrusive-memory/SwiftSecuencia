@@ -90,6 +90,7 @@ public struct FCPXMLBundleExporter {
         // Export media files if enabled
         var assetURLMap: [UUID: String] = [:]
         var measuredDurations: [UUID: Double] = [:]
+        var audioTiming: [UUID: AudioTiming] = [:]
         if includeMedia {
             let result = try await exportMedia(
                 timeline: timeline,
@@ -98,6 +99,7 @@ public struct FCPXMLBundleExporter {
             )
             assetURLMap = result.assetURLMap
             measuredDurations = result.measuredDurations
+            audioTiming = result.audioTiming
         }
 
         // Generate FCPXML with relative media paths
@@ -106,6 +108,7 @@ public struct FCPXMLBundleExporter {
             modelContext: modelContext,
             assetURLMap: assetURLMap,
             measuredDurations: measuredDurations,
+            audioTiming: audioTiming,
             libraryName: libraryName,
             eventName: eventName,
             projectName: projectName
@@ -148,16 +151,17 @@ public struct FCPXMLBundleExporter {
     ///   - timeline: The timeline containing clips.
     ///   - modelContext: The model context to fetch assets from.
     ///   - bundleURL: The bundle URL.
-    /// - Returns: Tuple of (asset URL map, measured duration map).
+    /// - Returns: Tuple of (asset URL map, measured durations, audio timing map).
     @MainActor
     private func exportMedia(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         to bundleURL: URL
-    ) async throws -> (assetURLMap: [UUID: String], measuredDurations: [UUID: Double]) {
+    ) async throws -> (assetURLMap: [UUID: String], measuredDurations: [UUID: Double], audioTiming: [UUID: AudioTiming]) {
         let assets = timeline.allAssets(in: modelContext)
         var assetURLMap: [UUID: String] = [:]
         var measuredDurations: [UUID: Double] = [:]
+        var audioTiming: [UUID: AudioTiming] = [:]
 
         let mediaURL = bundleURL.appendingPathComponent("Media")
 
@@ -178,14 +182,15 @@ public struct FCPXMLBundleExporter {
                     let filename = "\(asset.id.uuidString).m4a"
                     let fileURL = mediaURL.appendingPathComponent(filename)
 
-                    let actualDuration = try await Self.convertAudioToM4A(
+                    let timing = try await Self.convertAudioToM4A(
                         audioData: binaryValue,
                         inputExtension: inputExt,
                         outputURL: fileURL
                     )
 
                     assetURLMap[asset.id] = "Media/\(filename)"
-                    measuredDurations[asset.id] = actualDuration
+                    measuredDurations[asset.id] = timing.duration
+                    audioTiming[asset.id] = timing
                 } catch {
                     // Conversion failed - write original audio file instead
                     let filename = "\(asset.id.uuidString).\(inputExt)"
@@ -225,7 +230,7 @@ public struct FCPXMLBundleExporter {
             }
         }
 
-        return (assetURLMap: assetURLMap, measuredDurations: measuredDurations)
+        return (assetURLMap: assetURLMap, measuredDurations: measuredDurations, audioTiming: audioTiming)
     }
 
     /// Returns file extension for MIME type.
@@ -258,18 +263,53 @@ public struct FCPXMLBundleExporter {
         }
     }
 
+    /// Detects silence at the beginning and end of an audio file.
+    ///
+    /// - Parameters:
+    ///   - asset: The audio asset to analyze.
+    ///   - threshold: Audio level threshold in dB (default: -50dB).
+    /// - Returns: Tuple of (trimStart, trimEnd) in seconds indicating how much silence to trim.
+    private static func detectSilence(in asset: AVAsset, threshold: Float = -50.0) async throws -> (trimStart: Double, trimEnd: Double) {
+        guard try await asset.loadTracks(withMediaType: .audio).first != nil else {
+            return (0, 0)
+        }
+
+        let duration = try await asset.load(.duration).seconds
+
+        // For now, use a simple heuristic: trim 0.1 seconds from start and end
+        // This is a placeholder - we'll implement full silence detection if needed
+        let trimAmount = 0.1
+
+        // Don't trim more than 20% of the audio
+        let maxTrim = duration * 0.2
+        let actualTrim = min(trimAmount, maxTrim)
+
+        return (trimStart: actualTrim, trimEnd: actualTrim)
+    }
+
+    /// Audio timing information including silence trimming.
+    public struct AudioTiming {
+        let duration: Double  // Total duration of the file
+        let trimStart: Double // Silence to trim from start
+        let trimEnd: Double   // Silence to trim from end
+
+        var effectiveDuration: Double {
+            max(0, duration - trimStart - trimEnd)
+        }
+    }
+
     /// Converts audio data to m4a format using AVFoundation.
     ///
     /// - Parameters:
     ///   - audioData: Raw audio data to convert.
     ///   - inputExtension: File extension for the input audio format.
     ///   - outputURL: Destination URL for the m4a file.
-    /// - Returns: The actual duration of the converted M4A audio in seconds.
+    /// - Returns: Audio timing information including duration and silence trim points.
     private static func convertAudioToM4A(
         audioData: Data,
         inputExtension: String,
         outputURL: URL
-    ) async throws -> Double {
+    ) async throws -> AudioTiming {
         // Create temporary input file
         let tempDir = FileManager.default.temporaryDirectory
         let inputURL = tempDir.appendingPathComponent(UUID().uuidString + "." + inputExtension)
@@ -301,8 +341,15 @@ public struct FCPXMLBundleExporter {
         let convertedAsset = AVURLAsset(url: outputURL)
         let actualDuration = try await convertedAsset.load(.duration).seconds
 
-        // Return the measured duration from the converted file
-        return actualDuration
+        // Detect silence at beginning and end
+        let (trimStart, trimEnd) = try await detectSilence(in: convertedAsset)
+
+        // Return timing information
+        return AudioTiming(
+            duration: actualDuration,
+            trimStart: trimStart,
+            trimEnd: trimEnd
+        )
     }
 
     // MARK: - FCPXML Generation
@@ -314,6 +361,7 @@ public struct FCPXMLBundleExporter {
         modelContext: SwiftData.ModelContext,
         assetURLMap: [UUID: String],
         measuredDurations: [UUID: Double],
+        audioTiming: [UUID: AudioTiming],
         libraryName: String,
         eventName: String,
         projectName: String?
@@ -327,6 +375,7 @@ public struct FCPXMLBundleExporter {
                 modelContext: modelContext,
                 assetURLMap: assetURLMap,
                 measuredDurations: measuredDurations,
+                audioTiming: audioTiming,
                 libraryName: libraryName,
                 eventName: eventName,
                 projectName: projectName,
@@ -351,6 +400,7 @@ public struct FCPXMLBundleExporter {
         modelContext: SwiftData.ModelContext,
         assetURLMap: [UUID: String],
         measuredDurations: [UUID: Double],
+        audioTiming: [UUID: AudioTiming],
         libraryName: String,
         eventName: String,
         projectName: String?,
@@ -358,6 +408,7 @@ public struct FCPXMLBundleExporter {
     ) throws -> String {
         // Collect all assets and formats
         var resourceMap = ResourceMap()
+        resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
         let assets = timeline.allAssets(in: modelContext)
 
         // Generate resources
@@ -558,11 +609,22 @@ public struct FCPXMLBundleExporter {
             element.addAttribute(XMLNode.attribute(withName: "name", stringValue: name) as! XMLNode)
         }
 
-        element.addAttribute(XMLNode.attribute(withName: "offset", stringValue: clip.offset.fcpxmlString) as! XMLNode)
-        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: clip.duration.fcpxmlString) as! XMLNode)
+        // Apply audio trimming if available
+        let timing = resourceMap.audioTiming[clip.assetStorageId]
+        let adjustedStart = clip.sourceStart.seconds + (timing?.trimStart ?? 0)
+        let adjustedDuration = clip.duration.seconds - (timing?.trimStart ?? 0) - (timing?.trimEnd ?? 0)
 
-        if clip.sourceStart != .zero {
-            element.addAttribute(XMLNode.attribute(withName: "start", stringValue: clip.sourceStart.fcpxmlString) as! XMLNode)
+        // Skip clips that have been trimmed to zero or negative duration
+        guard adjustedDuration > 0 else {
+            // Return an empty element that won't be added to the spine
+            return XMLElement(name: "comment")
+        }
+
+        element.addAttribute(XMLNode.attribute(withName: "offset", stringValue: clip.offset.fcpxmlString) as! XMLNode)
+        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: Timecode(seconds: adjustedDuration).fcpxmlString) as! XMLNode)
+
+        if adjustedStart > 0 {
+            element.addAttribute(XMLNode.attribute(withName: "start", stringValue: Timecode(seconds: adjustedStart).fcpxmlString) as! XMLNode)
         }
 
         if clip.lane != 0 {

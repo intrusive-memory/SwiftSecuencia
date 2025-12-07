@@ -308,6 +308,7 @@ public struct FCPXMLExporter {
 struct ResourceMap {
     var formatID: String?
     var assetIDs: [UUID: String] = [:]
+    var audioTiming: [UUID: FCPXMLBundleExporter.AudioTiming] = [:]
 }
 
 /// Errors that can occur during FCPXML export.
