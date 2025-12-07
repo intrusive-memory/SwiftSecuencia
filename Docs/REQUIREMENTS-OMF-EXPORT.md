@@ -384,7 +384,7 @@ public struct OMFExporter {
     ///   - exportChapters: If true and timeline has chapters, export multiple OMFs.
     /// - Returns: Array of exported OMF file URLs.
     /// - Throws: OMFExportError if export fails.
-    public func export(
+    public mutating func export(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         outputURL: URL,
