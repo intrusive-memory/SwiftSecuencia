@@ -232,14 +232,14 @@ public struct FCPXMLBundleExporter {
     ///   - modelContext: The model context to fetch assets from.
     ///   - bundleURL: The bundle URL.
     ///   - progress: Optional Progress object for tracking media export progress.
-    /// - Returns: Tuple of (asset URL map, measured durations, audio timing map).
+    /// - Returns: Media export result containing asset URL map, measured durations, and audio timing.
     @MainActor
     private func exportMedia(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         to bundleURL: URL,
         progress: Progress? = nil
-    ) async throws -> (assetURLMap: [UUID: String], measuredDurations: [UUID: Double], audioTiming: [UUID: AudioTiming]) {
+    ) async throws -> MediaExportResult {
         let assets = timeline.allAssets(in: modelContext)
         var assetURLMap: [UUID: String] = [:]
         var measuredDurations: [UUID: Double] = [:]
@@ -326,7 +326,11 @@ public struct FCPXMLBundleExporter {
             mediaProgress.completedUnitCount = Int64(index + 1)
         }
 
-        return (assetURLMap: assetURLMap, measuredDurations: measuredDurations, audioTiming: audioTiming)
+        return MediaExportResult(
+            assetURLMap: assetURLMap,
+            measuredDurations: measuredDurations,
+            audioTiming: audioTiming
+        )
     }
 
     /// Returns file extension for MIME type.
@@ -461,6 +465,13 @@ public struct FCPXMLBundleExporter {
         var effectiveDuration: Double {
             max(0, duration - trimStart - trimEnd)
         }
+    }
+
+    /// Result of media export operation.
+    struct MediaExportResult {
+        let assetURLMap: [UUID: String]
+        let measuredDurations: [UUID: Double]
+        let audioTiming: [UUID: AudioTiming]
     }
 
     /// Converts audio data to m4a format using AVFoundation.
