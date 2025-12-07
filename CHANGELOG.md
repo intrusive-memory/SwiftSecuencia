@@ -5,6 +5,30 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-07
+
+### Added
+- **Progress Reporting**: Foundation.Progress API integration for export tracking
+  - Optional `progress` parameter in `FCPXMLBundleExporter.exportBundle()`
+  - Progress tracking across 5 export phases:
+    - Bundle structure creation (5%)
+    - Media export with per-asset progress (70%)
+    - FCPXML generation (15%)
+    - FCPXML file writing (5%)
+    - Info.plist generation (5%)
+  - Localized progress descriptions for user feedback
+  - Cancellation support with `FCPXMLExportError.cancelled`
+  - 4 new comprehensive progress tests
+
+### Changed
+- `FCPXMLExportError` now conforms to `Equatable` for testing
+- `exportMedia()` return type changed from 3-member tuple to `MediaExportResult` struct
+  - Fixes SwiftLint `large_tuple` violation
+  - Improved code clarity and maintainability
+
+### Fixed
+- SwiftLint CI failure: Large tuple violation in `exportMedia()` method
+
 ## [1.0.2] - 2025-12-06
 
 ### Added
@@ -132,6 +156,7 @@ SwiftSecuencia v1.0.0 is **production-ready** for generating Final Cut Pro timel
 - Confirm audio plays and mixes properly
 - Report any issues on GitHub
 
+[1.0.3]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.3
 [1.0.2]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.2
 [1.0.1]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.1
 [1.0.0]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.0
