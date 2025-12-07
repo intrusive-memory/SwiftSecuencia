@@ -41,6 +41,51 @@ import AVFoundation
 ///     bundleName: "MyProject"
 /// )
 /// ```
+///
+/// ## Progress Reporting
+///
+/// ```swift
+/// let exporter = FCPXMLBundleExporter()
+/// let progress = Progress(totalUnitCount: 100)
+///
+/// // Observe progress changes
+/// let observation = progress.observe(\.fractionCompleted) { progress, _ in
+///     print("Export progress: \(Int(progress.fractionCompleted * 100))%")
+///     print("Status: \(progress.localizedAdditionalDescription ?? "")")
+/// }
+///
+/// do {
+///     try await exporter.exportBundle(
+///         timeline: myTimeline,
+///         modelContext: context,
+///         to: outputURL,
+///         bundleName: "MyProject",
+///         progress: progress
+///     )
+/// } catch FCPXMLExportError.cancelled {
+///     print("Export was cancelled")
+/// }
+/// ```
+///
+/// ## Cancellation
+///
+/// ```swift
+/// let progress = Progress(totalUnitCount: 100)
+/// progress.cancellationHandler = {
+///     print("User cancelled export")
+/// }
+///
+/// // Cancel the export
+/// progress.cancel()
+///
+/// try await exporter.exportBundle(
+///     timeline: myTimeline,
+///     modelContext: context,
+///     to: outputURL,
+///     progress: progress
+/// )
+/// // Throws FCPXMLExportError.cancelled
+/// ```
 public struct FCPXMLBundleExporter {
 
     /// FCPXML version to generate.
@@ -69,8 +114,9 @@ public struct FCPXMLBundleExporter {
     ///   - libraryName: Name for the library element (default: "Exported Library").
     ///   - eventName: Name for the event element (default: "Exported Event").
     ///   - projectName: Name for the project (default: timeline name).
+    ///   - progress: Optional Progress object for tracking export progress and cancellation.
     /// - Returns: URL of the created bundle.
-    /// - Throws: Export errors if bundle creation fails.
+    /// - Throws: Export errors if bundle creation fails or operation is cancelled.
     @MainActor
     public mutating func exportBundle(
         timeline: Timeline,
@@ -79,30 +125,54 @@ public struct FCPXMLBundleExporter {
         bundleName: String? = nil,
         libraryName: String = "Exported Library",
         eventName: String = "Exported Event",
-        projectName: String? = nil
+        projectName: String? = nil,
+        progress: Progress? = nil
     ) async throws -> URL {
+        // Set up progress tracking
+        let exportProgress = progress ?? Progress(totalUnitCount: 100)
+        exportProgress.localizedDescription = "Exporting FCPXML bundle"
+
         let name = bundleName ?? timeline.name
         let bundleURL = directory.appendingPathComponent("\(name).fcpxmld")
 
-        // Create bundle directory structure
+        // Step 1: Create bundle directory structure (5%)
+        exportProgress.localizedAdditionalDescription = "Creating bundle structure"
         try createBundleStructure(at: bundleURL)
+        exportProgress.completedUnitCount = 5
 
-        // Export media files if enabled
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Step 2: Export media files if enabled (70%)
         var assetURLMap: [UUID: String] = [:]
         var measuredDurations: [UUID: Double] = [:]
         var audioTiming: [UUID: AudioTiming] = [:]
         if includeMedia {
+            exportProgress.localizedAdditionalDescription = "Exporting media files"
+            let mediaProgress = Progress(totalUnitCount: 70, parent: exportProgress, pendingUnitCount: 70)
+
             let result = try await exportMedia(
                 timeline: timeline,
                 modelContext: modelContext,
-                to: bundleURL
+                to: bundleURL,
+                progress: mediaProgress
             )
             assetURLMap = result.assetURLMap
             measuredDurations = result.measuredDurations
             audioTiming = result.audioTiming
+        } else {
+            exportProgress.completedUnitCount = 75
         }
 
-        // Generate FCPXML with relative media paths
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Step 3: Generate FCPXML with relative media paths (15%)
+        exportProgress.localizedAdditionalDescription = "Generating FCPXML"
         let fcpxml = try generateFCPXML(
             timeline: timeline,
             modelContext: modelContext,
@@ -113,13 +183,23 @@ public struct FCPXMLBundleExporter {
             eventName: eventName,
             projectName: projectName
         )
+        exportProgress.completedUnitCount = 90
 
-        // Write FCPXML to bundle
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Step 4: Write FCPXML to bundle (5%)
+        exportProgress.localizedAdditionalDescription = "Writing FCPXML"
         let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
         try fcpxml.write(to: fcpxmlURL, atomically: true, encoding: .utf8)
+        exportProgress.completedUnitCount = 95
 
-        // Generate and write Info.plist
+        // Step 5: Generate and write Info.plist (5%)
+        exportProgress.localizedAdditionalDescription = "Writing Info.plist"
         try generateInfoPlist(bundleName: name, to: bundleURL)
+        exportProgress.completedUnitCount = 100
 
         return bundleURL
     }
@@ -151,21 +231,34 @@ public struct FCPXMLBundleExporter {
     ///   - timeline: The timeline containing clips.
     ///   - modelContext: The model context to fetch assets from.
     ///   - bundleURL: The bundle URL.
+    ///   - progress: Optional Progress object for tracking media export progress.
     /// - Returns: Tuple of (asset URL map, measured durations, audio timing map).
     @MainActor
     private func exportMedia(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
-        to bundleURL: URL
+        to bundleURL: URL,
+        progress: Progress? = nil
     ) async throws -> (assetURLMap: [UUID: String], measuredDurations: [UUID: Double], audioTiming: [UUID: AudioTiming]) {
         let assets = timeline.allAssets(in: modelContext)
         var assetURLMap: [UUID: String] = [:]
         var measuredDurations: [UUID: Double] = [:]
         var audioTiming: [UUID: AudioTiming] = [:]
 
+        // Set up progress tracking for individual assets
+        let mediaProgress = progress ?? Progress(totalUnitCount: Int64(assets.count))
+        mediaProgress.localizedDescription = "Exporting media files"
+
         let mediaURL = bundleURL.appendingPathComponent("Media")
 
-        for asset in assets {
+        for (index, asset) in assets.enumerated() {
+            // Update progress description with current asset
+            mediaProgress.localizedAdditionalDescription = "Processing asset \(index + 1) of \(assets.count)"
+
+            // Check for cancellation before processing each asset
+            if mediaProgress.isCancelled {
+                throw FCPXMLExportError.cancelled
+            }
             guard let binaryValue = asset.binaryValue else {
                 throw FCPXMLExportError.invalidTimeline(reason: "Asset \(asset.id) has no binary data")
             }
@@ -228,6 +321,9 @@ public struct FCPXMLBundleExporter {
                     }
                 }
             }
+
+            // Update progress after processing each asset
+            mediaProgress.completedUnitCount = Int64(index + 1)
         }
 
         return (assetURLMap: assetURLMap, measuredDurations: measuredDurations, audioTiming: audioTiming)

@@ -312,11 +312,12 @@ struct ResourceMap {
 }
 
 /// Errors that can occur during FCPXML export.
-public enum FCPXMLExportError: Error, LocalizedError {
+public enum FCPXMLExportError: Error, LocalizedError, Equatable {
     case xmlGenerationFailed
     case missingFormat
     case missingAsset(assetId: UUID)
     case invalidTimeline(reason: String)
+    case cancelled
 
     public var errorDescription: String? {
         switch self {
@@ -328,6 +329,8 @@ public enum FCPXMLExportError: Error, LocalizedError {
             return "Missing asset resource: \(assetId)"
         case .invalidTimeline(let reason):
             return "Invalid timeline: \(reason)"
+        case .cancelled:
+            return "Export operation was cancelled"
         }
     }
 }
