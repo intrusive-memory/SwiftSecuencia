@@ -201,6 +201,9 @@ public struct FCPXMLBundleExporter {
         try generateInfoPlist(bundleName: name, to: bundleURL)
         exportProgress.completedUnitCount = 100
 
+        // Mark export as complete
+        exportProgress.localizedAdditionalDescription = "Export complete"
+
         return bundleURL
     }
 
@@ -275,10 +278,15 @@ public struct FCPXMLBundleExporter {
                     let filename = "\(asset.id.uuidString).m4a"
                     let fileURL = mediaURL.appendingPathComponent(filename)
 
+                    // Create child progress for this audio conversion
+                    let audioProgress = Progress(totalUnitCount: 100)
+                    audioProgress.localizedDescription = "Converting \(asset.prompt.isEmpty ? "audio" : asset.prompt)"
+
                     let timing = try await Self.convertAudioToM4A(
                         audioData: binaryValue,
                         inputExtension: inputExt,
-                        outputURL: fileURL
+                        outputURL: fileURL,
+                        progress: audioProgress
                     )
 
                     assetURLMap[asset.id] = "Media/\(filename)"
@@ -372,7 +380,7 @@ public struct FCPXMLBundleExporter {
     ///   - asset: The audio asset to analyze.
     ///   - threshold: Audio level threshold in dB (default: -90dB for near-zero detection).
     /// - Returns: Tuple of (trimStart, trimEnd) in seconds indicating how much silence to trim.
-    private static func detectSilence(in asset: AVAsset, threshold: Float = -90.0) async throws -> (trimStart: Double, trimEnd: Double) {
+    private static func detectSilence(in asset: AVAsset, threshold: Float = -90.0, progress: Progress? = nil) async throws -> (trimStart: Double, trimEnd: Double) {
         guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
             return (0, 0)
         }
@@ -484,7 +492,8 @@ public struct FCPXMLBundleExporter {
     private static func convertAudioToM4A(
         audioData: Data,
         inputExtension: String,
-        outputURL: URL
+        outputURL: URL,
+        progress: Progress? = nil
     ) async throws -> AudioTiming {
         // Create temporary input file
         let tempDir = FileManager.default.temporaryDirectory
@@ -506,26 +515,46 @@ public struct FCPXMLBundleExporter {
             throw FCPXMLExportError.invalidTimeline(reason: "Could not create export session for audio conversion")
         }
 
+        // Set up child progress for conversion (70% of total) if progress tracking is enabled
+        let conversionProgress: Progress?
+        if let parentProgress = progress {
+            conversionProgress = Progress(totalUnitCount: 100, parent: parentProgress, pendingUnitCount: 70)
+            conversionProgress?.localizedAdditionalDescription = "Converting audio to M4A"
+        } else {
+            conversionProgress = nil
+        }
+
         // Perform conversion using modern API
         do {
             try await exportSession.export(to: outputURL, as: .m4a)
+            // Mark conversion as complete
+            conversionProgress?.completedUnitCount = 100
         } catch {
             throw FCPXMLExportError.invalidTimeline(reason: "Audio conversion failed: \(error.localizedDescription)")
         }
 
-        // Measure the actual duration of the converted M4A file
-        let convertedAsset = AVURLAsset(url: outputURL)
-        let actualDuration = try await convertedAsset.load(.duration).seconds
+        // Measure the actual duration of the converted M4A file (10% of total)
+        if let parentProgress = progress {
+            let measureProgress = Progress(totalUnitCount: 1, parent: parentProgress, pendingUnitCount: 10)
+            measureProgress.localizedAdditionalDescription = "Measuring audio duration"
+            let convertedAsset = AVURLAsset(url: outputURL)
+            let actualDuration = try await convertedAsset.load(.duration).seconds
+            measureProgress.completedUnitCount = 1
 
-        // Detect silence at beginning and end
-        let (trimStart, trimEnd) = try await detectSilence(in: convertedAsset)
+            // Detect silence at beginning and end (20% of total)
+            let silenceProgress = Progress(totalUnitCount: 1, parent: parentProgress, pendingUnitCount: 20)
+            silenceProgress.localizedAdditionalDescription = "Detecting silence"
+            let (trimStart, trimEnd) = try await detectSilence(in: convertedAsset, progress: silenceProgress)
+            silenceProgress.completedUnitCount = 1
 
-        // Return timing information
-        return AudioTiming(
-            duration: actualDuration,
-            trimStart: trimStart,
-            trimEnd: trimEnd
-        )
+            return AudioTiming(duration: actualDuration, trimStart: trimStart, trimEnd: trimEnd)
+        } else {
+            // No progress tracking - just measure and detect
+            let convertedAsset = AVURLAsset(url: outputURL)
+            let actualDuration = try await convertedAsset.load(.duration).seconds
+            let (trimStart, trimEnd) = try await detectSilence(in: convertedAsset)
+            return AudioTiming(duration: actualDuration, trimStart: trimStart, trimEnd: trimEnd)
+        }
     }
 
     // MARK: - FCPXML Generation
