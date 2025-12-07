@@ -265,11 +265,14 @@ public struct FCPXMLBundleExporter {
 
     /// Detects silence at the beginning and end of an audio file.
     ///
+    /// For generated vocal audio, silence is actual silence (zero amplitude).
+    /// We use an aggressive threshold to detect true silence only.
+    ///
     /// - Parameters:
     ///   - asset: The audio asset to analyze.
-    ///   - threshold: Audio level threshold in dB (default: -50dB).
+    ///   - threshold: Audio level threshold in dB (default: -90dB for near-zero detection).
     /// - Returns: Tuple of (trimStart, trimEnd) in seconds indicating how much silence to trim.
-    private static func detectSilence(in asset: AVAsset, threshold: Float = -50.0) async throws -> (trimStart: Double, trimEnd: Double) {
+    private static func detectSilence(in asset: AVAsset, threshold: Float = -90.0) async throws -> (trimStart: Double, trimEnd: Double) {
         guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
             return (0, 0)
         }
@@ -344,15 +347,12 @@ public struct FCPXMLBundleExporter {
         if foundNonSilence {
             trimEnd = max(0, duration - lastNonSilentTime)
         } else {
-            // Entire file is silence
+            // Entire file is silence - discard it
             return (duration, 0)
         }
 
-        // Cap maximum trim to 20% of duration on each end
-        let maxTrim = duration * 0.2
-        trimStart = min(trimStart, maxTrim)
-        trimEnd = min(trimEnd, maxTrim)
-
+        // For generated audio, we trust the silence detection completely
+        // No artificial caps - trim all detected silence
         return (trimStart: trimStart, trimEnd: trimEnd)
     }
 
