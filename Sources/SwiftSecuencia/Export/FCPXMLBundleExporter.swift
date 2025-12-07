@@ -192,6 +192,16 @@ public struct FCPXMLBundleExporter {
                     let fileURL = mediaURL.appendingPathComponent(filename)
                     try binaryValue.write(to: fileURL, options: .atomic)
                     assetURLMap[asset.id] = "Media/\(filename)"
+
+                    // Measure duration from the fallback audio file
+                    do {
+                        let fallbackAsset = AVURLAsset(url: fileURL)
+                        let fallbackDuration = try await fallbackAsset.load(.duration).seconds
+                        measuredDurations[asset.id] = fallbackDuration
+                    } catch {
+                        // If we can't measure duration, fall back to metadata (asset.durationSeconds)
+                        // This will be used in generateAssetElement
+                    }
                 }
             } else {
                 // For video and images, write directly without conversion
@@ -201,6 +211,17 @@ public struct FCPXMLBundleExporter {
 
                 try binaryValue.write(to: fileURL, options: .atomic)
                 assetURLMap[asset.id] = "Media/\(filename)"
+
+                // Measure duration for video files to ensure accuracy
+                if asset.mimeType.hasPrefix("video/") {
+                    do {
+                        let videoAsset = AVURLAsset(url: fileURL)
+                        let videoDuration = try await videoAsset.load(.duration).seconds
+                        measuredDurations[asset.id] = videoDuration
+                    } catch {
+                        // If we can't measure duration, fall back to metadata
+                    }
+                }
             }
         }
 
