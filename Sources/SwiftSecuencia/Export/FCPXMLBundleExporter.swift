@@ -220,8 +220,9 @@ public struct FCPXMLBundleExporter {
         case "mp4": return "mp4"
         case "quicktime": return "mov"
         case "mpeg": return "mp3"
-        case "wav", "x-wav": return "wav"
+        case "wav", "x-wav", "vnd.wave": return "wav"
         case "aiff", "x-aiff": return "aiff"
+        case "pcm", "l16": return "wav"  // Raw PCM typically stored as WAV
         case "aac": return "aac"
         case "png": return "png"
         case "jpeg": return "jpg"
