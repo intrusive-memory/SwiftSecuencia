@@ -242,7 +242,7 @@ public struct FCPXMLBundleExporter {
     ///   - audioData: Raw audio data to convert.
     ///   - inputExtension: File extension for the input audio format.
     ///   - outputURL: Destination URL for the m4a file.
-    /// - Returns: The actual duration of the audio in seconds (measured from the source asset).
+    /// - Returns: The actual duration of the converted M4A audio in seconds.
     private static func convertAudioToM4A(
         audioData: Data,
         inputExtension: String,
@@ -263,9 +263,6 @@ public struct FCPXMLBundleExporter {
         // Create asset from input file
         let asset = AVURLAsset(url: inputURL)
 
-        // Get the actual audio duration from the source asset
-        let actualDuration = try await asset.load(.duration).seconds
-
         // Create export session
         guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
             throw FCPXMLExportError.invalidTimeline(reason: "Could not create export session for audio conversion")
@@ -278,7 +275,11 @@ public struct FCPXMLBundleExporter {
             throw FCPXMLExportError.invalidTimeline(reason: "Audio conversion failed: \(error.localizedDescription)")
         }
 
-        // Return the measured duration
+        // Measure the actual duration of the converted M4A file
+        let convertedAsset = AVURLAsset(url: outputURL)
+        let actualDuration = try await convertedAsset.load(.duration).seconds
+
+        // Return the measured duration from the converted file
         return actualDuration
     }
 
