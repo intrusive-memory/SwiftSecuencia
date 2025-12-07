@@ -270,21 +270,90 @@ public struct FCPXMLBundleExporter {
     ///   - threshold: Audio level threshold in dB (default: -50dB).
     /// - Returns: Tuple of (trimStart, trimEnd) in seconds indicating how much silence to trim.
     private static func detectSilence(in asset: AVAsset, threshold: Float = -50.0) async throws -> (trimStart: Double, trimEnd: Double) {
-        guard try await asset.loadTracks(withMediaType: .audio).first != nil else {
+        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
             return (0, 0)
         }
 
         let duration = try await asset.load(.duration).seconds
 
-        // For now, use a simple heuristic: trim 0.1 seconds from start and end
-        // This is a placeholder - we'll implement full silence detection if needed
-        let trimAmount = 0.1
+        // Use AVAssetReader to analyze audio samples
+        guard let reader = try? AVAssetReader(asset: asset) else {
+            return (0, 0)
+        }
 
-        // Don't trim more than 20% of the audio
+        let outputSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsNonInterleaved: false
+        ]
+
+        let readerOutput = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
+        reader.add(readerOutput)
+
+        guard reader.startReading() else {
+            return (0, 0)
+        }
+
+        defer {
+            reader.cancelReading()
+        }
+
+        let sampleRate = try await audioTrack.load(.naturalTimeScale)
+        let linearThreshold = pow(10.0, threshold / 20.0) * Float(Int16.max)
+
+        var trimStart: Double = 0
+        var trimEnd: Double = 0
+        var foundNonSilence = false
+        var currentTime: Double = 0
+        var lastNonSilentTime: Double = 0
+
+        // Read audio samples and detect silence
+        while let sampleBuffer = readerOutput.copyNextSampleBuffer() {
+            guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { continue }
+
+            var length: Int = 0
+            var dataPointer: UnsafeMutablePointer<Int8>?
+
+            CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &dataPointer)
+
+            guard let data = dataPointer else { continue }
+
+            let sampleCount = length / MemoryLayout<Int16>.size
+            let samples = UnsafeBufferPointer(start: data.withMemoryRebound(to: Int16.self, capacity: sampleCount) { $0 }, count: sampleCount)
+
+            // Check if this buffer contains non-silent audio
+            let hasAudio = samples.contains { abs(Float($0)) > linearThreshold }
+
+            let bufferDuration = Double(sampleCount) / Double(sampleRate)
+
+            if hasAudio {
+                if !foundNonSilence {
+                    // Found first non-silent sample
+                    trimStart = currentTime
+                    foundNonSilence = true
+                }
+                lastNonSilentTime = currentTime + bufferDuration
+            }
+
+            currentTime += bufferDuration
+        }
+
+        // Calculate trim from end
+        if foundNonSilence {
+            trimEnd = max(0, duration - lastNonSilentTime)
+        } else {
+            // Entire file is silence
+            return (duration, 0)
+        }
+
+        // Cap maximum trim to 20% of duration on each end
         let maxTrim = duration * 0.2
-        let actualTrim = min(trimAmount, maxTrim)
+        trimStart = min(trimStart, maxTrim)
+        trimEnd = min(trimEnd, maxTrim)
 
-        return (trimStart: actualTrim, trimEnd: actualTrim)
+        return (trimStart: trimStart, trimEnd: trimEnd)
     }
 
     /// Audio timing information including silence trimming.
