@@ -595,13 +595,14 @@ public struct FCPXMLBundleExporter {
         let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
         resourceElements.append(formatElement)
 
-        // Add asset resources with relative paths
+        // Add asset resources with relative paths (using frame rate from format)
         for asset in assets {
             let assetElement = try generateAssetElement(
                 asset: asset,
                 relativePath: assetURLMap[asset.id],
                 measuredDuration: measuredDurations[asset.id],
-                resourceMap: &resourceMap
+                resourceMap: &resourceMap,
+                frameRate: format.frameRate
             )
             resourceElements.append(assetElement)
         }
@@ -614,11 +615,12 @@ public struct FCPXMLBundleExporter {
         let pName = projectName ?? timeline.name
         project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
 
-        // Create sequence
+        // Create sequence (using frame rate from format)
         let sequence = try generateSequenceElement(
             timeline: timeline,
             modelContext: modelContext,
-            resourceMap: resourceMap
+            resourceMap: resourceMap,
+            frameRate: format.frameRate
         )
 
         project.addChild(sequence)
@@ -670,7 +672,8 @@ public struct FCPXMLBundleExporter {
         asset: TypedDataStorage,
         relativePath: String?,
         measuredDuration: Double?,
-        resourceMap: inout ResourceMap
+        resourceMap: inout ResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
         let assetID = nextResourceID()
         resourceMap.assetIDs[asset.id] = assetID
@@ -684,10 +687,10 @@ public struct FCPXMLBundleExporter {
             element.addAttribute(XMLNode.attribute(withName: "name", stringValue: prompt) as! XMLNode)
         }
 
-        // Add duration - prefer measured duration from audio conversion, fall back to asset metadata
+        // Add duration - prefer measured duration from audio conversion, fall back to asset metadata (frame-aligned)
         let durationSeconds = measuredDuration ?? asset.durationSeconds
         if let duration = durationSeconds {
-            let timecode = Timecode(seconds: duration)
+            let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
             element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
         }
 
@@ -715,7 +718,8 @@ public struct FCPXMLBundleExporter {
     private func generateSequenceElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
-        resourceMap: ResourceMap
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
         let element = XMLElement(name: "sequence")
 
@@ -723,7 +727,10 @@ public struct FCPXMLBundleExporter {
             throw FCPXMLExportError.missingFormat
         }
         element.addAttribute(XMLNode.attribute(withName: "format", stringValue: formatID) as! XMLNode)
-        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timeline.duration.fcpxmlString) as! XMLNode)
+
+        // Add duration (frame-aligned)
+        let alignedDuration = timeline.duration.aligned(to: frameRate)
+        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: alignedDuration.fcpxmlString) as! XMLNode)
         element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
 
         // Add timeline-level metadata
@@ -747,7 +754,7 @@ public struct FCPXMLBundleExporter {
             element.addChild(rating.xmlElement())
         }
 
-        let spine = try generateSpineElement(timeline: timeline, modelContext: modelContext, resourceMap: resourceMap)
+        let spine = try generateSpineElement(timeline: timeline, modelContext: modelContext, resourceMap: resourceMap, frameRate: frameRate)
         element.addChild(spine)
 
         return element
@@ -756,14 +763,15 @@ public struct FCPXMLBundleExporter {
     private func generateSpineElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
-        resourceMap: ResourceMap
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
         let element = XMLElement(name: "spine")
 
         let allClips = timeline.sortedClips
 
         for clip in allClips {
-            let clipElement = try generateAssetClipElement(clip: clip, resourceMap: resourceMap)
+            let clipElement = try generateAssetClipElement(clip: clip, resourceMap: resourceMap, frameRate: frameRate)
             element.addChild(clipElement)
         }
 
@@ -772,7 +780,8 @@ public struct FCPXMLBundleExporter {
 
     private func generateAssetClipElement(
         clip: TimelineClip,
-        resourceMap: ResourceMap
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
         guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {
             throw FCPXMLExportError.missingAsset(assetId: clip.assetStorageId)
@@ -796,11 +805,16 @@ public struct FCPXMLBundleExporter {
             return XMLElement(name: "comment")
         }
 
-        element.addAttribute(XMLNode.attribute(withName: "offset", stringValue: clip.offset.fcpxmlString) as! XMLNode)
-        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: Timecode(seconds: adjustedDuration).fcpxmlString) as! XMLNode)
+        // Use frame-aligned timecodes
+        let alignedOffset = clip.offset.aligned(to: frameRate)
+        element.addAttribute(XMLNode.attribute(withName: "offset", stringValue: alignedOffset.fcpxmlString) as! XMLNode)
+
+        let alignedDuration = Timecode.frameAligned(seconds: adjustedDuration, frameRate: frameRate)
+        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: alignedDuration.fcpxmlString) as! XMLNode)
 
         if adjustedStart > 0 {
-            element.addAttribute(XMLNode.attribute(withName: "start", stringValue: Timecode(seconds: adjustedStart).fcpxmlString) as! XMLNode)
+            let alignedStart = Timecode.frameAligned(seconds: adjustedStart, frameRate: frameRate)
+            element.addAttribute(XMLNode.attribute(withName: "start", stringValue: alignedStart.fcpxmlString) as! XMLNode)
         }
 
         if clip.lane != 0 {

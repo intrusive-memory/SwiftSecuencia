@@ -21,6 +21,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
         .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
+        .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
     ],
     targets: [
         .target(
@@ -37,6 +38,7 @@ let package = Package(
                 "Pipeline",
                 .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftTimecode", package: "swift-timecode"),
             ],
             path: "Sources/SwiftSecuencia",
             swiftSettings: [
