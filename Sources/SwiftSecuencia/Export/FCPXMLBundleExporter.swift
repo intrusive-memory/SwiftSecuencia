@@ -89,12 +89,15 @@ public struct FCPXMLBundleExporter {
 
         // Export media files if enabled
         var assetURLMap: [UUID: String] = [:]
+        var measuredDurations: [UUID: Double] = [:]
         if includeMedia {
-            assetURLMap = try await exportMedia(
+            let result = try await exportMedia(
                 timeline: timeline,
                 modelContext: modelContext,
                 to: bundleURL
             )
+            assetURLMap = result.assetURLMap
+            measuredDurations = result.measuredDurations
         }
 
         // Generate FCPXML with relative media paths
@@ -102,6 +105,7 @@ public struct FCPXMLBundleExporter {
             timeline: timeline,
             modelContext: modelContext,
             assetURLMap: assetURLMap,
+            measuredDurations: measuredDurations,
             libraryName: libraryName,
             eventName: eventName,
             projectName: projectName
@@ -144,15 +148,16 @@ public struct FCPXMLBundleExporter {
     ///   - timeline: The timeline containing clips.
     ///   - modelContext: The model context to fetch assets from.
     ///   - bundleURL: The bundle URL.
-    /// - Returns: Dictionary mapping asset IDs to relative file paths.
+    /// - Returns: Tuple of (asset URL map, measured duration map).
     @MainActor
     private func exportMedia(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         to bundleURL: URL
-    ) async throws -> [UUID: String] {
+    ) async throws -> (assetURLMap: [UUID: String], measuredDurations: [UUID: Double]) {
         let assets = timeline.allAssets(in: modelContext)
         var assetURLMap: [UUID: String] = [:]
+        var measuredDurations: [UUID: Double] = [:]
 
         let mediaURL = bundleURL.appendingPathComponent("Media")
 
@@ -173,13 +178,14 @@ public struct FCPXMLBundleExporter {
                     let filename = "\(asset.id.uuidString).m4a"
                     let fileURL = mediaURL.appendingPathComponent(filename)
 
-                    try await Self.convertAudioToM4A(
+                    let actualDuration = try await Self.convertAudioToM4A(
                         audioData: binaryValue,
                         inputExtension: inputExt,
                         outputURL: fileURL
                     )
 
                     assetURLMap[asset.id] = "Media/\(filename)"
+                    measuredDurations[asset.id] = actualDuration
                 } catch {
                     // Conversion failed - write original audio file instead
                     let filename = "\(asset.id.uuidString).\(inputExt)"
@@ -198,7 +204,7 @@ public struct FCPXMLBundleExporter {
             }
         }
 
-        return assetURLMap
+        return (assetURLMap: assetURLMap, measuredDurations: measuredDurations)
     }
 
     /// Returns file extension for MIME type.
@@ -236,11 +242,12 @@ public struct FCPXMLBundleExporter {
     ///   - audioData: Raw audio data to convert.
     ///   - inputExtension: File extension for the input audio format.
     ///   - outputURL: Destination URL for the m4a file.
+    /// - Returns: The actual duration of the audio in seconds (measured from the source asset).
     private static func convertAudioToM4A(
         audioData: Data,
         inputExtension: String,
         outputURL: URL
-    ) async throws {
+    ) async throws -> Double {
         // Create temporary input file
         let tempDir = FileManager.default.temporaryDirectory
         let inputURL = tempDir.appendingPathComponent(UUID().uuidString + "." + inputExtension)
@@ -256,6 +263,9 @@ public struct FCPXMLBundleExporter {
         // Create asset from input file
         let asset = AVURLAsset(url: inputURL)
 
+        // Get the actual audio duration from the source asset
+        let actualDuration = try await asset.load(.duration).seconds
+
         // Create export session
         guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
             throw FCPXMLExportError.invalidTimeline(reason: "Could not create export session for audio conversion")
@@ -267,6 +277,9 @@ public struct FCPXMLBundleExporter {
         } catch {
             throw FCPXMLExportError.invalidTimeline(reason: "Audio conversion failed: \(error.localizedDescription)")
         }
+
+        // Return the measured duration
+        return actualDuration
     }
 
     // MARK: - FCPXML Generation
@@ -277,6 +290,7 @@ public struct FCPXMLBundleExporter {
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         assetURLMap: [UUID: String],
+        measuredDurations: [UUID: Double],
         libraryName: String,
         eventName: String,
         projectName: String?
@@ -289,6 +303,7 @@ public struct FCPXMLBundleExporter {
                 timeline: timeline,
                 modelContext: modelContext,
                 assetURLMap: assetURLMap,
+                measuredDurations: measuredDurations,
                 libraryName: libraryName,
                 eventName: eventName,
                 projectName: projectName,
@@ -312,6 +327,7 @@ public struct FCPXMLBundleExporter {
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
         assetURLMap: [UUID: String],
+        measuredDurations: [UUID: Double],
         libraryName: String,
         eventName: String,
         projectName: String?,
@@ -334,6 +350,7 @@ public struct FCPXMLBundleExporter {
             let assetElement = try generateAssetElement(
                 asset: asset,
                 relativePath: assetURLMap[asset.id],
+                measuredDuration: measuredDurations[asset.id],
                 resourceMap: &resourceMap
             )
             resourceElements.append(assetElement)
@@ -402,6 +419,7 @@ public struct FCPXMLBundleExporter {
     private mutating func generateAssetElement(
         asset: TypedDataStorage,
         relativePath: String?,
+        measuredDuration: Double?,
         resourceMap: inout ResourceMap
     ) throws -> XMLElement {
         let assetID = nextResourceID()
@@ -416,8 +434,9 @@ public struct FCPXMLBundleExporter {
             element.addAttribute(XMLNode.attribute(withName: "name", stringValue: prompt) as! XMLNode)
         }
 
-        // Add duration if available
-        if let duration = asset.durationSeconds {
+        // Add duration - prefer measured duration from audio conversion, fall back to asset metadata
+        let durationSeconds = measuredDuration ?? asset.durationSeconds
+        if let duration = durationSeconds {
             let timecode = Timecode(seconds: duration)
             element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
         }
