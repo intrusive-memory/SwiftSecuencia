@@ -326,18 +326,20 @@ do {
 
 ## Performance Optimizations
 
-### Task Priority: .userInitiated
+### Task Priority: .high
 
-The export task uses `.userInitiated` priority (line 219 in ExportMenuView.swift):
-- User explicitly requested the export action
-- Should complete quickly and responsively
-- Not throttled by the system like `.utility` priority
-- Appropriate for foreground, user-visible work
+The export task uses `.high` priority (line 220 in ExportMenuView.swift):
+- User is actively waiting for export completion
+- I/O-heavy work where speed matters most
+- Will use all available CPU cycles without starving UI thread
+- Appropriate for time-sensitive, user-requested operations
 
-**Priority Levels:**
-- `.userInitiated` - Normal priority, user-visible work (✅ our choice)
-- `.utility` - Lower priority, background maintenance (❌ too slow)
-- `.background` - Lowest priority, deferrable work (❌ much too slow)
+**Priority Levels (highest to lowest):**
+- `.high` - High priority, time-sensitive work (✅ our choice)
+- `.medium` - Default priority for most work
+- `.userInitiated` - User-initiated but not urgent (❌ too conservative)
+- `.utility` - Lower priority, background maintenance (❌ way too slow)
+- `.background` - Lowest priority, deferrable work (❌ extremely slow)
 
 ### Non-Blocking Progress Updates
 

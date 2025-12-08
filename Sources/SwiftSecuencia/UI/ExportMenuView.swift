@@ -213,10 +213,11 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             }
             let container = modelContext.container
 
-            // Launch background export with user-initiated priority
-            // Use .userInitiated when app is foreground, .utility for background
-            // The user explicitly requested this export, so it should run at higher priority
-            let outputURL = try await Task.detached(priority: .userInitiated) {
+            // Launch background export with high priority
+            // User is actively waiting for export completion
+            // .high priority will use all available CPU cycles without starving UI
+            // Appropriate for I/O-heavy work where speed matters
+            let outputURL = try await Task.detached(priority: .high) {
                 // Create the exporter on THIS background thread
                 let exporter = BackgroundAudioExporter(modelContainer: container)
 
