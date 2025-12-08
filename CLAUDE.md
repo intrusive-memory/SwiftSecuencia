@@ -295,6 +295,17 @@ extension AssetClip: FCPXMLElement {
 - [x] 215 total tests passing
 - **Status**: v1.0.3 (December 2025)
 
+### Phase 8: Background Audio Export with @ModelActor (✅ COMPLETED)
+- [x] `BackgroundAudioExporter` using @ModelActor for safe SwiftData concurrency
+- [x] Timeline building on main thread (metadata only, no audio data)
+- [x] Background thread audio export with `.utility` priority
+- [x] Persistent identifier-based model passing across actor boundaries
+- [x] Memory-efficient audio loading (one asset at a time)
+- [x] Read-only SwiftData access from background thread
+- [x] Immediate save dialog with no blocking
+- [x] 237 total tests passing
+- **Status**: v1.0.5 (December 2025)
+
 ### Future Enhancements (Planned)
 - [ ] Transitions and effects
 - [ ] Advanced clip adjustments (transform, crop, volume)
@@ -314,12 +325,66 @@ See the documentation in `Docs/`:
 - [FCP Cafe Developer Resources](https://fcp.cafe/developers/fcpxml/)
 - [FCPXML DTD (v1.8)](https://github.com/CommandPost/CommandPost/blob/develop/src/extensions/cp/apple/fcpxml/dtd/FCPXMLv1_8.dtd)
 
+## Concurrency Architecture
+
+SwiftSecuencia uses a carefully designed concurrency model to ensure UI responsiveness during audio export operations. See `Docs/CONCURRENCY-ARCHITECTURE.md` for the complete concurrency diagram.
+
+### M4A Audio Export Concurrency
+
+The M4A export follows a two-phase approach:
+
+**Phase 1: Main Thread (30%)**
+- Show save dialog immediately (no blocking)
+- Build Timeline with metadata only (no audio data loaded)
+- Insert and save Timeline to SwiftData
+- Extract `persistentModelID` for background handoff
+
+**Phase 2: Background Thread (70%)**
+- Initialize `BackgroundAudioExporter` with `@ModelActor`
+- Fetch Timeline by persistent ID (read-only SwiftData access)
+- Load audio assets one at a time (memory-efficient)
+- Write to temporary files for AVFoundation
+- Build AVMutableComposition and export to M4A
+- Run with `.utility` priority to avoid blocking UI
+
+### Key Concurrency Principles
+
+1. **Pass IDs, not objects**: Use `persistentModelID` to cross actor boundaries
+2. **Read-only SwiftData access**: Background thread never modifies data
+3. **Lazy audio loading**: Load one asset at a time, write to temp file, release
+4. **@ModelActor for safety**: Automatic SwiftData concurrency management
+5. **Progress reporting**: Foundation.Progress is thread-safe by design
+
+### Usage Example
+
+```swift
+// Phase 1: Main thread builds timeline metadata
+let timeline = try await converter.convertToTimeline(
+    screenplayName: "My Script",
+    audioElements: audioFiles,
+    progress: progress
+)
+modelContext.insert(timeline)
+try modelContext.save()
+
+// Phase 2: Background thread exports audio
+let outputURL = try await Task.detached(priority: .utility) {
+    let exporter = BackgroundAudioExporter(modelContainer: container)
+    return try await exporter.exportAudio(
+        timelineID: timeline.persistentModelID,
+        to: destinationURL,
+        progress: progress
+    )
+}.value
+```
+
 ## Code Style
 
 - Use Swift 6.2 language features
 - Mark types as `Sendable` where appropriate
 - Use `@MainActor` only when necessary
 - Prefer `async/await` for file I/O operations
+- Use `@ModelActor` for background SwiftData operations
 - Document public APIs with DocC-compatible comments
 - Use `#expect` macro for Swift Testing assertions
 

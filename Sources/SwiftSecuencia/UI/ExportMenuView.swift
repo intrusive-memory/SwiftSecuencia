@@ -150,7 +150,7 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     private func handleM4AExportResult(_ result: Result<URL, Error>) {
         switch result {
         case .success(let destinationURL):
-            // User chose a location - now do the export in background
+            // User chose a location - now do the export
             // Note: fileExporter automatically manages security-scoped access
             // The destinationURL is already security-scoped and valid for writing
             Task {
@@ -179,7 +179,8 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             progress.localizedDescription = "Exporting to M4A"
             exportProgress = progress
 
-            // Phase 1: Convert to Timeline (30%)
+            // Phase 1: Build Timeline on Main Thread (30%)
+            // This stays on main thread - just metadata, no audio data
             let conversionProgress = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 30)
 
             let converter = ScreenplayToTimelineConverter()
@@ -190,26 +191,34 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
                 progress: conversionProgress
             )
 
-            // Save timeline to SwiftData
+            // Save timeline to SwiftData (main thread)
             modelContext.insert(timeline)
             try modelContext.save()
 
-            // Phase 2: Export to M4A (70%)
+            // Get the persistent ID to pass to background thread
+            let timelineID = timeline.persistentModelID
+
+            // Phase 2: Export to M4A on Background Thread (70%)
+            // Initialize the background exporter - MUST be done on background thread
             let exportProgressChild = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
+            let container = modelContext.container
 
-            let exporter = TimelineAudioExporter()
+            // Launch background export with lower priority
+            let outputURL = try await Task.detached(priority: .utility) {
+                // Create the exporter on THIS background thread
+                let exporter = BackgroundAudioExporter(modelContainer: container)
 
-            // Export directly to the user's chosen destination
-            _ = try await exporter.exportAudio(
-                timeline: timeline,
-                modelContext: modelContext,
-                to: destinationURL,
-                progress: exportProgressChild
-            )
+                // Perform the export (reads SwiftData, writes audio to disk)
+                return try await exporter.exportAudio(
+                    timelineID: timelineID,
+                    to: destinationURL,
+                    progress: exportProgressChild
+                )
+            }.value
 
             #if os(macOS)
-            // Reveal in Finder on macOS
-            NSWorkspace.shared.activateFileViewerSelecting([destinationURL])
+            // Reveal in Finder on macOS (back on main thread)
+            NSWorkspace.shared.activateFileViewerSelecting([outputURL])
             #endif
 
         } catch {

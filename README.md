@@ -191,6 +191,24 @@ FCPXMLDocument
         └── Collection[]
 ```
 
+### Concurrency Model
+
+SwiftSecuencia uses a carefully designed concurrency architecture to ensure UI responsiveness during audio export operations:
+
+**Two-Phase Export**
+1. **Main Thread (30%)** - Build timeline metadata (no audio data loaded)
+2. **Background Thread (70%)** - Load audio, write to disk, export to M4A
+
+**Key Features:**
+- Save dialog appears immediately with no lag
+- Timeline metadata built on main thread (fast)
+- Audio I/O operations on background thread with `.utility` priority
+- `@ModelActor` for safe SwiftData access from background
+- Memory-efficient: Load one audio asset at a time
+- Read-only SwiftData access from background (no data races)
+
+For complete details, see [Docs/CONCURRENCY-ARCHITECTURE.md](Docs/CONCURRENCY-ARCHITECTURE.md).
+
 ## Examples
 
 ### Adding Transitions
