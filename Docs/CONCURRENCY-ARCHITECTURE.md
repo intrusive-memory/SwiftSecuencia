@@ -319,9 +319,68 @@ do {
 
 ### UI Responsiveness
 - Save dialog: Immediate (no lag)
-- Progress updates: Real-time
+- Progress updates: Real-time via fire-and-forget MainActor dispatch
 - Main thread never blocked by export
-- Background priority (.utility) prevents CPU contention
+- User-initiated priority (.userInitiated) for foreground exports
+- Export thread never blocks waiting for MainActor availability
+
+## Performance Optimizations
+
+### Task Priority: .userInitiated
+
+The export task uses `.userInitiated` priority (line 219 in ExportMenuView.swift):
+- User explicitly requested the export action
+- Should complete quickly and responsively
+- Not throttled by the system like `.utility` priority
+- Appropriate for foreground, user-visible work
+
+**Priority Levels:**
+- `.userInitiated` - Normal priority, user-visible work (✅ our choice)
+- `.utility` - Lower priority, background maintenance (❌ too slow)
+- `.background` - Lowest priority, deferrable work (❌ much too slow)
+
+### Non-Blocking Progress Updates
+
+Progress updates use fire-and-forget dispatch pattern:
+```swift
+private func updateProgress(_ progress: Progress, completedUnits: Int64?, description: String?) {
+    Task { @MainActor in
+        if let completedUnits = completedUnits {
+            progress.completedUnitCount = completedUnits
+        }
+        if let description = description {
+            progress.localizedAdditionalDescription = description
+        }
+    }
+}
+```
+
+**Benefits:**
+- Export thread never blocks waiting for MainActor
+- I/O operations run continuously without interruption
+- Progress still updates reliably via Task scheduling
+- Lower context switching overhead
+
+**Comparison:**
+- ❌ `await MainActor.run { }` - Blocks export thread until MainActor available
+- ✅ `Task { @MainActor in }` - Schedules update asynchronously, continues immediately
+
+### Remaining Bottlenecks
+
+**Sequential I/O Operations:**
+- Clips processed one at a time: fetch → write → load → insert
+- Could potentially parallelize independent operations
+- Trade-off: Memory usage vs. speed (current approach: low memory)
+
+**AVAssetExportSession:**
+- Apple's M4A encoder runs on internal threads
+- Export phase (60% of time) already optimized by Apple
+- No way to make it faster without changing codec/quality
+
+**SwiftData Fetches:**
+- Assets fetched one-by-one in loop
+- Read-only access (safe for batch fetching)
+- Potential optimization: Batch fetch all assets upfront
 
 ## Testing
 
@@ -347,3 +406,4 @@ All 237 tests pass, including:
 ## Version History
 
 - **v1.0.5** (December 2025) - Initial implementation with @ModelActor
+- **v1.0.6** (December 2025) - Performance optimizations: .userInitiated priority, non-blocking progress updates
