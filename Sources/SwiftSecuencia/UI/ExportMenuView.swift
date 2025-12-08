@@ -26,7 +26,7 @@ import AppKit
 /// ```swift
 /// .toolbar {
 ///     ToolbarItem(placement: .primaryAction) {
-///         ExportMenuView(document: document)
+///         ExportMenuView(document: document, progress: exportProgress)
 ///     }
 /// }
 /// ```
@@ -39,9 +39,13 @@ import AppKit
 ///
 /// The view reads `ModelContext` from the SwiftUI environment.
 ///
+/// ## Progress Reporting
+///
+/// The caller is responsible for providing a Progress object for tracking export progress.
+/// The library does not dictate which progress UI to use - use any progress indicator you prefer.
+///
 /// ## Features
 ///
-/// - Progress tracking during export
 /// - Error handling with user-friendly alerts
 /// - Automatic file naming
 /// - macOS: Reveals exported files in Finder
@@ -59,14 +63,15 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     /// Optional custom system image for the menu button
     public let systemImage: String
 
+    /// Optional Progress object for tracking export operations
+    public let progress: Progress?
+
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
 
     // MARK: - State
 
-    @State private var isExporting = false
-    @State private var exportProgress: Progress?
     @State private var exportError: Error?
     @State private var showError = false
     @State private var showM4AExporter = false
@@ -79,14 +84,17 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     ///   - document: The document to export (must conform to ExportableDocument)
     ///   - label: Custom label for the menu button (default: "Share")
     ///   - systemImage: Custom system image for the menu button (default: "square.and.arrow.up")
+    ///   - progress: Optional Progress object for tracking export operations (default: nil)
     public init(
         document: Document,
         label: String = "Share",
-        systemImage: String = "square.and.arrow.up"
+        systemImage: String = "square.and.arrow.up",
+        progress: Progress? = nil
     ) {
         self.document = document
         self.label = label
         self.systemImage = systemImage
+        self.progress = progress
     }
 
     // MARK: - Body
@@ -170,18 +178,18 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
         let audioFiles = document.audioElements()
         guard !audioFiles.isEmpty else { return }
 
-        isExporting = true
-        defer { isExporting = false }
-
         do {
-            // Create progress
-            let progress = Progress(totalUnitCount: 100)
-            progress.localizedDescription = "Exporting to M4A"
-            exportProgress = progress
+            // Set up progress reporting if provided by caller
+            if let progress = progress {
+                progress.totalUnitCount = 100
+                progress.localizedDescription = "Exporting to M4A"
+            }
 
             // Phase 1: Build Timeline on Main Thread (30%)
             // This stays on main thread - just metadata, no audio data
-            let conversionProgress = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 30)
+            let conversionProgress = progress.map {
+                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 30)
+            }
 
             let converter = ScreenplayToTimelineConverter()
             let timeline = try await converter.convertToTimeline(
@@ -200,7 +208,9 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 
             // Phase 2: Export to M4A on Background Thread (70%)
             // Initialize the background exporter - MUST be done on background thread
-            let exportProgressChild = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
+            let exportProgressChild = progress.map {
+                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 70)
+            }
             let container = modelContext.container
 
             // Launch background export with lower priority
@@ -248,17 +258,17 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             return
         }
 
-        isExporting = true
-        defer { isExporting = false }
-
         do {
-            // Create progress for both conversion and export
-            let progress = Progress(totalUnitCount: 100)
-            progress.localizedDescription = "Exporting to Final Cut Pro"
-            exportProgress = progress
+            // Set up progress reporting if provided by caller
+            if let progress = progress {
+                progress.totalUnitCount = 100
+                progress.localizedDescription = "Exporting to Final Cut Pro"
+            }
 
             // Phase 1: Convert to Timeline (30%)
-            let conversionProgress = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 30)
+            let conversionProgress = progress.map {
+                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 30)
+            }
 
             let converter = ScreenplayToTimelineConverter()
             let timeline = try await converter.convertToTimeline(
@@ -273,7 +283,9 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             try modelContext.save()
 
             // Phase 2: Export to FCPXML Bundle (70%)
-            let exportProgressChild = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
+            let exportProgressChild = progress.map {
+                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 70)
+            }
 
             var exporter = FCPXMLBundleExporter(includeMedia: true)
             let parentDirectory = url.deletingLastPathComponent()
