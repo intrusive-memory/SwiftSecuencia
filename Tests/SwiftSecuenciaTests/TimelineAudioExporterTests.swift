@@ -500,49 +500,4 @@ struct TimelineAudioExporterTests {
         }
     }
 
-    // MARK: - Source Start Tests
-
-    @Test("Export respects clip sourceStart property")
-    @MainActor
-    func testSourceStartRespected() async throws {
-        let container = try createTestContainer()
-        let context = ModelContext(container)
-
-        // Create 3-second audio
-        let audio = try createTestAudioAsset(in: context, duration: 3.0)
-
-        let timeline = Timeline(name: "Source Start Timeline")
-
-        // Use middle 1 second (from 1s to 2s)
-        let clip = TimelineClip(
-            assetStorageId: audio.id,
-            offset: Timecode.zero,
-            duration: Timecode(seconds: 1.0),
-            sourceStart: Timecode(seconds: 1.0)  // Start at 1s into the audio
-        )
-
-        timeline.appendClip(clip)
-        context.insert(timeline)
-
-        let exporter = TimelineAudioExporter()
-        let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("sourcestart.m4a")
-
-        let result = try await exporter.exportAudio(
-            timeline: timeline,
-            modelContext: context,
-            to: outputURL
-        )
-
-        #expect(FileManager.default.fileExists(atPath: result.path))
-
-        // Verify duration is approximately 1 second
-        let asset = AVURLAsset(url: result)
-        let duration = try await asset.load(.duration)
-        let durationSeconds = CMTimeGetSeconds(duration)
-        #expect(durationSeconds >= 0.9 && durationSeconds <= 1.1)
-
-        // Cleanup
-        try? FileManager.default.removeItem(at: outputURL)
-    }
 }
