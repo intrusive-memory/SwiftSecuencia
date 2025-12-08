@@ -90,7 +90,7 @@ jobs:
         run: |
           echo "🔨 Building for iOS Simulator (arm64)"
           xcodebuild build \
-            -scheme SwiftSecuenciaTests \
+            -scheme SwiftSecuencia \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
             -quiet \
