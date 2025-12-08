@@ -390,6 +390,160 @@ let outputURL = try await Task.detached(priority: .utility) {
 
 ## Common Patterns
 
+### Using ExportMenuView in Your UI
+
+`ExportMenuView` is a reusable SwiftUI component for adding export functionality to your app. The caller is responsible for providing progress reporting.
+
+```swift
+import SwiftUI
+import SwiftSecuencia
+
+struct ContentView: View {
+    @State private var exportProgress = Progress(totalUnitCount: 100)
+    let document: MyDocument  // Must conform to ExportableDocument
+
+    var body: some View {
+        NavigationStack {
+            // Your main content
+            Text("Document: \(document.exportName)")
+
+            // Show progress if export is active
+            if exportProgress.fractionCompleted > 0 && !exportProgress.isFinished {
+                VStack {
+                    ProgressView(exportProgress)
+                        .progressViewStyle(.linear)
+                    Text(exportProgress.localizedDescription ?? "Exporting...")
+                        .font(.caption)
+                }
+                .padding()
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                ExportMenuView(
+                    document: document,
+                    progress: exportProgress  // Caller provides Progress
+                )
+            }
+        }
+    }
+}
+```
+
+**Key Points:**
+- **Caller provides Progress**: Pass a `Progress` object to track export operations
+- **Caller provides UI**: Use any progress indicator you prefer (ProgressView, custom UI, etc.)
+- **Optional progress**: Pass `nil` if you don't need progress tracking
+- **Thread-safe**: Foundation.Progress is thread-safe and can be updated from background threads
+
+### Direct Export Without UI
+
+For programmatic exports without `ExportMenuView`, use the exporters directly:
+
+**M4A Audio Export:**
+```swift
+@MainActor
+func exportAudioDirectly() async throws {
+    let progress = Progress(totalUnitCount: 100)
+
+    // Phase 1: Build timeline on main thread (metadata only)
+    let converter = ScreenplayToTimelineConverter()
+    let timeline = try await converter.convertToTimeline(
+        screenplayName: "My Script",
+        audioElements: audioFiles,
+        videoFormat: .hd1080p(frameRate: .fps24),
+        progress: Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 30)
+    )
+
+    // Save to SwiftData
+    modelContext.insert(timeline)
+    try modelContext.save()
+
+    // Phase 2: Export on background thread
+    let container = modelContext.container
+    let timelineID = timeline.persistentModelID
+
+    let outputURL = try await Task.detached(priority: .utility) {
+        let exporter = BackgroundAudioExporter(modelContainer: container)
+        return try await exporter.exportAudio(
+            timelineID: timelineID,
+            to: destinationURL,
+            progress: Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
+        )
+    }.value
+}
+```
+
+**FCPXML Bundle Export (macOS only):**
+```swift
+@MainActor
+func exportFCPXMLBundle() async throws {
+    let progress = Progress(totalUnitCount: 100)
+
+    // Build timeline on main thread
+    let converter = ScreenplayToTimelineConverter()
+    let timeline = try await converter.convertToTimeline(
+        screenplayName: "My Script",
+        audioElements: audioFiles,
+        videoFormat: .hd1080p(frameRate: .fps24),
+        progress: Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 30)
+    )
+
+    modelContext.insert(timeline)
+    try modelContext.save()
+
+    // Export FCPXML bundle
+    var exporter = FCPXMLBundleExporter(includeMedia: true)
+    let bundleURL = try await exporter.exportBundle(
+        timeline: timeline,
+        modelContext: modelContext,
+        to: parentDirectory,
+        bundleName: "MyProject",
+        libraryName: "SwiftSecuencia Export",
+        eventName: "My Script",
+        progress: Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
+    )
+}
+```
+
+### Progress Reporting Best Practices
+
+**1. Create Progress on Main Thread:**
+```swift
+@State private var exportProgress = Progress(totalUnitCount: 100)
+```
+
+**2. Pass to Export Functions:**
+```swift
+ExportMenuView(document: document, progress: exportProgress)
+```
+
+**3. Observe Progress Updates:**
+```swift
+// Option 1: SwiftUI ProgressView (automatic)
+ProgressView(exportProgress)
+
+// Option 2: KVO observation
+exportProgress.observe(\.fractionCompleted) { progress, _ in
+    print("Export \(Int(progress.fractionCompleted * 100))% complete")
+}
+
+// Option 3: Polling in Task
+Task {
+    while !exportProgress.isFinished {
+        print(exportProgress.localizedDescription ?? "Exporting...")
+        try? await Task.sleep(for: .milliseconds(100))
+    }
+}
+```
+
+**4. Handle Cancellation:**
+```swift
+Button("Cancel Export") {
+    exportProgress.cancel()
+}
+```
+
 ### Resource IDs
 
 FCPXML uses ID references (e.g., "r1", "r2") to link elements. The library should:
