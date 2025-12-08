@@ -73,7 +73,7 @@ public actor BackgroundAudioExporter {
             throw AudioExportError.emptyTimeline
         }
 
-        exportProgress.completedUnitCount = 5
+        await updateProgress(exportProgress, completedUnits: 5, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -81,14 +81,14 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 2: Filter audio clips (5%)
-        exportProgress.localizedAdditionalDescription = "Filtering audio clips"
+        await updateProgress(exportProgress, completedUnits: nil, description: "Filtering audio clips")
         let audioClips = try filterAudioClips(timeline.clips)
 
         guard !audioClips.isEmpty else {
             throw AudioExportError.emptyTimeline
         }
 
-        exportProgress.completedUnitCount = 10
+        await updateProgress(exportProgress, completedUnits: 10, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -96,13 +96,13 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 3: Build composition (30%)
-        exportProgress.localizedAdditionalDescription = "Building composition"
+        await updateProgress(exportProgress, completedUnits: nil, description: "Building composition")
         let (composition, tempFiles) = try await buildComposition(
             from: timeline,
             audioClips: audioClips,
             progress: exportProgress
         )
-        exportProgress.completedUnitCount = 40
+        await updateProgress(exportProgress, completedUnits: 40, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -111,7 +111,7 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 4: Export composition (60%)
-        exportProgress.localizedAdditionalDescription = "Exporting audio"
+        await updateProgress(exportProgress, completedUnits: nil, description: "Exporting audio")
         do {
             try await exportComposition(
                 composition,
@@ -122,8 +122,7 @@ public actor BackgroundAudioExporter {
             // Clean up temp files after successful export
             cleanupTempFiles(tempFiles)
 
-            exportProgress.completedUnitCount = 100
-            exportProgress.localizedAdditionalDescription = "Export complete"
+            await updateProgress(exportProgress, completedUnits: 100, description: "Export complete")
 
             return outputURL
         } catch {
@@ -182,7 +181,7 @@ public actor BackgroundAudioExporter {
             }
 
             // Update progress with detailed description
-            progress.localizedAdditionalDescription = "Loading audio clip \(index + 1) of \(sortedClips.count)"
+            await updateProgress(progress, completedUnits: nil, description: "Loading audio clip \(index + 1) of \(sortedClips.count)")
 
             // Create a new track for each clip
             guard let compositionTrack = composition.addMutableTrack(
@@ -202,7 +201,7 @@ public actor BackgroundAudioExporter {
             tempFiles.append(tempURL)
 
             // Update progress
-            progress.completedUnitCount = Int64(10 + Int((Double(index + 1) * clipProgressIncrement)))
+            await updateProgress(progress, completedUnits: Int64(10 + Int((Double(index + 1) * clipProgressIncrement))), description: nil)
         }
 
         return (composition, tempFiles)
@@ -221,7 +220,7 @@ public actor BackgroundAudioExporter {
         total: Int
     ) async throws -> URL {
         // Fetch the asset using actor-isolated modelContext
-        progress.localizedAdditionalDescription = "Fetching clip \(index) of \(total) from storage"
+        await updateProgress(progress, completedUnits: nil, description: "Fetching clip \(index) of \(total) from storage")
         guard let asset = clip.fetchAsset(in: modelContext) else {
             throw AudioExportError.missingAsset(assetId: clip.assetStorageId)
         }
@@ -233,7 +232,7 @@ public actor BackgroundAudioExporter {
         // Create temporary file for the audio
         // IMPORTANT: Do NOT delete this file until after export completes!
         // AVMutableComposition references the file by URL, not by loading it into memory
-        progress.localizedAdditionalDescription = "Writing clip \(index) of \(total) to temp file"
+        await updateProgress(progress, completedUnits: nil, description: "Writing clip \(index) of \(total) to temp file")
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(fileExtension(for: asset.mimeType))
@@ -244,7 +243,7 @@ public actor BackgroundAudioExporter {
         // (Swift will handle this, but being explicit about the pattern)
 
         // Create AVAsset from the audio file
-        progress.localizedAdditionalDescription = "Processing clip \(index) of \(total)"
+        await updateProgress(progress, completedUnits: nil, description: "Processing clip \(index) of \(total)")
         let avAsset = AVURLAsset(url: tempURL)
 
         // Get the audio track from the asset
@@ -261,7 +260,7 @@ public actor BackgroundAudioExporter {
         let insertTime = CMTime(seconds: clip.offset.seconds, preferredTimescale: 600)
 
         // Insert the audio into the composition track
-        progress.localizedAdditionalDescription = "Adding clip \(index) of \(total) to composition"
+        await updateProgress(progress, completedUnits: nil, description: "Adding clip \(index) of \(total) to composition")
         try track.insertTimeRange(timeRange, of: sourceTrack, at: insertTime)
 
         // Return the temp URL so caller can keep it alive until export completes
@@ -303,16 +302,40 @@ public actor BackgroundAudioExporter {
         // Note: AVAssetExportSession internally updates its progress property,
         // but we can't easily observe it from an actor context without complexity.
         // The export will report completion when done.
-        progress.localizedAdditionalDescription = "Encoding M4A audio"
+        await updateProgress(progress, completedUnits: nil, description: "Encoding M4A audio")
 
         try await exportSession.export(to: outputURL, as: .m4a)
 
         // Update progress to complete
-        progress.completedUnitCount = 100
-        progress.localizedAdditionalDescription = "Export complete"
+        await updateProgress(progress, completedUnits: 100, description: "Export complete")
     }
 
     // MARK: - Helpers
+
+    /// Updates progress on the main actor to ensure UI updates are triggered.
+    ///
+    /// Foundation.Progress is thread-safe, but SwiftUI's observation system works best
+    /// when updates are dispatched explicitly to the main actor. This ensures progress
+    /// bar updates are visible in the UI.
+    ///
+    /// - Parameters:
+    ///   - progress: The Progress object to update
+    ///   - completedUnits: Optional new completedUnitCount value
+    ///   - description: Optional new localizedAdditionalDescription value
+    private func updateProgress(
+        _ progress: Progress,
+        completedUnits: Int64? = nil,
+        description: String? = nil
+    ) async {
+        await MainActor.run {
+            if let completedUnits = completedUnits {
+                progress.completedUnitCount = completedUnits
+            }
+            if let description = description {
+                progress.localizedAdditionalDescription = description
+            }
+        }
+    }
 
     /// Cleans up temporary files created during composition building.
     private func cleanupTempFiles(_ urls: [URL]) {
