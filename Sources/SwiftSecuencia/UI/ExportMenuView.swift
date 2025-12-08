@@ -70,7 +70,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     @State private var exportError: Error?
     @State private var showError = false
     @State private var showM4AExporter = false
-    @State private var m4aExportURL: URL?
 
     // MARK: - Initialization
 
@@ -121,7 +120,7 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
         .disabled(document.audioElements().isEmpty)
         .fileExporter(
             isPresented: $showM4AExporter,
-            document: M4AExportDocument(url: m4aExportURL),
+            document: M4AExportDocument(),
             contentType: .mpeg4Audio,
             defaultFilename: "\(document.exportName).m4a"
         ) { result in
@@ -140,6 +139,34 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 
     @MainActor
     private func exportToM4A() async {
+        let audioFiles = document.audioElements()
+        guard !audioFiles.isEmpty else { return }
+
+        // Show save dialog immediately - no processing yet
+        showM4AExporter = true
+    }
+
+    @MainActor
+    private func handleM4AExportResult(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let destinationURL):
+            // User chose a location - now do the export in background
+            // Note: fileExporter automatically manages security-scoped access
+            // The destinationURL is already security-scoped and valid for writing
+            Task {
+                await performM4AExport(to: destinationURL)
+            }
+        case .failure(let error):
+            // User cancelled or error occurred
+            if (error as NSError).code != NSUserCancelledError {
+                exportError = error
+                showError = true
+            }
+        }
+    }
+
+    @MainActor
+    private func performM4AExport(to destinationURL: URL) async {
         let audioFiles = document.audioElements()
         guard !audioFiles.isEmpty else { return }
 
@@ -171,47 +198,23 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             let exportProgressChild = Progress(totalUnitCount: 100, parent: progress, pendingUnitCount: 70)
 
             let exporter = TimelineAudioExporter()
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension("m4a")
 
+            // Export directly to the user's chosen destination
             _ = try await exporter.exportAudio(
                 timeline: timeline,
                 modelContext: modelContext,
-                to: tempURL,
+                to: destinationURL,
                 progress: exportProgressChild
             )
 
-            // Show file exporter
-            m4aExportURL = tempURL
-            showM4AExporter = true
+            #if os(macOS)
+            // Reveal in Finder on macOS
+            NSWorkspace.shared.activateFileViewerSelecting([destinationURL])
+            #endif
 
         } catch {
             exportError = error
             showError = true
-        }
-    }
-
-    @MainActor
-    private func handleM4AExportResult(_ result: Result<URL, Error>) {
-        // Clean up temp file
-        if let tempURL = m4aExportURL {
-            try? FileManager.default.removeItem(at: tempURL)
-            m4aExportURL = nil
-        }
-
-        switch result {
-        case .success(let url):
-            #if os(macOS)
-            // Reveal in Finder on macOS
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-            #endif
-        case .failure(let error):
-            // User cancelled or error occurred
-            if (error as NSError).code != NSUserCancelledError {
-                exportError = error
-                showError = true
-            }
         }
     }
 
@@ -296,38 +299,19 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 
 // MARK: - M4A Export Document
 
-/// FileDocument wrapper for M4A export via fileExporter.
+/// Placeholder FileDocument for M4A export via fileExporter.
+/// The actual export happens after the user chooses the save location.
 private struct M4AExportDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.mpeg4Audio]
 
-    let url: URL?
+    init() {}
 
-    init(url: URL?) {
-        self.url = url
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        self.url = nil
-    }
+    init(configuration: ReadConfiguration) throws {}
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        guard let url = url else {
-            throw NSError(
-                domain: "com.swiftsecuencia",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "No audio data available"]
-            )
-        }
-
-        guard let data = try? Data(contentsOf: url) else {
-            throw NSError(
-                domain: "com.swiftsecuencia",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Failed to read audio file"]
-            )
-        }
-
-        return FileWrapper(regularFileWithContents: data)
+        // Return empty file wrapper - the actual content will be written
+        // directly to the destination URL after the user chooses it
+        return FileWrapper(regularFileWithContents: Data())
     }
 }
 
