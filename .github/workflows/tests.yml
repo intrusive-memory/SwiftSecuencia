@@ -38,12 +38,12 @@ jobs:
             echo "❌ Package.swift contains macOS version < 26"
             exit 1
           fi
-          # Check for iOS < 17 (not allowed)
-          if grep -E "platforms.*\.iOS\(\.v([0-9]|1[0-6])\)" Package.swift; then
-            echo "❌ Package.swift contains iOS version < 17"
+          # Check for iOS < 26 (not allowed)
+          if grep -E "platforms.*\.iOS\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
+            echo "❌ Package.swift contains iOS version < 26"
             exit 1
           fi
-          echo "✅ Platform configuration verified (macOS 26+, iOS 17+)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Platform configuration verified (macOS 26+, iOS 26+)" >> $GITHUB_STEP_SUMMARY
 
       - name: Check for TODOs in committed code
         shell: bash {0}
@@ -70,7 +70,76 @@ jobs:
           swift build --configuration debug
           echo "✅ Swift package builds successfully" >> $GITHUB_STEP_SUMMARY
 
-  # Step 2: Unit Tests (runs after code quality passes)
+  # Step 2: iOS Unit Tests (runs after code quality passes)
+  unit-tests-ios:
+    name: iOS Unit Tests
+    runs-on: macos-26
+    needs: [code-quality]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build for iOS Simulator
+        run: |
+          echo "🔨 Building for iOS Simulator (arm64)"
+          xcodebuild build \
+            -scheme SwiftSecuencia \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run unit tests on iOS Simulator
+        run: |
+          set +e
+
+          echo "🧪 Running unit tests on iOS Simulator (FCPXML tests skipped - macOS only)"
+
+          # Skip macOS-only test suites (FCPXML export, DTD validation, Pipeline)
+          SKIP_TESTS=(
+            "FCPXMLExporterTests"
+            "FCPXMLBundleExporterTests"
+            "FCPXMLDTDValidationTests"
+            "PipelineTests"
+          )
+
+          SKIP_ARGS=""
+          for test in "${SKIP_TESTS[@]}"; do
+            SKIP_ARGS="$SKIP_ARGS -skip-testing:SwiftSecuenciaTests/$test"
+          done
+
+          # Run tests with reduced parallelism
+          xcodebuild test \
+            -scheme SwiftSecuencia \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+            -enableCodeCoverage YES \
+            -parallel-testing-enabled NO \
+            $SKIP_ARGS \
+            CODE_SIGNING_ALLOWED=NO \
+            > test_output_ios.txt 2>&1
+          TEST_EXIT_CODE=$?
+          cat test_output_ios.txt
+
+          # Check if tests passed
+          if grep -q "Test run with .* tests in .* suites passed\|TEST SUCCEEDED" test_output_ios.txt; then
+            echo "✅ All iOS unit tests passed" >> $GITHUB_STEP_SUMMARY
+            TEST_COUNT=$(grep -o "[0-9]* tests" test_output_ios.txt | tail -1 | grep -o "[0-9]*")
+            echo "- Executed $TEST_COUNT tests successfully (FCPXML tests skipped)" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "❌ iOS unit tests failed" >> $GITHUB_STEP_SUMMARY
+            exit $TEST_EXIT_CODE
+          fi
+
+  # Step 3: macOS Unit Tests (runs after code quality passes)
   unit-tests-macos:
     name: macOS Unit Tests
     runs-on: macos-26
@@ -111,10 +180,10 @@ jobs:
           swift test --parallel 2>&1 | tee test_output_macos.txt
 
           if grep -q "Test run with .* tests in .* suites passed" test_output_macos.txt; then
-            echo "✅ All unit tests passed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ All macOS unit tests passed" >> $GITHUB_STEP_SUMMARY
             TEST_COUNT=$(grep -o "[0-9]* tests" test_output_macos.txt | tail -1 | grep -o "[0-9]*")
             echo "- Executed $TEST_COUNT tests successfully" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Unit tests failed" >> $GITHUB_STEP_SUMMARY
+            echo "❌ macOS unit tests failed" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi

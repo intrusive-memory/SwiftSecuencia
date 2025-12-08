@@ -46,7 +46,6 @@ import AppKit
 /// - Automatic file naming
 /// - macOS: Reveals exported files in Finder
 /// - Disables menu when no audio content available
-@available(iOS 17.0, macOS 26.0, *)
 public struct ExportMenuView<Document: ExportableDocument>: View {
 
     // MARK: - Properties
@@ -298,7 +297,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 // MARK: - M4A Export Document
 
 /// FileDocument wrapper for M4A export via fileExporter.
-@available(iOS 17.0, macOS 26.0, *)
 private struct M4AExportDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.mpeg4Audio]
 

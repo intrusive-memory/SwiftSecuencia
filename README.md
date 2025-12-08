@@ -16,12 +16,12 @@ Create timelines once and export to multiple professional tools.
 
 - Swift 6.2+
 - **macOS 26.0+** (full support: FCPXML + audio export)
-- **iOS 17.0+** (partial support: audio export only)
+- **iOS 26.0+** (partial support: audio export only)
 - [SwiftCompartido](https://github.com/intrusive-memory/SwiftCompartido) (dependency)
 
 ### Platform Support
 
-| Feature | macOS 26+ | iOS 17+ |
+| Feature | macOS 26+ | iOS 26+ |
 |---------|-----------|---------|
 | FCPXML Export (`FCPXMLExporter`, `FCPXMLBundleExporter`) | ✅ | ❌ |
 | Audio Export (`TimelineAudioExporter`) | ✅ | ✅ |
@@ -30,7 +30,7 @@ Create timelines once and export to multiple professional tools.
 
 **Notes:**
 - FCPXML export requires macOS because it uses the `XMLDocument` API (not available on iOS) and Final Cut Pro for iPad does not support FCPXML import/export.
-- iOS support is currently available but not tested in CI. iOS CI testing will be added in a future release.
+- iOS 26+ is fully tested in CI for audio export and Timeline/TimelineClip models.
 
 ## Installation
 

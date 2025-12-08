@@ -6,7 +6,7 @@ SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X t
 
 **Platforms**:
 - **macOS 26.0+** - Full support (FCPXML export + audio export)
-- **iOS 17.0+** - Partial support (audio export only via `TimelineAudioExporter`)
+- **iOS 26.0+** - Partial support (audio export only via `TimelineAudioExporter`)
 
 ## Pipeline Integration
 
@@ -17,7 +17,7 @@ SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipel
 ### Minimum Versions
 
 - **macOS**: 26.0+ (enforced)
-- **iOS**: 17.0+ (audio export only)
+- **iOS**: 26.0+ (audio export only)
 
 ### Platform-Specific Features
 
@@ -28,7 +28,7 @@ SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipel
 - `FCPXMLValidator` / `FCPXMLDTDValidator` - Uses XMLDocument
 - **Pipeline library** - All FCPXML manipulation
 
-**Cross-Platform Features** (iOS 17+ and macOS 26+):
+**Cross-Platform Features** (iOS 26+ and macOS 26+):
 - `Timeline` / `TimelineClip` - SwiftData models
 - `TimelineAudioExporter` - M4A export using AVFoundation
 - `ExportTimelineAudioIntent` - Audio export App Intent
@@ -49,13 +49,13 @@ SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipel
    ```swift
    platforms: [
        .macOS(.v26),
-       .iOS(.v17)  // Audio export only
+       .iOS(.v26)  // Audio export only
    ]
    ```
 
 4. **User-facing messages** must reflect platform requirements
    - ✅ macOS: "Requires macOS 26"
-   - ✅ iOS: "Audio export only, requires iOS 17"
+   - ✅ iOS: "Audio export only, requires iOS 26"
 
 ### Why This Matters
 
