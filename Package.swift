@@ -38,7 +38,7 @@ let package = Package(
             dependencies: [
                 .target(name: "Pipeline", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
-                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),  // DTD validation macOS-only
+                .product(name: "SwiftFijos", package: "SwiftFijos"),  // DTD validation macOS-only
                 .product(name: "SwiftTimecode", package: "swift-timecode"),
             ],
             path: "Sources/SwiftSecuencia",
@@ -52,7 +52,7 @@ let package = Package(
             dependencies: [
                 "SwiftSecuencia",
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
-                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],
             path: "Tests/SwiftSecuenciaTests",
             swiftSettings: [
