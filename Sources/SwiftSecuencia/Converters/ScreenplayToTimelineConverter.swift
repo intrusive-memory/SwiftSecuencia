@@ -50,7 +50,6 @@ public struct ScreenplayToTimelineConverter {
     /// Creates a new screenplay to timeline converter.
     public init() {}
 
-
     /// Converts screenplay elements to a Timeline with sequenced audio clips (direct element access).
     ///
     /// Use this variant when you already have direct access to TypedDataStorage elements.

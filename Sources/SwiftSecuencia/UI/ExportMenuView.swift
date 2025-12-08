@@ -207,7 +207,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             // Reveal in Finder on macOS
             NSWorkspace.shared.activateFileViewerSelecting([url])
             #endif
-            break
         case .failure(let error):
             // User cancelled or error occurred
             if (error as NSError).code != NSUserCancelledError {

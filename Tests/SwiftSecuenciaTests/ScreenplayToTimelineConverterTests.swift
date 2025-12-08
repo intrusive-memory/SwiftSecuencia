@@ -89,7 +89,6 @@ struct ScreenplayToTimelineConverterTests {
         #expect(timeline.duration == Timecode(seconds: 7.0))
     }
 
-
     @Test("Convert handles missing duration with default")
     @MainActor
     func testConvertWithMissingDuration() async throws {

@@ -50,8 +50,16 @@ custom_rules:
     message: "Use #unavailable(macOS 26, *) or higher. macOS versions < 26 are not supported."
     severity: error
 
-  # Prevent iOS references entirely (this library is macOS-only)
-  no_ios_availability:
-    regex: '(@available|#available|#unavailable)\s*\([^)]*iOS'
-    message: "SwiftSecuencia is macOS 26.0+ only. Do not use iOS availability checks."
+  # Prevent iOS versions < 17.0 (M4A audio export supports iOS 17.0+)
+  no_old_ios_availability_attribute:
+    regex: '@available\s*\([^)]*iOS\s*(?:,\s*introduced:\s*)?\b([0-9]|1[0-6])\b(?:\.[0-9]+)?'
+    match_kinds:
+      - attribute.builtin
+    message: "Use @available(iOS 17.0, *) or higher. iOS versions < 17 are not supported."
+    severity: error
+
+  # Prevent #available with iOS versions < 17
+  no_old_ios_availability_check:
+    regex: '#available\s*\([^)]*iOS\s*(?:,\s*introduced:\s*)?\b([0-9]|1[0-6])\b(?:\.[0-9]+)?'
+    message: "Use #available(iOS 17, *) or higher. iOS versions < 17 are not supported."
     severity: error
