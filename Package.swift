@@ -6,7 +6,8 @@ import PackageDescription
 let package = Package(
     name: "SwiftSecuencia",
     platforms: [
-        .macOS(.v26)
+        .macOS(.v26),
+        .iOS(.v17)  // Audio export and Timeline/TimelineClip only; FCPXML export requires macOS
     ],
     products: [
         .library(
@@ -21,6 +22,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
         .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
+        .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
     ],
     targets: [
         .target(
@@ -34,9 +36,10 @@ let package = Package(
         .target(
             name: "SwiftSecuencia",
             dependencies: [
-                "Pipeline",
-                .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
-                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
+                .target(name: "Pipeline", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
+                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
+                .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),  // DTD validation macOS-only
+                .product(name: "SwiftTimecode", package: "swift-timecode"),
             ],
             path: "Sources/SwiftSecuencia",
             swiftSettings: [
@@ -48,7 +51,7 @@ let package = Package(
             name: "SwiftSecuenciaTests",
             dependencies: [
                 "SwiftSecuencia",
-                .product(name: "SwiftCompartido", package: "SwiftCompartido", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftCompartido", package: "SwiftCompartido"),
                 .product(name: "SwiftFijos", package: "SwiftFijos", condition: .when(platforms: [.macOS])),
             ],
             path: "Tests/SwiftSecuenciaTests",

@@ -64,6 +64,7 @@ public struct Metadata: Sendable, Equatable, Hashable, Codable {
         entries.isEmpty
     }
 
+    #if os(macOS)
     /// Generates the FCPXML element for this metadata container.
     public func xmlElement() -> XMLElement {
         let element = XMLElement(name: "metadata")
@@ -82,6 +83,7 @@ public struct Metadata: Sendable, Equatable, Hashable, Codable {
 
         return element
     }
+    #endif
 }
 
 // MARK: - Common Metadata Keys

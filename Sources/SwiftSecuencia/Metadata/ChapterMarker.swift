@@ -67,6 +67,7 @@ public struct ChapterMarker: Sendable, Equatable, Hashable, Codable {
         self.note = note
     }
 
+    #if os(macOS)
     /// Generates the FCPXML element for this chapter marker.
     public func xmlElement() -> XMLElement {
         let element = XMLElement(name: "chapter-marker")
@@ -83,4 +84,5 @@ public struct ChapterMarker: Sendable, Equatable, Hashable, Codable {
 
         return element
     }
+    #endif
 }

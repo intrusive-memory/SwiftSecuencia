@@ -68,7 +68,8 @@ import SwiftCompartido
     // Verify asset-clip element
     #expect(xml.contains("<asset-clip"))
     #expect(xml.contains("offset=\"0s\""))
-    #expect(xml.contains("duration=\"30s\""))
+    // Duration is frame-aligned to 23.98fps: 30 seconds = 719 frames = 719719/24000s
+    #expect(xml.contains("duration=\"719719/24000s\""))
 }
 
 @Test func exportTimelineWithMultipleClips() async throws {
@@ -112,7 +113,8 @@ import SwiftCompartido
     )
 
     // Verify structure
-    #expect(xml.contains("duration=\"25s\"")) // Total timeline duration
+    // Total timeline duration is frame-aligned to 23.98fps: ~25 seconds = 599 frames = 599599/24000s
+    #expect(xml.contains("duration=\"599599/24000s\""))
 
     // Should have 2 asset-clip elements
     let clipCount = xml.components(separatedBy: "<asset-clip").count - 1
@@ -221,8 +223,8 @@ import SwiftCompartido
     var exporter = FCPXMLExporter(version: .v1_11)
     let xml = try exporter.export(timeline: timeline, modelContext: context)
 
-    // Verify start attribute
-    #expect(xml.contains("start=\"5s\""))
+    // Verify start attribute (frame-aligned to 23.98fps: 5 seconds = 120 frames = 120120/24000s)
+    #expect(xml.contains("start=\"120120/24000s\""))
 }
 
 @Test func exportClipWithName() async throws {

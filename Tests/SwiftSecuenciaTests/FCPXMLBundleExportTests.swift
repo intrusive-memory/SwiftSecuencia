@@ -449,3 +449,195 @@ import SwiftCompartido
     #expect(xmlString.contains("lane=\"1\""))
     #expect(xmlString.contains("lane=\"-1\""))
 }
+
+// MARK: - Progress Tracking Tests
+
+@Test @MainActor func exportBundleReportsProgressCorrectly() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+    let context = ModelContext(container)
+
+    let timeline = Timeline(name: "Progress Test")
+    context.insert(timeline)
+
+    // Create test asset
+    let asset = TypedDataStorage(
+        providerId: "test",
+        requestorID: "progress-test",
+        mimeType: "image/png",
+        binaryValue: Data([0x89, 0x50, 0x4E, 0x47]) // PNG header
+    )
+    context.insert(asset)
+
+    // Add clip
+    let clip = TimelineClip(
+        assetStorageId: asset.id,
+        offset: Timecode.zero,
+        duration: Timecode(seconds: 5)
+    )
+    timeline.clips.append(clip)
+
+    // Create temporary directory
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    // Set up progress tracking
+    let progress = Progress(totalUnitCount: 100)
+    nonisolated(unsafe) var progressValues: [Double] = []
+
+    let observation = progress.observe(\.fractionCompleted) { progress, _ in
+        progressValues.append(progress.fractionCompleted)
+    }
+
+    // Export with progress
+    var exporter = FCPXMLBundleExporter()
+    _ = try await exporter.exportBundle(
+        timeline: timeline,
+        modelContext: context,
+        to: tempDir,
+        progress: progress
+    )
+
+    // Verify progress was reported
+    #expect(progressValues.count > 0)
+    #expect(progress.fractionCompleted >= 1.0)  // Allow >= due to potential rounding
+    #expect(progress.completedUnitCount == 100)
+
+    observation.invalidate()
+}
+
+@Test @MainActor func exportBundleWithoutMediaSkipsMediaExport() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+    let context = ModelContext(container)
+
+    let timeline = Timeline(name: "No Media Test")
+    context.insert(timeline)
+
+    // Create temporary directory
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    // Set up progress tracking
+    let progress = Progress(totalUnitCount: 100)
+
+    // Export without media
+    var exporter = FCPXMLBundleExporter(includeMedia: false)
+    _ = try await exporter.exportBundle(
+        timeline: timeline,
+        modelContext: context,
+        to: tempDir,
+        progress: progress
+    )
+
+    // Verify progress completed
+    #expect(progress.fractionCompleted == 1.0)
+    #expect(progress.completedUnitCount == 100)
+}
+
+@Test @MainActor func exportBundleHandlesCancellation() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+    let context = ModelContext(container)
+
+    let timeline = Timeline(name: "Cancel Test")
+    context.insert(timeline)
+
+    // Create multiple assets to ensure cancellation can happen during media export
+    for i in 0..<5 {
+        let asset = TypedDataStorage(
+            providerId: "test",
+            requestorID: "cancel-test-\(i)",
+            mimeType: "image/png",
+            binaryValue: Data([0x89, 0x50, 0x4E, 0x47])
+        )
+        context.insert(asset)
+
+        let clip = TimelineClip(
+            assetStorageId: asset.id,
+            offset: Timecode(seconds: Double(i * 5)),
+            duration: Timecode(seconds: 5)
+        )
+        timeline.clips.append(clip)
+    }
+
+    // Create temporary directory
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    // Set up progress and cancel immediately
+    let progress = Progress(totalUnitCount: 100)
+    progress.cancel()
+
+    // Export should throw cancelled error
+    var exporter = FCPXMLBundleExporter()
+    do {
+        _ = try await exporter.exportBundle(
+            timeline: timeline,
+            modelContext: context,
+            to: tempDir,
+            progress: progress
+        )
+        Issue.record("Expected FCPXMLExportError.cancelled to be thrown")
+    } catch {
+        #expect(error as? FCPXMLExportError == .cancelled)
+    }
+}
+
+@Test @MainActor func exportBundleProgressDescriptions() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+    let context = ModelContext(container)
+
+    let timeline = Timeline(name: "Description Test")
+    context.insert(timeline)
+
+    // Create test asset
+    let asset = TypedDataStorage(
+        providerId: "test",
+        requestorID: "desc-test",
+        mimeType: "image/png",
+        binaryValue: Data([0x89, 0x50, 0x4E, 0x47])
+    )
+    context.insert(asset)
+
+    let clip = TimelineClip(
+        assetStorageId: asset.id,
+        offset: Timecode.zero,
+        duration: Timecode(seconds: 5)
+    )
+    timeline.clips.append(clip)
+
+    // Create temporary directory
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    // Set up progress tracking
+    let progress = Progress(totalUnitCount: 100)
+    nonisolated(unsafe) var descriptions: [String] = []
+
+    let observation = progress.observe(\.localizedAdditionalDescription) { progress, _ in
+        if let desc = progress.localizedAdditionalDescription {
+            descriptions.append(desc)
+        }
+    }
+
+    // Export with progress
+    var exporter = FCPXMLBundleExporter()
+    _ = try await exporter.exportBundle(
+        timeline: timeline,
+        modelContext: context,
+        to: tempDir,
+        progress: progress
+    )
+
+    // Verify progress descriptions were updated
+    #expect(descriptions.count > 0)
+    #expect(progress.localizedDescription == "Exporting FCPXML bundle")
+
+    observation.invalidate()
+}

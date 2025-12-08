@@ -5,6 +5,8 @@
 //  App Intent for generating FCPXML bundles from screenplay elements.
 //
 
+#if os(macOS)
+
 import AppIntents
 import Foundation
 import SwiftData
@@ -216,3 +218,5 @@ public struct GenerateFCPXMLBundleIntent: AppIntent {
         return VideoFormat.hd1080p(frameRate: rate)
     }
 }
+
+#endif
