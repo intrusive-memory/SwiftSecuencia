@@ -70,6 +70,7 @@ public struct Keyword: Sendable, Equatable, Hashable, Codable {
         self.note = note
     }
 
+    #if os(macOS)
     /// Generates the FCPXML element for this keyword.
     public func xmlElement() -> XMLElement {
         let element = XMLElement(name: "keyword")
@@ -83,4 +84,5 @@ public struct Keyword: Sendable, Equatable, Hashable, Codable {
 
         return element
     }
+    #endif
 }

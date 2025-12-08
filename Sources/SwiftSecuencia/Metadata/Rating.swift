@@ -76,6 +76,7 @@ public struct Rating: Sendable, Equatable, Hashable, Codable {
         self.note = note
     }
 
+    #if os(macOS)
     /// Generates the FCPXML element for this rating.
     public func xmlElement() -> XMLElement {
         let element = XMLElement(name: "rating")
@@ -89,4 +90,5 @@ public struct Rating: Sendable, Equatable, Hashable, Codable {
 
         return element
     }
+    #endif
 }

@@ -78,6 +78,7 @@ public struct Marker: Sendable, Equatable, Hashable, Codable {
 
     // MARK: - XML Generation
 
+    #if os(macOS)
     /// Generates the FCPXML element for this marker.
     public func xmlElement() -> XMLElement {
         let element = XMLElement(name: "marker")
@@ -95,4 +96,5 @@ public struct Marker: Sendable, Equatable, Hashable, Codable {
 
         return element
     }
+    #endif
 }
