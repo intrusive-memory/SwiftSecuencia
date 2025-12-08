@@ -158,30 +158,126 @@ public actor BackgroundAudioExporter {
 
     /// Builds an AVMutableComposition from timeline clips for stereo mixdown.
     /// Returns both the composition and temporary file URLs that must be kept until export completes.
+    ///
+    /// This uses a two-phase approach for better performance:
+    /// 1. Write all audio files to disk in parallel (Phase 1: 15% progress)
+    /// 2. Build composition from files serially (Phase 2: 15% progress)
     private func buildComposition(
         from timeline: Timeline,
         audioClips: [TimelineClip],
         progress: Progress
     ) async throws -> (composition: AVMutableComposition, tempFiles: [URL]) {
-        let composition = AVMutableComposition()
-        var tempFiles: [URL] = []
-
-        // Sort all clips by offset
         let sortedClips = audioClips.sorted { $0.offset < $1.offset }
 
-        let clipProgressIncrement = 30.0 / Double(sortedClips.count)
+        // Phase 1: Write all audio files to temp storage (in parallel - 15%)
+        updateProgress(progress, completedUnits: nil, description: "Writing audio files to disk")
+        let tempFiles = try await writeAudioFilesToDisk(
+            clips: sortedClips,
+            progress: progress
+        )
 
-        // Insert each clip into its own track to avoid conflicts
-        // AVMutableComposition will automatically mix multiple tracks
-        for (index, clip) in sortedClips.enumerated() {
+        // Check for cancellation after file writes
+        if progress.isCancelled {
+            cleanupTempFiles(tempFiles)
+            throw AudioExportError.cancelled
+        }
+
+        updateProgress(progress, completedUnits: 25, description: nil)
+
+        // Phase 2: Build composition from temp files (15%)
+        updateProgress(progress, completedUnits: nil, description: "Building audio composition")
+        let composition = try await buildCompositionFromFiles(
+            clips: sortedClips,
+            tempFiles: tempFiles,
+            progress: progress
+        )
+
+        return (composition, tempFiles)
+    }
+
+    /// Phase 1: Write all audio clips to temp files in parallel.
+    /// Returns array of temp file URLs in same order as clips.
+    ///
+    /// Strategy: Fetch all data on actor thread first, then write in parallel.
+    /// This keeps all audio data in memory temporarily for faster parallel writes.
+    private func writeAudioFilesToDisk(
+        clips: [TimelineClip],
+        progress: Progress
+    ) async throws -> [URL] {
+        // Step 1: Fetch all audio data on actor thread (serial, but fast)
+        struct AudioFileData {
+            let data: Data
+            let fileExtension: String
+        }
+
+        var audioFiles: [AudioFileData] = []
+        audioFiles.reserveCapacity(clips.count)
+
+        for clip in clips {
+            guard let asset = clip.fetchAsset(in: modelContext) else {
+                throw AudioExportError.missingAsset(assetId: clip.assetStorageId)
+            }
+
+            guard let audioData = asset.binaryValue else {
+                throw AudioExportError.invalidAudioData(assetId: asset.id, reason: "No binary data")
+            }
+
+            // Compute file extension on actor thread
+            let ext = fileExtension(for: asset.mimeType)
+            audioFiles.append(AudioFileData(data: audioData, fileExtension: ext))
+        }
+
+        // Step 2: Write all files to disk in parallel (I/O heavy)
+        return try await withThrowingTaskGroup(of: (Int, URL).self) { group in
+            var tempURLs: [Int: URL] = [:]
+
+            for (index, audioFile) in audioFiles.enumerated() {
+                group.addTask {
+                    // Create temp file URL
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent(UUID().uuidString)
+                        .appendingPathExtension(audioFile.fileExtension)
+
+                    // Write to disk (this is the I/O operation that benefits from parallelization)
+                    try audioFile.data.write(to: tempURL)
+
+                    return (index, tempURL)
+                }
+            }
+
+            // Collect results maintaining order
+            for try await (index, url) in group {
+                tempURLs[index] = url
+
+                // Update progress for each completed file write
+                let completedCount = tempURLs.count
+                let progressUnits = Int64(10 + Int((Double(completedCount) / Double(clips.count)) * 15))
+                updateProgress(progress, completedUnits: progressUnits,
+                              description: "Wrote \(completedCount) of \(clips.count) audio files")
+            }
+
+            // Return URLs in original clip order
+            return clips.indices.compactMap { tempURLs[$0] }
+        }
+    }
+
+    /// Phase 2: Build AVMutableComposition from pre-written temp files.
+    private func buildCompositionFromFiles(
+        clips: [TimelineClip],
+        tempFiles: [URL],
+        progress: Progress
+    ) async throws -> AVMutableComposition {
+        let composition = AVMutableComposition()
+        let clipProgressIncrement = 15.0 / Double(clips.count)
+
+        for (index, clip) in clips.enumerated() {
             // Check for cancellation
             if progress.isCancelled {
-                cleanupTempFiles(tempFiles)
                 throw AudioExportError.cancelled
             }
 
-            // Update progress with detailed description
-            updateProgress(progress, completedUnits: nil, description: "Loading audio clip \(index + 1) of \(sortedClips.count)")
+            updateProgress(progress, completedUnits: nil,
+                          description: "Adding clip \(index + 1) of \(clips.count) to composition")
 
             // Create a new track for each clip
             guard let compositionTrack = composition.addMutableTrack(
@@ -191,80 +287,31 @@ public actor BackgroundAudioExporter {
                 throw AudioExportError.exportFailed(reason: "Failed to create composition track")
             }
 
-            let tempURL = try await insertClipIntoTrack(
-                clip: clip,
-                track: compositionTrack,
-                progress: progress,
-                index: index + 1,
-                total: sortedClips.count
-            )
-            tempFiles.append(tempURL)
+            let tempURL = tempFiles[index]
+
+            // Create AVAsset from the temp file (already written)
+            let avAsset = AVURLAsset(url: tempURL)
+
+            // Get the audio track
+            guard let sourceTrack = try await avAsset.loadTracks(withMediaType: .audio).first else {
+                throw AudioExportError.invalidAudioData(assetId: clip.assetStorageId, reason: "No audio track found")
+            }
+
+            // Calculate time ranges
+            let startTime = CMTime(seconds: clip.sourceStart.seconds, preferredTimescale: 600)
+            let duration = CMTime(seconds: clip.duration.seconds, preferredTimescale: 600)
+            let timeRange = CMTimeRange(start: startTime, duration: duration)
+            let insertTime = CMTime(seconds: clip.offset.seconds, preferredTimescale: 600)
+
+            // Insert into composition
+            try compositionTrack.insertTimeRange(timeRange, of: sourceTrack, at: insertTime)
 
             // Update progress
-            updateProgress(progress, completedUnits: Int64(10 + Int((Double(index + 1) * clipProgressIncrement))), description: nil)
+            let progressUnits = Int64(25 + Int((Double(index + 1) * clipProgressIncrement)))
+            updateProgress(progress, completedUnits: progressUnits, description: nil)
         }
 
-        return (composition, tempFiles)
-    }
-
-    /// Inserts a timeline clip into a composition track.
-    /// Returns the temporary file URL that must be kept until export completes.
-    ///
-    /// IMPORTANT: Loads audio data into memory only for this clip, writes to temp file,
-    /// then releases. AVFoundation will stream from temp files.
-    private func insertClipIntoTrack(
-        clip: TimelineClip,
-        track: AVMutableCompositionTrack,
-        progress: Progress,
-        index: Int,
-        total: Int
-    ) async throws -> URL {
-        // Fetch the asset using actor-isolated modelContext
-        updateProgress(progress, completedUnits: nil, description: "Fetching clip \(index) of \(total) from storage")
-        guard let asset = clip.fetchAsset(in: modelContext) else {
-            throw AudioExportError.missingAsset(assetId: clip.assetStorageId)
-        }
-
-        guard let audioData = asset.binaryValue else {
-            throw AudioExportError.invalidAudioData(assetId: asset.id, reason: "No binary data")
-        }
-
-        // Create temporary file for the audio
-        // IMPORTANT: Do NOT delete this file until after export completes!
-        // AVMutableComposition references the file by URL, not by loading it into memory
-        updateProgress(progress, completedUnits: nil, description: "Writing clip \(index) of \(total) to temp file")
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension(fileExtension(for: asset.mimeType))
-
-        try audioData.write(to: tempURL)
-
-        // Release the audio data from memory now that it's written to disk
-        // (Swift will handle this, but being explicit about the pattern)
-
-        // Create AVAsset from the audio file
-        updateProgress(progress, completedUnits: nil, description: "Processing clip \(index) of \(total)")
-        let avAsset = AVURLAsset(url: tempURL)
-
-        // Get the audio track from the asset
-        guard let sourceTrack = try await avAsset.loadTracks(withMediaType: .audio).first else {
-            throw AudioExportError.invalidAudioData(assetId: asset.id, reason: "No audio track found")
-        }
-
-        // Calculate time range for insertion
-        let startTime = CMTime(seconds: clip.sourceStart.seconds, preferredTimescale: 600)
-        let duration = CMTime(seconds: clip.duration.seconds, preferredTimescale: 600)
-        let timeRange = CMTimeRange(start: startTime, duration: duration)
-
-        // Calculate insertion time on the composition track
-        let insertTime = CMTime(seconds: clip.offset.seconds, preferredTimescale: 600)
-
-        // Insert the audio into the composition track
-        updateProgress(progress, completedUnits: nil, description: "Adding clip \(index) of \(total) to composition")
-        try track.insertTimeRange(timeRange, of: sourceTrack, at: insertTime)
-
-        // Return the temp URL so caller can keep it alive until export completes
-        return tempURL
+        return composition
     }
 
     // MARK: - Composition Export
