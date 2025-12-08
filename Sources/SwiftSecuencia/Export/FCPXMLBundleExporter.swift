@@ -5,6 +5,8 @@
 //  Exports Timeline to FCPXML bundle (.fcpxmld) with embedded media.
 //
 
+#if os(macOS)
+
 import Foundation
 import SwiftData
 import SwiftCompartido
@@ -906,3 +908,5 @@ public struct FCPXMLBundleExporter {
         try plistData.write(to: plistURL, options: .atomic)
     }
 }
+
+#endif

@@ -1,18 +1,34 @@
 # SwiftSecuencia
 
-A Swift library for generating and exporting Final Cut Pro X timelines via FCPXML.
+A Swift library for working with sequenced media - timelines, audio, and exports for professional video and audio applications.
 
 ## Overview
 
-SwiftSecuencia provides a type-safe, Swift-native API for creating FCPXML documents that can be imported into Final Cut Pro X. Build timelines programmatically with clips, transitions, effects, and more.
+SwiftSecuencia provides a type-safe, Swift-native API for creating and exporting media timelines. Build timelines programmatically with clips, transitions, effects, and export to multiple formats:
+
+- **FCPXML** - Import into Final Cut Pro X (macOS only)
+- **M4A Audio** - High-quality stereo mixdowns (macOS + iOS)
+- **Logic Pro** _(coming soon)_ - Import into Logic Pro
+
+Create timelines once and export to multiple professional tools.
 
 ## Requirements
 
 - Swift 6.2+
-- macOS 26.0+
+- **macOS 26.0+** (full support: FCPXML + audio export)
+- **iOS 17.0+** (partial support: audio export only)
 - [SwiftCompartido](https://github.com/intrusive-memory/SwiftCompartido) (dependency)
 
-**Note:** SwiftSecuencia is macOS-only because Final Cut Pro for iPad does not support FCPXML import/export. The .fcpxmld bundle format is exclusive to Final Cut Pro for Mac.
+### Platform Support
+
+| Feature | macOS 26+ | iOS 17+ |
+|---------|-----------|---------|
+| FCPXML Export (`FCPXMLExporter`, `FCPXMLBundleExporter`) | ✅ | ❌ |
+| Audio Export (`TimelineAudioExporter`) | ✅ | ✅ |
+| Timeline/TimelineClip Models | ✅ | ✅ |
+| App Intents (Shortcuts) | ✅ | ✅ |
+
+**Note:** FCPXML export requires macOS because it uses the `XMLDocument` API (not available on iOS) and Final Cut Pro for iPad does not support FCPXML import/export.
 
 ## Installation
 
@@ -342,3 +358,43 @@ Contributions are welcome! Please read our contributing guidelines before submit
 SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipeline) project by Reuel Kim, licensed under the MIT License. Pipeline provides FCPXML document manipulation capabilities that have been integrated and adapted for Swift 6.2 and macOS 26.0+.
 
 See [PIPELINE-LICENSE.md](PIPELINE-LICENSE.md) for the full Pipeline license.
+
+### iOS Audio Export Example
+
+```swift
+import SwiftSecuencia
+import SwiftData
+
+// Create a timeline with audio clips
+let timeline = Timeline(name: "Podcast Episode 1")
+
+// Add audio clips (from SwiftCompartido TypedDataStorage)
+let clip1 = TimelineClip(
+    assetStorageId: audioAsset1.id,
+    offset: Timecode(seconds: 0),
+    duration: Timecode(seconds: 30)
+)
+let clip2 = TimelineClip(
+    assetStorageId: audioAsset2.id,
+    offset: Timecode(seconds: 30),
+    duration: Timecode(seconds: 45)
+)
+
+timeline.appendClip(clip1)
+timeline.appendClip(clip2)
+
+// Export to M4A (works on iOS and macOS)
+let exporter = TimelineAudioExporter()
+let outputURL = FileManager.default.temporaryDirectory
+    .appendingPathComponent("podcast.m4a")
+
+try await exporter.exportAudio(
+    timeline: timeline,
+    modelContext: modelContext,
+    to: outputURL
+)
+
+// Result: High-quality M4A file with AAC compression at 256 kbps
+// All timeline lanes are automatically mixed to stereo
+```
+

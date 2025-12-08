@@ -5,6 +5,8 @@
 //  Validates FCPXML documents against DTD files using xmllint.
 //
 
+#if os(macOS)
+
 import Foundation
 import SwiftFijos
 import Pipeline
@@ -217,3 +219,5 @@ public enum DTDValidationError: Error, LocalizedError {
         }
     }
 }
+
+#endif

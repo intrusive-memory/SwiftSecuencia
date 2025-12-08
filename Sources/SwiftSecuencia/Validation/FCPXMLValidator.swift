@@ -5,6 +5,8 @@
 //  Validates FCPXML documents and timelines before export.
 //
 
+#if os(macOS)
+
 import Foundation
 import SwiftData
 import SwiftCompartido
@@ -204,3 +206,5 @@ public struct FCPXMLValidator {
         return ValidationResult(errors: errors, warnings: warnings)
     }
 }
+
+#endif

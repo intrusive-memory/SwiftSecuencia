@@ -5,6 +5,8 @@
 //  Exports Timeline to FCPXML format.
 //
 
+#if os(macOS)
+
 import Foundation
 import SwiftData
 import SwiftCompartido
@@ -343,3 +345,5 @@ public enum FCPXMLExportError: Error, LocalizedError, Equatable {
         }
     }
 }
+
+#endif

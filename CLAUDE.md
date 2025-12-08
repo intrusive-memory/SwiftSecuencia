@@ -4,7 +4,9 @@
 
 SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X timelines via FCPXML. The library provides type-safe Swift APIs that model the FCPXML document structure and includes FCPXML manipulation capabilities from the Pipeline library.
 
-**Platform**: macOS 26.0+ only
+**Platforms**:
+- **macOS 26.0+** - Full support (FCPXML export + audio export)
+- **iOS 17.0+** - Partial support (audio export only via `TimelineAudioExporter`)
 
 ## Pipeline Integration
 
@@ -12,39 +14,56 @@ SwiftSecuencia includes code from the [Pipeline](https://github.com/reuelk/pipel
 
 ## ⚠️ CRITICAL: Platform Version Enforcement
 
-**This library ONLY supports macOS 26.0+. NEVER add code that supports older platforms or iOS.**
+### Minimum Versions
+
+- **macOS**: 26.0+ (enforced)
+- **iOS**: 17.0+ (audio export only)
+
+### Platform-Specific Features
+
+**macOS-Only Features** (wrapped in `#if os(macOS)`):
+- `FCPXMLExporter` - Uses XMLDocument (macOS-only API)
+- `FCPXMLBundleExporter` - Uses XMLDocument
+- `GenerateFCPXMLBundleIntent` - Depends on FCPXML export
+- `FCPXMLValidator` / `FCPXMLDTDValidator` - Uses XMLDocument
+- **Pipeline library** - All FCPXML manipulation
+
+**Cross-Platform Features** (iOS 17+ and macOS 26+):
+- `Timeline` / `TimelineClip` - SwiftData models
+- `TimelineAudioExporter` - M4A export using AVFoundation
+- `ExportTimelineAudioIntent` - Audio export App Intent
+- All timing types (`Timecode`, `FrameRate`)
+- All format types (`VideoFormat`, `AudioLayout`, etc.)
 
 ### Rules for Platform Versions
 
-1. **NEVER add `@available` attributes** for versions below macOS 26.0
+1. **NEVER add `@available` attributes** for versions below the minimum
    - ❌ WRONG: `@available(macOS 12.0, *)`
-   - ✅ CORRECT: No `@available` needed (package enforces macOS 26)
+   - ✅ CORRECT: No `@available` needed (package enforces minimums)
 
-2. **NEVER add `#available` runtime checks** for versions below macOS 26.0
-   - ❌ WRONG: `if #available(macOS 15.0, *) { ... }`
-   - ✅ CORRECT: No runtime checks needed (package enforces minimum version)
+2. **Use `#if os(macOS)` for FCPXML features**
+   - ✅ CORRECT: Wrap FCPXMLExporter and related code in `#if os(macOS)`
+   - ✅ CORRECT: Leave TimelineAudioExporter cross-platform (no guards)
 
-3. **NEVER add iOS support** - this library is macOS-only
-   - ❌ WRONG: `@available(iOS 26.0, *)`
-   - ❌ WRONG: `#if os(iOS)`
-   - ✅ CORRECT: macOS-only code (Final Cut Pro for iPad does not support FCPXML)
-
-4. **Package.swift must always specify macOS 26 only**
+3. **Package.swift platforms**
    ```swift
    platforms: [
-       .macOS(.v26)
+       .macOS(.v26),
+       .iOS(.v17)  // Audio export only
    ]
    ```
 
-5. **User-facing messages** must reflect macOS 26 requirements
-   - ❌ WRONG: "Requires macOS 15"
-   - ✅ CORRECT: "Requires macOS 26"
+4. **User-facing messages** must reflect platform requirements
+   - ✅ macOS: "Requires macOS 26"
+   - ✅ iOS: "Audio export only, requires iOS 17"
 
 ### Why This Matters
 
-Final Cut Pro for iPad does not support FCPXML import/export. The .fcpxmld bundle format is exclusive to Final Cut Pro for Mac.
+- Final Cut Pro for iPad does not support FCPXML import/export (macOS-only)
+- XMLDocument API is not available on iOS
+- Audio export (AVFoundation) works on both platforms
 
-**DO NOT lower the platform requirements. SwiftSecuencia is intentionally macOS 26+ only.**
+**DO NOT lower the minimum versions. DO NOT add FCPXML export to iOS (not possible).**
 
 ## Architecture
 
