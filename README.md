@@ -28,7 +28,9 @@ Create timelines once and export to multiple professional tools.
 | Timeline/TimelineClip Models | ✅ | ✅ |
 | App Intents (Shortcuts) | ✅ | ✅ |
 
-**Note:** FCPXML export requires macOS because it uses the `XMLDocument` API (not available on iOS) and Final Cut Pro for iPad does not support FCPXML import/export.
+**Notes:**
+- FCPXML export requires macOS because it uses the `XMLDocument` API (not available on iOS) and Final Cut Pro for iPad does not support FCPXML import/export.
+- iOS support is currently available but not tested in CI. iOS CI testing will be added in a future release.
 
 ## Installation
 

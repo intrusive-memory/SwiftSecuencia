@@ -33,11 +33,17 @@ jobs:
       - name: Verify Platform Configuration
         run: |
           echo "🔍 Verifying Package.swift platform configuration..."
-          if grep -E "platforms.*\.(macOS|iOS)\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
-            echo "❌ Package.swift contains platform version < 26"
+          # Check for macOS < 26 (not allowed)
+          if grep -E "platforms.*\.macOS\(\.v([0-9]|1[0-9]|2[0-5])\)" Package.swift; then
+            echo "❌ Package.swift contains macOS version < 26"
             exit 1
           fi
-          echo "✅ Platform configuration verified (macOS 26+)" >> $GITHUB_STEP_SUMMARY
+          # Check for iOS < 17 (not allowed)
+          if grep -E "platforms.*\.iOS\(\.v([0-9]|1[0-6])\)" Package.swift; then
+            echo "❌ Package.swift contains iOS version < 17"
+            exit 1
+          fi
+          echo "✅ Platform configuration verified (macOS 26+, iOS 17+)" >> $GITHUB_STEP_SUMMARY
 
       - name: Check for TODOs in committed code
         shell: bash {0}
