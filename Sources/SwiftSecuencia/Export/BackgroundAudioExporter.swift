@@ -181,6 +181,9 @@ public actor BackgroundAudioExporter {
                 throw AudioExportError.cancelled
             }
 
+            // Update progress with detailed description
+            progress.localizedAdditionalDescription = "Loading audio clip \(index + 1) of \(sortedClips.count)"
+
             // Create a new track for each clip
             guard let compositionTrack = composition.addMutableTrack(
                 withMediaType: .audio,
@@ -191,7 +194,10 @@ public actor BackgroundAudioExporter {
 
             let tempURL = try await insertClipIntoTrack(
                 clip: clip,
-                track: compositionTrack
+                track: compositionTrack,
+                progress: progress,
+                index: index + 1,
+                total: sortedClips.count
             )
             tempFiles.append(tempURL)
 
@@ -209,9 +215,13 @@ public actor BackgroundAudioExporter {
     /// then releases. AVFoundation will stream from temp files.
     private func insertClipIntoTrack(
         clip: TimelineClip,
-        track: AVMutableCompositionTrack
+        track: AVMutableCompositionTrack,
+        progress: Progress,
+        index: Int,
+        total: Int
     ) async throws -> URL {
         // Fetch the asset using actor-isolated modelContext
+        progress.localizedAdditionalDescription = "Fetching clip \(index) of \(total) from storage"
         guard let asset = clip.fetchAsset(in: modelContext) else {
             throw AudioExportError.missingAsset(assetId: clip.assetStorageId)
         }
@@ -223,6 +233,7 @@ public actor BackgroundAudioExporter {
         // Create temporary file for the audio
         // IMPORTANT: Do NOT delete this file until after export completes!
         // AVMutableComposition references the file by URL, not by loading it into memory
+        progress.localizedAdditionalDescription = "Writing clip \(index) of \(total) to temp file"
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(fileExtension(for: asset.mimeType))
@@ -233,6 +244,7 @@ public actor BackgroundAudioExporter {
         // (Swift will handle this, but being explicit about the pattern)
 
         // Create AVAsset from the audio file
+        progress.localizedAdditionalDescription = "Processing clip \(index) of \(total)"
         let avAsset = AVURLAsset(url: tempURL)
 
         // Get the audio track from the asset
@@ -249,6 +261,7 @@ public actor BackgroundAudioExporter {
         let insertTime = CMTime(seconds: clip.offset.seconds, preferredTimescale: 600)
 
         // Insert the audio into the composition track
+        progress.localizedAdditionalDescription = "Adding clip \(index) of \(total) to composition"
         try track.insertTimeRange(timeRange, of: sourceTrack, at: insertTime)
 
         // Return the temp URL so caller can keep it alive until export completes
@@ -287,10 +300,16 @@ public actor BackgroundAudioExporter {
         exportSession.outputFileType = .m4a
 
         // Use modern async API for export
+        // Note: AVAssetExportSession internally updates its progress property,
+        // but we can't easily observe it from an actor context without complexity.
+        // The export will report completion when done.
+        progress.localizedAdditionalDescription = "Encoding M4A audio"
+
         try await exportSession.export(to: outputURL, as: .m4a)
 
         // Update progress to complete
         progress.completedUnitCount = 100
+        progress.localizedAdditionalDescription = "Export complete"
     }
 
     // MARK: - Helpers
