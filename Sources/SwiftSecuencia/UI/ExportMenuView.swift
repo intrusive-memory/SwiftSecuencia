@@ -64,8 +64,10 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     /// Optional custom system image for the menu button
     public let systemImage: String
 
-    /// Optional Progress object for tracking export operations
-    public let progress: Progress?
+    /// Optional closure to create Progress objects for tracking export operations
+    /// This closure is called for each export operation, allowing concurrent exports
+    /// to have separate progress tracking
+    public let progressFactory: (() -> Progress)?
 
     // MARK: - Environment
 
@@ -86,17 +88,18 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     ///   - document: The document to export (must conform to ExportableDocument)
     ///   - label: Custom label for the menu button (default: "Share")
     ///   - systemImage: Custom system image for the menu button (default: "square.and.arrow.up")
-    ///   - progress: Optional Progress object for tracking export operations (default: nil)
+    ///   - progressFactory: Optional closure that creates Progress objects for tracking export operations (default: nil)
+    ///                      Called once per export operation to allow concurrent exports with separate progress tracking
     public init(
         document: Document,
         label: String = "Share",
         systemImage: String = "square.and.arrow.up",
-        progress: Progress? = nil
+        progressFactory: (() -> Progress)? = nil
     ) {
         self.document = document
         self.label = label
         self.systemImage = systemImage
-        self.progress = progress
+        self.progressFactory = progressFactory
     }
 
     // MARK: - Body
@@ -191,6 +194,9 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
         let audioFiles = document.audioElements()
 
         do {
+            // Create a new Progress object for this export operation
+            let progress = progressFactory?()
+
             // Set up progress reporting if provided by caller
             if let progress = progress {
                 progress.totalUnitCount = 100
@@ -283,6 +289,9 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
         }
 
         do {
+            // Create a new Progress object for this export operation
+            let progress = progressFactory?()
+
             // Set up progress reporting if provided by caller
             if let progress = progress {
                 progress.totalUnitCount = 100
