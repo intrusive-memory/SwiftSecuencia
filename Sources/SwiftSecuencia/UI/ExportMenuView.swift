@@ -18,7 +18,8 @@ import AppKit
 /// Reusable export menu component for Final Cut Pro and M4A audio exports.
 ///
 /// This component provides a toolbar menu with export options for:
-/// - Export to M4A Audio File (macOS + iOS)
+/// - Export to M4A Audio File - Background (macOS + iOS): UI stays responsive
+/// - Export to M4A Audio File - Fast (macOS + iOS): Maximum speed, blocks UI
 /// - Export to Final Cut Pro (macOS only)
 ///
 /// ## Usage in Toolbar
@@ -75,6 +76,7 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     @State private var exportError: Error?
     @State private var showError = false
     @State private var showM4AExporter = false
+    @State private var useBackgroundExport = true
 
     // MARK: - Initialization
 
@@ -101,17 +103,31 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 
     public var body: some View {
         Menu {
-            // M4A Audio Export (iOS + macOS)
+            // M4A Audio Export - Background (iOS + macOS)
             Button {
                 Task {
+                    useBackgroundExport = true
                     await exportToM4A()
                 }
             } label: {
-                Label("Export to Audio File", systemImage: "waveform")
+                Label("Export to Audio File (Background)", systemImage: "waveform")
+            }
+            .disabled(document.audioElements().isEmpty)
+
+            // M4A Audio Export - Foreground (iOS + macOS)
+            Button {
+                Task {
+                    useBackgroundExport = false
+                    await exportToM4A()
+                }
+            } label: {
+                Label("Export to Audio File (Fast)", systemImage: "bolt.fill")
             }
             .disabled(document.audioElements().isEmpty)
 
             #if os(macOS)
+            Divider()
+
             // Final Cut Pro Export (macOS only)
             Button {
                 Task {
@@ -182,7 +198,9 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             // Set up progress reporting if provided by caller
             if let progress = progress {
                 progress.totalUnitCount = 100
-                progress.localizedDescription = "Exporting to M4A"
+                progress.localizedDescription = useBackgroundExport
+                    ? "Exporting to M4A (Background)"
+                    : "Exporting to M4A (Fast)"
             }
 
             // Phase 1: Build Timeline on Main Thread (30%)
@@ -203,31 +221,35 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
             modelContext.insert(timeline)
             try modelContext.save()
 
-            // Get the persistent ID to pass to background thread
-            let timelineID = timeline.persistentModelID
-
-            // Phase 2: Export to M4A on Background Thread (70%)
-            // Initialize the background exporter - MUST be done on background thread
+            // Phase 2: Export to M4A (70%)
             let exportProgressChild = progress.map {
                 Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 70)
             }
-            let container = modelContext.container
 
-            // Launch background export with high priority
-            // User is actively waiting for export completion
-            // .high priority will use all available CPU cycles without starving UI
-            // Appropriate for I/O-heavy work where speed matters
-            let outputURL = try await Task.detached(priority: .high) {
-                // Create the exporter on THIS background thread
-                let exporter = BackgroundAudioExporter(modelContainer: container)
+            let outputURL: URL
+            if useBackgroundExport {
+                // Background export: Use BackgroundAudioExporter on background thread
+                let timelineID = timeline.persistentModelID
+                let container = modelContext.container
 
-                // Perform the export (reads SwiftData, writes audio to disk)
-                return try await exporter.exportAudio(
-                    timelineID: timelineID,
+                outputURL = try await Task.detached(priority: .high) {
+                    let exporter = BackgroundAudioExporter(modelContainer: container)
+                    return try await exporter.exportAudio(
+                        timelineID: timelineID,
+                        to: destinationURL,
+                        progress: exportProgressChild
+                    )
+                }.value
+            } else {
+                // Foreground export: Use ForegroundAudioExporter on main thread
+                let exporter = ForegroundAudioExporter()
+                outputURL = try await exporter.exportAudio(
+                    timeline: timeline,
+                    modelContext: modelContext,
                     to: destinationURL,
                     progress: exportProgressChild
                 )
-            }.value
+            }
 
             #if os(macOS)
             // Reveal in Finder on macOS (back on main thread)
