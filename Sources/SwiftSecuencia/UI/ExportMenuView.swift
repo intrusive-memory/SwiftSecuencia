@@ -18,9 +18,9 @@ import AppKit
 /// Reusable export menu component for Final Cut Pro and M4A audio exports.
 ///
 /// This component provides a toolbar menu with export options for:
-/// - Export to M4A Audio File - Background (macOS + iOS): UI stays responsive
-/// - Export to M4A Audio File - Fast (macOS + iOS): Maximum speed, blocks UI
-/// - Export to Final Cut Pro (macOS only)
+/// - Export Audio (Background) - macOS + iOS: UI stays responsive
+/// - Export Audio (Foreground) - macOS + iOS: Maximum speed, blocks UI
+/// - Export to Final Cut Pro - macOS only
 ///
 /// ## Usage in Toolbar
 ///
@@ -110,7 +110,7 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
                     await exportToM4A()
                 }
             } label: {
-                Label("Export to Audio File (Background)", systemImage: "waveform")
+                Label("Export Audio (Background)", systemImage: "waveform")
             }
             .disabled(document.audioElements().isEmpty)
 
@@ -121,7 +121,7 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
                     await exportToM4A()
                 }
             } label: {
-                Label("Export to Audio File (Fast)", systemImage: "bolt.fill")
+                Label("Export Audio (Foreground)", systemImage: "bolt.fill")
             }
             .disabled(document.audioElements().isEmpty)
 
@@ -163,9 +163,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
 
     @MainActor
     private func exportToM4A() async {
-        let audioFiles = document.audioElements()
-        guard !audioFiles.isEmpty else { return }
-
         // Show save dialog immediately - no processing yet
         showM4AExporter = true
     }
@@ -192,7 +189,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     @MainActor
     private func performM4AExport(to destinationURL: URL) async {
         let audioFiles = document.audioElements()
-        guard !audioFiles.isEmpty else { return }
 
         do {
             // Set up progress reporting if provided by caller
@@ -200,35 +196,37 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
                 progress.totalUnitCount = 100
                 progress.localizedDescription = useBackgroundExport
                     ? "Exporting to M4A (Background)"
-                    : "Exporting to M4A (Fast)"
-            }
-
-            // Phase 1: Build Timeline on Main Thread (30%)
-            // This stays on main thread - just metadata, no audio data
-            let conversionProgress = progress.map {
-                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 30)
-            }
-
-            let converter = ScreenplayToTimelineConverter()
-            let timeline = try await converter.convertToTimeline(
-                screenplayName: document.exportName,
-                audioElements: audioFiles,
-                videoFormat: .hd1080p(frameRate: .fps24),
-                progress: conversionProgress
-            )
-
-            // Save timeline to SwiftData (main thread)
-            modelContext.insert(timeline)
-            try modelContext.save()
-
-            // Phase 2: Export to M4A (70%)
-            let exportProgressChild = progress.map {
-                Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 70)
+                    : "Exporting to M4A (Foreground)"
             }
 
             let outputURL: URL
+
             if useBackgroundExport {
-                // Background export: Use BackgroundAudioExporter on background thread
+                // Background export: Create Timeline, persist, export on background thread
+                // This path creates a Timeline for potential reuse
+
+                // Phase 1: Build Timeline on Main Thread (30%)
+                let conversionProgress = progress.map {
+                    Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 30)
+                }
+
+                let converter = ScreenplayToTimelineConverter()
+                let timeline = try await converter.convertToTimeline(
+                    screenplayName: document.exportName,
+                    audioElements: audioFiles,
+                    videoFormat: .hd1080p(frameRate: .fps24),
+                    progress: conversionProgress
+                )
+
+                // Save timeline to SwiftData (main thread)
+                modelContext.insert(timeline)
+                try modelContext.save()
+
+                // Phase 2: Export to M4A on background thread (70%)
+                let exportProgressChild = progress.map {
+                    Progress(totalUnitCount: 100, parent: $0, pendingUnitCount: 70)
+                }
+
                 let timelineID = timeline.persistentModelID
                 let container = modelContext.container
 
@@ -241,13 +239,15 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
                     )
                 }.value
             } else {
-                // Foreground export: Use ForegroundAudioExporter on main thread
+                // Foreground export: Skip Timeline creation, export directly (FAST PATH)
+                // This path skips Timeline creation for maximum speed
+
                 let exporter = ForegroundAudioExporter()
-                outputURL = try await exporter.exportAudio(
-                    timeline: timeline,
+                outputURL = try await exporter.exportAudioDirect(
+                    audioElements: audioFiles,
                     modelContext: modelContext,
                     to: destinationURL,
-                    progress: exportProgressChild
+                    progress: progress
                 )
             }
 
@@ -268,7 +268,6 @@ public struct ExportMenuView<Document: ExportableDocument>: View {
     @MainActor
     private func exportToFinalCutPro() async {
         let audioFiles = document.audioElements()
-        guard !audioFiles.isEmpty else { return }
 
         // Show save panel
         let savePanel = NSSavePanel()
