@@ -73,7 +73,7 @@ public actor BackgroundAudioExporter {
             throw AudioExportError.emptyTimeline
         }
 
-        updateProgress(exportProgress, completedUnits: 5, description: nil)
+        await updateProgress(exportProgress, completedUnits: 5, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -81,14 +81,14 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 2: Filter audio clips (5%)
-        updateProgress(exportProgress, completedUnits: nil, description: "Filtering audio clips")
+        await updateProgress(exportProgress, completedUnits: nil, description: "Filtering audio clips")
         let audioClips = try filterAudioClips(timeline.clips)
 
         guard !audioClips.isEmpty else {
             throw AudioExportError.emptyTimeline
         }
 
-        updateProgress(exportProgress, completedUnits: 10, description: nil)
+        await updateProgress(exportProgress, completedUnits: 10, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -96,13 +96,13 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 3: Build composition (30%)
-        updateProgress(exportProgress, completedUnits: nil, description: "Building composition")
+        await updateProgress(exportProgress, completedUnits: nil, description: "Building composition")
         let (composition, tempFiles) = try await buildComposition(
             from: timeline,
             audioClips: audioClips,
             progress: exportProgress
         )
-        updateProgress(exportProgress, completedUnits: 40, description: nil)
+        await updateProgress(exportProgress, completedUnits: 40, description: nil)
 
         // Check for cancellation
         if exportProgress.isCancelled {
@@ -111,7 +111,7 @@ public actor BackgroundAudioExporter {
         }
 
         // Step 4: Export composition (60%)
-        updateProgress(exportProgress, completedUnits: nil, description: "Exporting audio")
+        await updateProgress(exportProgress, completedUnits: nil, description: "Exporting audio")
         do {
             try await exportComposition(
                 composition,
@@ -122,7 +122,7 @@ public actor BackgroundAudioExporter {
             // Clean up temp files after successful export
             cleanupTempFiles(tempFiles)
 
-            updateProgress(exportProgress, completedUnits: 100, description: "Export complete")
+            await updateProgress(exportProgress, completedUnits: 100, description: "Export complete")
 
             return outputURL
         } catch {
@@ -170,7 +170,7 @@ public actor BackgroundAudioExporter {
         let sortedClips = audioClips.sorted { $0.offset < $1.offset }
 
         // Phase 1: Write all audio files to temp storage (in parallel - 15%)
-        updateProgress(progress, completedUnits: nil, description: "Writing audio files to disk")
+        await updateProgress(progress, completedUnits: nil, description: "Writing audio files to disk")
         let tempFiles = try await writeAudioFilesToDisk(
             clips: sortedClips,
             progress: progress
@@ -182,10 +182,10 @@ public actor BackgroundAudioExporter {
             throw AudioExportError.cancelled
         }
 
-        updateProgress(progress, completedUnits: 25, description: nil)
+        await updateProgress(progress, completedUnits: 25, description: nil)
 
         // Phase 2: Build composition from temp files (15%)
-        updateProgress(progress, completedUnits: nil, description: "Building audio composition")
+        await updateProgress(progress, completedUnits: nil, description: "Building audio composition")
         let composition = try await buildCompositionFromFiles(
             clips: sortedClips,
             tempFiles: tempFiles,
@@ -252,8 +252,8 @@ public actor BackgroundAudioExporter {
                 // Update progress for each completed file write
                 let completedCount = tempURLs.count
                 let progressUnits = Int64(10 + Int((Double(completedCount) / Double(clips.count)) * 15))
-                updateProgress(progress, completedUnits: progressUnits,
-                              description: "Wrote \(completedCount) of \(clips.count) audio files")
+                await updateProgress(progress, completedUnits: progressUnits,
+                                    description: "Wrote \(completedCount) of \(clips.count) audio files")
             }
 
             // Return URLs in original clip order
@@ -276,8 +276,8 @@ public actor BackgroundAudioExporter {
                 throw AudioExportError.cancelled
             }
 
-            updateProgress(progress, completedUnits: nil,
-                          description: "Adding clip \(index + 1) of \(clips.count) to composition")
+            await updateProgress(progress, completedUnits: nil,
+                                description: "Adding clip \(index + 1) of \(clips.count) to composition")
 
             // Create a new track for each clip
             guard let compositionTrack = composition.addMutableTrack(
@@ -308,7 +308,7 @@ public actor BackgroundAudioExporter {
 
             // Update progress
             let progressUnits = Int64(25 + Int((Double(index + 1) * clipProgressIncrement)))
-            updateProgress(progress, completedUnits: progressUnits, description: nil)
+            await updateProgress(progress, completedUnits: progressUnits, description: nil)
         }
 
         return composition
@@ -345,16 +345,22 @@ public actor BackgroundAudioExporter {
         exportSession.outputURL = outputURL
         exportSession.outputFileType = .m4a
 
-        // Use modern async API for export
-        // Note: AVAssetExportSession internally updates its progress property,
-        // but we can't easily observe it from an actor context without complexity.
-        // The export will report completion when done.
-        updateProgress(progress, completedUnits: nil, description: "Encoding M4A audio")
+        await updateProgress(progress, completedUnits: nil, description: "Encoding M4A audio")
 
-        try await exportSession.export(to: outputURL, as: .m4a)
+        // Export with progress tracking using modern states API
+        // AVAssetExportSession takes 60% of total time (from 40% to 100%)
+        for await state in exportSession.states(updateInterval: 0.1) {
+            if case .exporting(let exportProgressObj) = state {
+                // Map exportSession.progress (0.0-1.0) to our progress range (40-100)
+                let fractionComplete = exportProgressObj.fractionCompleted
+                let progressUnits = Int64(40 + Int(fractionComplete * 60.0))
+                await updateProgress(progress, completedUnits: progressUnits,
+                                    description: "Encoding M4A audio (\(Int(fractionComplete * 100))%)")
+            }
+        }
 
         // Update progress to complete
-        updateProgress(progress, completedUnits: 100, description: "Export complete")
+        await updateProgress(progress, completedUnits: 100, description: "Export complete")
     }
 
     // MARK: - Helpers
@@ -365,8 +371,8 @@ public actor BackgroundAudioExporter {
     /// when updates are dispatched explicitly to the main actor. This ensures progress
     /// bar updates are visible in the UI.
     ///
-    /// This method uses `Task.detached` to avoid blocking the background export thread
-    /// waiting for MainActor availability. Updates happen asynchronously.
+    /// This method uses `await MainActor.run` to immediately update progress,
+    /// ensuring the UI reflects the current state without delay.
     ///
     /// - Parameters:
     ///   - progress: The Progress object to update
@@ -376,10 +382,10 @@ public actor BackgroundAudioExporter {
         _ progress: Progress,
         completedUnits: Int64? = nil,
         description: String? = nil
-    ) {
-        // Fire-and-forget dispatch to MainActor
-        // Don't await - this prevents blocking the export thread
-        Task { @MainActor in
+    ) async {
+        // Immediate dispatch to MainActor - blocks until update is complete
+        // This ensures UI updates are visible immediately
+        await MainActor.run {
             if let completedUnits = completedUnits {
                 progress.completedUnitCount = completedUnits
             }
