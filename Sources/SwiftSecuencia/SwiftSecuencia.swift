@@ -61,7 +61,7 @@ import Foundation
 /// ```
 public struct SwiftSecuencia {
     /// The current version of the SwiftSecuencia library.
-    public static let version = "1.0.4"
+    public static let version = "1.0.5"
 
     /// The default FCPXML version produced by this library.
     public static let defaultFCPXMLVersion = "1.11"
