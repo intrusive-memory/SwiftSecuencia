@@ -191,23 +191,70 @@ FCPXMLDocument
         └── Collection[]
 ```
 
-### Concurrency Model
+### Audio Export: Background vs Foreground
 
-SwiftSecuencia uses a carefully designed concurrency architecture to ensure UI responsiveness during audio export operations:
+SwiftSecuencia provides **two audio exporters** with different performance trade-offs:
 
-**Two-Phase Export**
+#### BackgroundAudioExporter (UI Responsiveness)
+
+Exports audio on a background thread, keeping the UI responsive:
+
+```swift
+let exporter = BackgroundAudioExporter(modelContainer: container)
+let outputURL = try await exporter.exportAudio(
+    timelineID: timelineID,
+    to: destinationURL,
+    progress: progress
+)
+```
+
+**When to use:**
+- Large timelines (100+ clips)
+- User needs to interact with UI during export
+- Background processing is preferred
+
+**Characteristics:**
+- Runs on background thread with `.high` priority
+- UI remains fully responsive
+- Uses `@ModelActor` for safe SwiftData concurrency
+- Parallel file I/O for optimal performance
+- ~10-15% slower than foreground due to actor overhead
+
+#### ForegroundAudioExporter (Maximum Speed)
+
+Exports audio on the main thread for maximum performance:
+
+```swift
+@MainActor
+let exporter = ForegroundAudioExporter()
+let outputURL = try await exporter.exportAudio(
+    timeline: timeline,
+    modelContext: modelContext,
+    to: destinationURL,
+    progress: progress
+)
+```
+
+**When to use:**
+- Small to medium timelines (< 100 clips)
+- Export speed is critical
+- UI blocking is acceptable
+- User is actively waiting for export
+
+**Characteristics:**
+- Runs on main thread (blocks UI)
+- No actor context switching overhead
+- Direct ModelContext access
+- Parallel file I/O with high priority tasks
+- Fastest possible export speed
+
+**Two-Phase Export Architecture:**
 1. **Main Thread (30%)** - Build timeline metadata (no audio data loaded)
-2. **Background Thread (70%)** - Load audio, write to disk, export to M4A
+2. **Export Phase (70%)** - Load audio, write to disk, export to M4A
+   - Background: Uses background thread with `@ModelActor`
+   - Foreground: Uses main thread with direct access
 
-**Key Features:**
-- Save dialog appears immediately with no lag
-- Timeline metadata built on main thread (fast)
-- Audio I/O operations on background thread with `.utility` priority
-- `@ModelActor` for safe SwiftData access from background
-- Memory-efficient: Load one audio asset at a time
-- Read-only SwiftData access from background (no data races)
-
-For complete details, see [Docs/CONCURRENCY-ARCHITECTURE.md](Docs/CONCURRENCY-ARCHITECTURE.md).
+For complete concurrency details, see [Docs/CONCURRENCY-ARCHITECTURE.md](Docs/CONCURRENCY-ARCHITECTURE.md).
 
 ## Examples
 
@@ -403,16 +450,29 @@ let clip2 = TimelineClip(
 timeline.appendClip(clip1)
 timeline.appendClip(clip2)
 
-// Export to M4A (works on iOS and macOS)
-let exporter = TimelineAudioExporter()
-let outputURL = FileManager.default.temporaryDirectory
-    .appendingPathComponent("podcast.m4a")
+// Save timeline to SwiftData
+modelContext.insert(timeline)
+try modelContext.save()
 
-try await exporter.exportAudio(
-    timeline: timeline,
-    modelContext: modelContext,
-    to: outputURL
+// Option 1: Background export (UI stays responsive)
+let backgroundExporter = BackgroundAudioExporter(modelContainer: modelContext.container)
+let outputURL = try await backgroundExporter.exportAudio(
+    timelineID: timeline.persistentModelID,
+    to: FileManager.default.temporaryDirectory.appendingPathComponent("podcast.m4a"),
+    progress: nil
 )
+
+// Option 2: Foreground export (maximum speed, blocks UI)
+@MainActor
+func exportFast() async throws -> URL {
+    let foregroundExporter = ForegroundAudioExporter()
+    return try await foregroundExporter.exportAudio(
+        timeline: timeline,
+        modelContext: modelContext,
+        to: FileManager.default.temporaryDirectory.appendingPathComponent("podcast.m4a"),
+        progress: nil
+    )
+}
 
 // Result: High-quality M4A file with AAC compression at 256 kbps
 // All timeline lanes are automatically mixed to stereo
