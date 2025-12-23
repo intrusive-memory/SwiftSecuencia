@@ -324,15 +324,10 @@ struct WebVTTGenerator {
 
         // First pass: collect timing and metadata
         for (index, element) in audioElements.enumerated() {
-            // Load audio to get duration
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(element.fileExtension)
-
-            try await element.writeData(to: tempURL)
-
-            let asset = AVURLAsset(url: tempURL)
-            let duration = try await asset.load(.duration).seconds
+            // Get duration directly from metadata to avoid expensive I/O
+            guard let duration = element.durationSeconds else {
+                throw AudioExportError.invalidAudioData(assetId: element.id, reason: "Missing duration metadata")
+            }
 
             let startTime = cumulativeTime
             let endTime = cumulativeTime + duration
@@ -343,9 +338,6 @@ struct WebVTTGenerator {
             cues.append((index: index + 1, start: startTime, end: endTime, character: character, text: text))
 
             cumulativeTime += duration
-
-            // Cleanup
-            try? FileManager.default.removeItem(at: tempURL)
         }
 
         // Second pass: build WebVTT
