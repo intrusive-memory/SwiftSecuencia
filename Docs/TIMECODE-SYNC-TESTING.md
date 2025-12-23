@@ -693,12 +693,12 @@ This testing plan ensures timing data generation meets accuracy, performance, an
         audioElements: audioElements,
         modelContext: modelContext,
         to: outputURL,
-        includeTimingData: true,
+        timingDataFormat: .json,
         progress: nil
     )
 
     // Load timing data
-    let data = try Data(contentsOf: result.timingDataURL!)
+    let data = try Data(contentsOf: result.jsonURL!)
     let timingData = try JSONDecoder().decode(TimingData.self, from: data)
 
     let tolerance = 0.1  // ±100ms
