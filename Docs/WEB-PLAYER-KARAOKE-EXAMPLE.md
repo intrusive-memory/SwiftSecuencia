@@ -209,18 +209,23 @@ class KaraokePlayer {
             if (!trackElement) {
                 console.error('No <track> element found');
                 resolve(); // Resolve anyway to prevent hanging
-                return;
+    waitForTracksReady() {
+        return new Promise((resolve) => {
+            const tracks = this.audio.textTracks;
+            if (tracks.length > 0 && tracks[0].readyState === 2) { // 'loaded'
+                return resolve();
             }
 
-            // Listen for the load event on the track element
-            trackElement.addEventListener('load', () => {
-                resolve();
-            }, { once: true });
-
-            // Fallback: if already loaded but event didn't fire
-            if (trackElement.readyState === 2) { // LOADED = 2
-                resolve();
-            }
+            const onAddTrack = () => {
+                const track = tracks[0];
+                if (track.readyState === 2) {
+                    resolve();
+                } else {
+                    track.addEventListener('load', resolve);
+                }
+                tracks.removeEventListener('addtrack', onAddTrack);
+            };
+            tracks.addEventListener('addtrack', onAddTrack);
         });
     }
 
