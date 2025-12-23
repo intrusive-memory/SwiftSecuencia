@@ -785,13 +785,13 @@ This testing plan ensures timing data generation meets accuracy, performance, an
         audioElements: audioElements,
         modelContext: modelContext,
         to: outputURL,
-        includeTimingData: true,
+        timingDataFormat: .json,
         progress: nil
     )
 
     // Verify timing data generated successfully
-    #expect(result.timingDataURL != nil)
-    let data = try Data(contentsOf: result.timingDataURL!)
+    #expect(result.jsonURL != nil)
+    let data = try Data(contentsOf: result.jsonURL!)
     let timingData = try JSONDecoder().decode(TimingData.self, from: data)
     #expect(timingData.segments.count == 3)
 
