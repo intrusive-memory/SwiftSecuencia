@@ -266,7 +266,7 @@ class KaraokePlayer {
 
     parseVoiceTag(vttText) {
         // Parse WebVTT voice tag: <v CHARACTER>Text</v>
-        const voiceMatch = vttText.match(/<v\s+([^>]+)>([^<]+)<\/v>/);
+        const voiceMatch = vttText.match(/<v\s+([^>]+)>(.*?)<\/v>/);
 
         if (voiceMatch) {
             return {
