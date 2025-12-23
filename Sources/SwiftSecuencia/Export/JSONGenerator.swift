@@ -219,35 +219,26 @@ public struct JSONGenerator: Sendable {
 
     /// Get audio duration from TypedDataStorage element
     ///
-    /// Uses durationSeconds if available, otherwise loads and analyzes audio data.
+    /// Requires durationSeconds metadata to be set. Timing data generation
+    /// requires duration metadata - loading audio files just to get duration
+    /// would add significant I/O overhead (>5% performance impact).
+    ///
+    /// - Parameter element: TypedDataStorage element with durationSeconds set
+    /// - Returns: Duration in seconds
+    /// - Throws: `MissingDurationMetadataError` if durationSeconds is nil
     @MainActor
     private func getAudioDuration(for element: TypedDataStorage) async throws -> TimeInterval {
-        // Use stored duration if available
-        if let duration = element.durationSeconds {
-            return duration
+        // Require duration metadata for timing data generation
+        guard let duration = element.durationSeconds else {
+            struct MissingDurationMetadataError: Error, CustomStringConvertible {
+                let elementId: UUID
+                var description: String {
+                    "Timing data generation requires durationSeconds metadata. Element \(elementId) is missing duration. Ensure audio elements have duration set before generating timing data."
+                }
+            }
+            throw MissingDurationMetadataError(elementId: element.id)
         }
 
-        // Fall back to analyzing audio data
-        guard let audioData = element.binaryValue else {
-            struct MissingAudioDataError: Error {}
-            throw MissingAudioDataError()
-        }
-
-        // Write to temporary file
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("m4a")
-
-        try audioData.write(to: tempURL)
-
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
-        }
-
-        // Create AVAsset and get duration
-        let asset = AVURLAsset(url: tempURL)
-        let duration = try await asset.load(.duration)
-
-        return duration.seconds
+        return duration
     }
 }
