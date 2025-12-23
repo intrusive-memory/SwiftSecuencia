@@ -195,15 +195,31 @@ class KaraokePlayer {
 
     waitForTracksReady() {
         return new Promise((resolve) => {
-            if (this.audio.textTracks.length > 0 &&
-                this.audio.textTracks[0].cues &&
-                this.audio.textTracks[0].cues.length > 0) {
+            const track = this.audio.textTracks[0];
+
+            // Check if cues are already loaded
+            if (track && track.cues && track.cues.length > 0) {
                 resolve();
-            } else {
-                this.audio.addEventListener('loadedmetadata', () => {
-                    // Wait a bit for cues to load
-                    setTimeout(resolve, 100);
-                });
+                return;
+            }
+
+            // Get the <track> element (not TextTrack object)
+            const trackElement = this.audio.querySelector('track');
+
+            if (!trackElement) {
+                console.error('No <track> element found');
+                resolve(); // Resolve anyway to prevent hanging
+                return;
+            }
+
+            // Listen for the load event on the track element
+            trackElement.addEventListener('load', () => {
+                resolve();
+            }, { once: true });
+
+            // Fallback: if already loaded but event didn't fire
+            if (trackElement.readyState === 2) { // LOADED = 2
+                resolve();
             }
         });
     }
@@ -614,7 +630,38 @@ document.querySelectorAll('.line').forEach(line => {
 
 ## Common Issues & Solutions
 
-### Issue 1: Cues Not Firing
+### Issue 1: Cues Not Loading (Race Condition)
+
+**Problem**: Cues aren't ready when initializing, causing the player to fail
+
+**Cause**: Using `setTimeout` with a fixed delay creates a race condition - cues may take longer to load on slow connections or with large VTT files
+
+**Solution**: Listen for the `load` event on the `<track>` element
+
+```javascript
+waitForTracksReady() {
+    return new Promise((resolve) => {
+        const trackElement = this.audio.querySelector('track');
+
+        // Listen for load event (no race condition)
+        trackElement.addEventListener('load', () => {
+            resolve();
+        }, { once: true });
+
+        // Fallback: check if already loaded
+        if (trackElement.readyState === 2) { // LOADED = 2
+            resolve();
+        }
+    });
+}
+```
+
+**Why this works:**
+- Event-driven: No arbitrary delays
+- Reliable: Works regardless of file size or network speed
+- Standard: Uses proper `HTMLTrackElement.readyState` API
+
+### Issue 2: Cues Not Firing
 
 **Problem**: `cuechange` events don't fire
 
@@ -624,7 +671,7 @@ document.querySelectorAll('.line').forEach(line => {
 track.mode = 'hidden'; // Required for events
 ```
 
-### Issue 2: CORS Errors
+### Issue 3: CORS Errors
 
 **Problem**: VTT file not loading due to CORS
 
@@ -635,7 +682,7 @@ Access-Control-Allow-Origin: *
 Content-Type: text/vtt
 ```
 
-### Issue 3: Voice Tags Not Parsing
+### Issue 4: Voice Tags Not Parsing
 
 **Problem**: Voice tags show as raw text
 
