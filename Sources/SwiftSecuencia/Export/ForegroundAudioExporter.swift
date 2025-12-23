@@ -131,13 +131,18 @@ public struct ForegroundAudioExporter {
             // Generate timing data if requested
             if timingDataFormat != .none {
                 exportProgress.localizedAdditionalDescription = "Generating timing data"
-                try await generateTimingData(
-                    audioElements: audioFiles,
-                    audioFileName: outputURL.lastPathComponent,
-                    outputDirectory: outputURL.deletingLastPathComponent(),
-                    format: timingDataFormat,
-                    modelContext: modelContext
-                )
+                do {
+                    try await generateTimingData(
+                        audioElements: audioFiles,
+                        audioFileName: outputURL.lastPathComponent,
+                        outputDirectory: outputURL.deletingLastPathComponent(),
+                        format: timingDataFormat,
+                        modelContext: modelContext
+                    )
+                } catch {
+                    // Log warning but continue - timing data generation should not fail the export
+                    print("Warning: Failed to generate timing data: \(error)")
+                }
             }
 
             exportProgress.completedUnitCount = 100
@@ -230,13 +235,18 @@ public struct ForegroundAudioExporter {
             // Generate timing data if requested
             if timingDataFormat != .none {
                 exportProgress.localizedAdditionalDescription = "Generating timing data"
-                try await generateTimingData(
-                    timeline: timeline,
-                    audioFileName: outputURL.lastPathComponent,
-                    outputDirectory: outputURL.deletingLastPathComponent(),
-                    format: timingDataFormat,
-                    modelContext: modelContext
-                )
+                do {
+                    try await generateTimingData(
+                        timeline: timeline,
+                        audioFileName: outputURL.lastPathComponent,
+                        outputDirectory: outputURL.deletingLastPathComponent(),
+                        format: timingDataFormat,
+                        modelContext: modelContext
+                    )
+                } catch {
+                    // Log warning but continue - timing data generation should not fail the export
+                    print("Warning: Failed to generate timing data: \(error)")
+                }
             }
 
             exportProgress.completedUnitCount = 100
