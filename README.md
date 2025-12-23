@@ -26,19 +26,23 @@ try await exporter.exportBundle(timeline: timeline, ...)
 ```
 
 ### 3. 🎵 Export to M4A Audio (macOS + iOS)
-Convert timelines to high-quality M4A audio with **two performance modes**:
+Convert timelines to high-quality M4A audio with **two performance modes** and **optional timing data** for karaoke-style text sync:
 
 - **Background Export** - UI stays responsive, ideal for large timelines
 - **Foreground Export** - Maximum speed (15-20% faster), blocks UI
+- **Timing Data** - WebVTT/JSON for synchronized text display (optional)
 
 ```swift
 // Background: UI responsive
 let exporter = BackgroundAudioExporter(modelContainer: container)
 try await exporter.exportAudio(timelineID: id, to: url)
 
-// Foreground: Maximum speed
+// Foreground: Maximum speed + timing data
 let exporter = ForegroundAudioExporter()
-try await exporter.exportAudio(timeline: timeline, ...)
+try await exporter.exportAudio(
+    timeline: timeline,
+    timingDataFormat: .webvtt  // Optional: .json, .both, .none
+)
 ```
 
 ---
@@ -299,6 +303,66 @@ let outputURL = try await exporter.exportAudio(
 - ⚠️ Higher memory usage (all audio loaded at once)
 
 **Performance:** ~10 seconds for 50 clips, 2.5 minutes duration
+
+#### Timing Data Export (WebVTT & JSON)
+
+Both audio exporters support **optional timing data generation** for karaoke-style text synchronization in web players:
+
+```swift
+@MainActor
+let exporter = ForegroundAudioExporter()
+let outputURL = try await exporter.exportAudioDirect(
+    audioElements: audioFiles,
+    modelContext: modelContext,
+    to: destinationURL,
+    timingDataFormat: .webvtt  // Or .json, .both, .none (default)
+)
+// Creates: screenplay.m4a + screenplay.vtt
+```
+
+**Supported Formats:**
+- **`.webvtt`** - W3C-compliant WebVTT for browser TextTrack API (±10ms precision)
+- **`.json`** - Structured JSON timing data for custom parsers
+- **`.both`** - Generate both WebVTT and JSON files
+- **`.none`** - No timing data (default)
+
+**File Naming:**
+- WebVTT: `screenplay.vtt` (replaces .m4a extension)
+- JSON: `screenplay.m4a.timing.json` (appends .timing.json)
+
+**Use Case:** Enable synchronized "follow along" text display in web players, perfect for screenplay/podcast narration where text highlights in sync with audio playback.
+
+**WebVTT Example Output:**
+```vtt
+WEBVTT
+
+00:00:00.000 --> 00:00:02.500
+<v ALICE>Hello, world!</v>
+
+00:00:02.500 --> 00:00:05.000
+<v BOB>How are you today?</v>
+```
+
+**JSON Example Output:**
+```json
+{
+  "audioFile": "screenplay.m4a",
+  "duration": 5.0,
+  "segments": [
+    {
+      "id": "uuid-1",
+      "startTime": 0.0,
+      "endTime": 2.5,
+      "text": "Hello, world!",
+      "metadata": {
+        "character": "ALICE",
+        "lane": 0
+      }
+    }
+  ],
+  "version": "1.0"
+}
+```
 
 #### Technical Details
 

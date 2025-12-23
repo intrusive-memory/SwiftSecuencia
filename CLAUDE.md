@@ -312,6 +312,19 @@ extension AssetClip: FCPXMLElement {
 - [x] 237 total tests passing
 - **Status**: v1.0.7 (December 2025)
 
+### Phase 9: Timing Data Export for Karaoke-Style Sync (✅ COMPLETED)
+- [x] WebVTT generator for W3C-compliant timing data
+- [x] JSON generator for structured timing data
+- [x] Integration into `ForegroundAudioExporter` via `timingDataFormat` parameter
+- [x] Support for 4 export formats: `.none`, `.webvtt`, `.json`, `.both`
+- [x] File naming conventions: `.vtt` for WebVTT, `.timing.json` for JSON
+- [x] `@MainActor` concurrency safety for all generator methods
+- [x] Clip ordering fix using `timeline.sortedClips`
+- [x] 6 comprehensive integration tests (WebVTT, JSON, both, none)
+- [x] 277 total tests passing
+- **Status**: Phase 9 complete (December 2025)
+- **Use case**: Karaoke-style text synchronization in web players using TextTrack API (±10ms precision)
+
 ## Audio Export: Foreground vs Background
 
 SwiftSecuencia provides two audio exporters with different performance trade-offs and architectures:
