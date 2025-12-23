@@ -25,7 +25,7 @@ struct TimingDataFormatTests {
         // Verify Sendable conformance compiles
         let format: TimingDataFormat = .webvtt
         Task {
-            let _ = format  // Can be captured in Task
+            _ = format  // Can be captured in Task
         }
     }
 

@@ -49,7 +49,6 @@ struct ForegroundExporterTimingDataTests {
 
     // MARK: - Tests
 
-
     @Test("Direct export generates WebVTT file")
     func directExportGeneratesWebVTT() async throws {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
