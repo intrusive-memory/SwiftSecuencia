@@ -31,6 +31,7 @@ public struct JSONGenerator: Sendable {
     ///   - modelContext: SwiftData context for fetching assets
     /// - Returns: TimingData structure ready for JSON serialization
     /// - Throws: Asset fetching errors
+    @MainActor
     public func generateTimingData(
         from timeline: Timeline,
         audioFileName: String,
@@ -39,11 +40,11 @@ public struct JSONGenerator: Sendable {
         var segments: [TimingSegment] = []
 
         // Calculate total duration from timeline clips
-        let totalDuration = timeline.clips.map { ($0.offset + $0.duration).seconds }
+        let totalDuration = timeline.sortedClips.map { ($0.offset + $0.duration).seconds }
             .max() ?? 0.0
 
         // Iterate through timeline clips in order
-        for clip in timeline.clips {
+        for clip in timeline.sortedClips {
             // Fetch asset metadata
             guard let asset = clip.fetchAsset(in: modelContext) else {
                 continue  // Skip clips without valid assets
@@ -91,6 +92,7 @@ public struct JSONGenerator: Sendable {
     ///   - modelContext: SwiftData context for asset operations
     /// - Returns: TimingData structure ready for JSON serialization
     /// - Throws: Audio processing errors
+    @MainActor
     public func generateTimingData(
         from audioElements: [TypedDataStorage],
         audioFileName: String,
@@ -147,6 +149,7 @@ public struct JSONGenerator: Sendable {
     ///   - modelContext: SwiftData context for fetching assets
     /// - Returns: JSON string with pretty-printed, sorted keys
     /// - Throws: Encoding or asset fetching errors
+    @MainActor
     public func generateJSON(
         from timeline: Timeline,
         audioFileName: String,
@@ -178,6 +181,7 @@ public struct JSONGenerator: Sendable {
     ///   - modelContext: SwiftData context for asset operations
     /// - Returns: JSON string with pretty-printed, sorted keys
     /// - Throws: Encoding or audio processing errors
+    @MainActor
     public func generateJSON(
         from audioElements: [TypedDataStorage],
         audioFileName: String,
@@ -216,6 +220,7 @@ public struct JSONGenerator: Sendable {
     /// Get audio duration from TypedDataStorage element
     ///
     /// Uses durationSeconds if available, otherwise loads and analyzes audio data.
+    @MainActor
     private func getAudioDuration(for element: TypedDataStorage) async throws -> TimeInterval {
         // Use stored duration if available
         if let duration = element.durationSeconds {

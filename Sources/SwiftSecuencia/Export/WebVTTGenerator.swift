@@ -30,11 +30,12 @@ public struct WebVTTGenerator: Sendable {
     ///   - modelContext: SwiftData context for fetching assets
     /// - Returns: WebVTT string with timing cues and voice tags
     /// - Throws: `FCPXMLExportError` if asset fetching fails
+    @MainActor
     public func generateWebVTT(from timeline: Timeline, modelContext: ModelContext) async throws -> String {
         var elements: [WebVTT.Element] = []
 
         // Iterate through timeline clips in order
-        for clip in timeline.clips {
+        for clip in timeline.sortedClips {
             // Fetch asset metadata
             guard let asset = clip.fetchAsset(in: modelContext) else {
                 continue  // Skip clips without valid assets
@@ -75,6 +76,7 @@ public struct WebVTTGenerator: Sendable {
     ///   - modelContext: SwiftData context for asset operations
     /// - Returns: WebVTT string with timing cues and voice tags
     /// - Throws: Audio processing errors
+    @MainActor
     public func generateWebVTT(from audioElements: [TypedDataStorage], modelContext: ModelContext) async throws -> String {
         var elements: [WebVTT.Element] = []
         var currentTime = 0.0
@@ -147,6 +149,7 @@ public struct WebVTTGenerator: Sendable {
     /// Get audio duration from TypedDataStorage element
     ///
     /// Uses durationSeconds if available, otherwise loads and analyzes audio data.
+    @MainActor
     private func getAudioDuration(for element: TypedDataStorage) async throws -> TimeInterval {
         // Use stored duration if available
         if let duration = element.durationSeconds {

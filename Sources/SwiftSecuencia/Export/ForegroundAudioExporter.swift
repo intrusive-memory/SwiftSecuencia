@@ -65,6 +65,7 @@ public struct ForegroundAudioExporter {
     ///   - audioElements: Array of TypedDataStorage with audio content
     ///   - modelContext: SwiftData ModelContext for asset access
     ///   - outputURL: Destination file URL for the M4A file
+    ///   - timingDataFormat: Format for timing data export (default: .none)
     ///   - progress: Optional Progress object for tracking
     /// - Returns: URL of the created M4A file
     /// - Throws: AudioExportError if export fails
@@ -72,6 +73,7 @@ public struct ForegroundAudioExporter {
         audioElements: [TypedDataStorage],
         modelContext: ModelContext,
         to outputURL: URL,
+        timingDataFormat: TimingDataFormat = .none,
         progress: Progress? = nil
     ) async throws -> URL {
         // Set up progress tracking
@@ -124,6 +126,20 @@ public struct ForegroundAudioExporter {
             // Clean up temp files after successful export
             cleanupTempFiles(tempFiles)
 
+            exportProgress.completedUnitCount = 90
+
+            // Generate timing data if requested
+            if timingDataFormat != .none {
+                exportProgress.localizedAdditionalDescription = "Generating timing data"
+                try await generateTimingData(
+                    audioElements: audioFiles,
+                    audioFileName: outputURL.lastPathComponent,
+                    outputDirectory: outputURL.deletingLastPathComponent(),
+                    format: timingDataFormat,
+                    modelContext: modelContext
+                )
+            }
+
             exportProgress.completedUnitCount = 100
             exportProgress.localizedAdditionalDescription = "Export complete"
 
@@ -151,6 +167,7 @@ public struct ForegroundAudioExporter {
     ///   - timeline: The Timeline to export (main thread)
     ///   - modelContext: SwiftData ModelContext (main thread)
     ///   - outputURL: Destination file URL for the M4A file
+    ///   - timingDataFormat: Format for timing data export (default: .none)
     ///   - progress: Optional Progress object for tracking
     /// - Returns: URL of the created M4A file
     /// - Throws: AudioExportError if export fails
@@ -158,6 +175,7 @@ public struct ForegroundAudioExporter {
         timeline: Timeline,
         modelContext: ModelContext,
         to outputURL: URL,
+        timingDataFormat: TimingDataFormat = .none,
         progress: Progress? = nil
     ) async throws -> URL {
         // Set up progress tracking
@@ -206,6 +224,20 @@ public struct ForegroundAudioExporter {
 
             // Clean up temp files after successful export
             cleanupTempFiles(tempFiles)
+
+            exportProgress.completedUnitCount = 90
+
+            // Generate timing data if requested
+            if timingDataFormat != .none {
+                exportProgress.localizedAdditionalDescription = "Generating timing data"
+                try await generateTimingData(
+                    timeline: timeline,
+                    audioFileName: outputURL.lastPathComponent,
+                    outputDirectory: outputURL.deletingLastPathComponent(),
+                    format: timingDataFormat,
+                    modelContext: modelContext
+                )
+            }
 
             exportProgress.completedUnitCount = 100
             exportProgress.localizedAdditionalDescription = "Export complete"
@@ -631,5 +663,179 @@ public struct ForegroundAudioExporter {
         case "aac": return "aac"
         default: return subtype
         }
+    }
+
+    // MARK: - Timing Data Generation
+
+    /// Generates timing data from Timeline and writes to files.
+    @MainActor
+    private func generateTimingData(
+        timeline: Timeline,
+        audioFileName: String,
+        outputDirectory: URL,
+        format: TimingDataFormat,
+        modelContext: ModelContext
+    ) async throws {
+        switch format {
+        case .none:
+            return
+
+        case .webvtt:
+            try await generateWebVTT(
+                timeline: timeline,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+
+        case .json:
+            try await generateJSON(
+                timeline: timeline,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+
+        case .both:
+            try await generateWebVTT(
+                timeline: timeline,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+            try await generateJSON(
+                timeline: timeline,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+        }
+    }
+
+    /// Generates timing data from audio elements and writes to files.
+    @MainActor
+    private func generateTimingData(
+        audioElements: [TypedDataStorage],
+        audioFileName: String,
+        outputDirectory: URL,
+        format: TimingDataFormat,
+        modelContext: ModelContext
+    ) async throws {
+        switch format {
+        case .none:
+            return
+
+        case .webvtt:
+            try await generateWebVTT(
+                audioElements: audioElements,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+
+        case .json:
+            try await generateJSON(
+                audioElements: audioElements,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+
+        case .both:
+            try await generateWebVTT(
+                audioElements: audioElements,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+            try await generateJSON(
+                audioElements: audioElements,
+                audioFileName: audioFileName,
+                outputDirectory: outputDirectory,
+                modelContext: modelContext
+            )
+        }
+    }
+
+    /// Generates and writes WebVTT file from Timeline.
+    @MainActor
+    private func generateWebVTT(
+        timeline: Timeline,
+        audioFileName: String,
+        outputDirectory: URL,
+        modelContext: ModelContext
+    ) async throws {
+        let generator = WebVTTGenerator()
+        let webvtt = try await generator.generateWebVTT(from: timeline, modelContext: modelContext)
+
+        // Write to .vtt file
+        let vttURL = outputDirectory
+            .appendingPathComponent(audioFileName)
+            .deletingPathExtension()
+            .appendingPathExtension("vtt")
+
+        try webvtt.write(to: vttURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Generates and writes WebVTT file from audio elements.
+    @MainActor
+    private func generateWebVTT(
+        audioElements: [TypedDataStorage],
+        audioFileName: String,
+        outputDirectory: URL,
+        modelContext: ModelContext
+    ) async throws {
+        let generator = WebVTTGenerator()
+        let webvtt = try await generator.generateWebVTT(from: audioElements, modelContext: modelContext)
+
+        // Write to .vtt file
+        let vttURL = outputDirectory
+            .appendingPathComponent(audioFileName)
+            .deletingPathExtension()
+            .appendingPathExtension("vtt")
+
+        try webvtt.write(to: vttURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Generates and writes JSON file from Timeline.
+    @MainActor
+    private func generateJSON(
+        timeline: Timeline,
+        audioFileName: String,
+        outputDirectory: URL,
+        modelContext: ModelContext
+    ) async throws {
+        let generator = JSONGenerator()
+        let json = try await generator.generateJSON(
+            from: timeline,
+            audioFileName: audioFileName,
+            modelContext: modelContext
+        )
+
+        // Write to .timing.json file
+        let jsonURL = TimingData.fileURL(for: outputDirectory.appendingPathComponent(audioFileName))
+
+        try json.write(to: jsonURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Generates and writes JSON file from audio elements.
+    @MainActor
+    private func generateJSON(
+        audioElements: [TypedDataStorage],
+        audioFileName: String,
+        outputDirectory: URL,
+        modelContext: ModelContext
+    ) async throws {
+        let generator = JSONGenerator()
+        let json = try await generator.generateJSON(
+            from: audioElements,
+            audioFileName: audioFileName,
+            modelContext: modelContext
+        )
+
+        // Write to .timing.json file
+        let jsonURL = TimingData.fileURL(for: outputDirectory.appendingPathComponent(audioFileName))
+
+        try json.write(to: jsonURL, atomically: true, encoding: .utf8)
     }
 }
