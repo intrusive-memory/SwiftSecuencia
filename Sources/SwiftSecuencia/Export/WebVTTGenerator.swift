@@ -1,5 +1,5 @@
 import Foundation
-import WebVTTParser
+import WebVTT
 import SwiftData
 import SwiftCompartido
 import AVFoundation
@@ -32,7 +32,7 @@ public struct WebVTTGenerator: Sendable {
     /// - Throws: `FCPXMLExportError` if asset fetching fails
     @MainActor
     public func generateWebVTT(from timeline: Timeline, modelContext: ModelContext) async throws -> String {
-        var elements: [WebVTT.Element] = []
+        var webVTT = WebVTT()
 
         // Iterate through timeline clips in order
         for clip in timeline.sortedClips {
@@ -49,24 +49,21 @@ public struct WebVTTGenerator: Sendable {
             let character = extractCharacter(from: asset)
             let text = extractText(from: asset)
 
-            // Build cue payload
-            let payload = buildCuePayload(text: text, character: character)
+            // Build cue text with voice tags if needed
+            let cueText = buildCueText(text: text, character: character)
 
             // Create WebVTT cue
-            let metadata = WebVTT.CueMetadata(
+            let cue = WebVTT.Cue(
                 identifier: clip.id.uuidString,
-                timing: startTime...endTime
+                startTime: WebVTT.Timestamp(seconds: startTime),
+                endTime: WebVTT.Timestamp(seconds: endTime),
+                text: cueText
             )
-            let cue = WebVTT.Cue(metadata: metadata, payload: payload)
-            elements.append(.cue(cue))
+            webVTT.cues.append(cue)
         }
 
-        // Build WebVTT document
-        let webvtt = WebVTT(elements: elements)
-
         // Serialize to string
-        let parser = WebVTTParser()
-        return try parser.print(webvtt)
+        return webVTT.description
     }
 
     /// Generate WebVTT from audio elements (direct export)
@@ -78,7 +75,7 @@ public struct WebVTTGenerator: Sendable {
     /// - Throws: Audio processing errors
     @MainActor
     public func generateWebVTT(from audioElements: [TypedDataStorage], modelContext: ModelContext) async throws -> String {
-        var elements: [WebVTT.Element] = []
+        var webVTT = WebVTT()
         var currentTime = 0.0
 
         // Build cues sequentially from audio elements
@@ -93,26 +90,23 @@ public struct WebVTTGenerator: Sendable {
             let character = extractCharacter(from: element)
             let text = extractText(from: element)
 
-            // Build cue payload
-            let payload = buildCuePayload(text: text, character: character)
+            // Build cue text with voice tags if needed
+            let cueText = buildCueText(text: text, character: character)
 
             // Create WebVTT cue
-            let metadata = WebVTT.CueMetadata(
+            let cue = WebVTT.Cue(
                 identifier: element.id.uuidString,
-                timing: startTime...endTime
+                startTime: WebVTT.Timestamp(seconds: startTime),
+                endTime: WebVTT.Timestamp(seconds: endTime),
+                text: cueText
             )
-            let cue = WebVTT.Cue(metadata: metadata, payload: payload)
-            elements.append(.cue(cue))
+            webVTT.cues.append(cue)
 
             currentTime = endTime
         }
 
-        // Build WebVTT document
-        let webvtt = WebVTT(elements: elements)
-
         // Serialize to string
-        let parser = WebVTTParser()
-        return try parser.print(webvtt)
+        return webVTT.description
     }
 
     // MARK: - Private Helpers
@@ -127,22 +121,19 @@ public struct WebVTTGenerator: Sendable {
         asset.prompt.isEmpty ? nil : asset.prompt
     }
 
-    /// Build cue payload with optional voice tags
-    private func buildCuePayload(text: String?, character: String?) -> WebVTT.CuePayload {
+    /// Build cue text with optional voice tags
+    ///
+    /// WebVTT voice tags format: `<v VoiceName>text</v>`
+    /// See: https://www.w3.org/TR/webvtt1/#webvtt-cue-voice-span
+    private func buildCueText(text: String?, character: String?) -> String {
         let textContent = text ?? ""
 
         if let character = character {
             // Use voice tag for character attribution
-            return WebVTT.CuePayload(components: [
-                .voice(name: character, children: [
-                    .plain(text: textContent)
-                ])
-            ])
+            return "<v \(character)>\(textContent)</v>"
         } else {
             // Plain text without voice tag
-            return WebVTT.CuePayload(components: [
-                .plain(text: textContent)
-            ])
+            return textContent
         }
     }
 

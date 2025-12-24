@@ -23,7 +23,7 @@ let package = Package(
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
         .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
         .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
-        .package(url: "https://github.com/mihai8804858/swift-webvtt-parser.git", from: "1.0.0"),
+        .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     ],
     targets: [
         .target(
@@ -41,7 +41,7 @@ let package = Package(
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
                 .product(name: "SwiftFijos", package: "SwiftFijos"),  // DTD validation macOS-only
                 .product(name: "SwiftTimecode", package: "swift-timecode"),
-                .product(name: "WebVTTParser", package: "swift-webvtt-parser"),
+                .product(name: "WebVTT", package: "WebVTT"),
             ],
             path: "Sources/SwiftSecuencia",
             swiftSettings: [
