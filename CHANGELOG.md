@@ -5,6 +5,25 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-12-24
+
+### Fixed
+- **WebVTT Dependency**: Replaced `swift-webvtt-parser` with `mattt/WebVTT` to eliminate macro dependencies
+  - Fixes Xcode Cloud build failures with "Macro 'CasePathsMacros' must be enabled"
+  - Zero external dependencies (no macro trust issues)
+  - Simpler API with same WebVTT format compatibility
+- **WebVTT Character Escaping**: Added W3C-compliant special character escaping in cue text
+  - Escape `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`
+  - Sanitize character names in voice tags to prevent malformed WebVTT
+  - Per [W3C WebVTT Cue Text spec](https://www.w3.org/TR/webvtt1/#webvtt-cue-text)
+- **WebVTT API Usage**: Corrected API calls after library switch
+  - Use `Timestamp(totalMilliseconds:)` for timing
+  - Set `cue.id` property after initialization
+  - Proper initializer signature: `Cue(startTime:endTime:text:)`
+
+### Changed
+- **Package Dependency**: `swift-webvtt-parser` → `mattt/WebVTT` (v1.0.0+)
+
 ## [1.0.3] - 2025-12-07
 
 ### Added
@@ -156,6 +175,7 @@ SwiftSecuencia v1.0.0 is **production-ready** for generating Final Cut Pro timel
 - Confirm audio plays and mixes properly
 - Report any issues on GitHub
 
+[1.0.7]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.7
 [1.0.3]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.3
 [1.0.2]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.2
 [1.0.1]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.1
