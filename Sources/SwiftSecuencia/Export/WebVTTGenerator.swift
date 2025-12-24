@@ -53,12 +53,12 @@ public struct WebVTTGenerator: Sendable {
             let cueText = buildCueText(text: text, character: character)
 
             // Create WebVTT cue
-            let cue = WebVTT.Cue(
-                identifier: clip.id.uuidString,
-                startTime: WebVTT.Timestamp(seconds: startTime),
-                endTime: WebVTT.Timestamp(seconds: endTime),
+            var cue = WebVTT.Cue(
+                startTime: WebVTT.Timestamp(totalMilliseconds: Int(startTime * 1000)),
+                endTime: WebVTT.Timestamp(totalMilliseconds: Int(endTime * 1000)),
                 text: cueText
             )
+            cue.id = clip.id.uuidString
             webVTT.cues.append(cue)
         }
 
@@ -94,12 +94,12 @@ public struct WebVTTGenerator: Sendable {
             let cueText = buildCueText(text: text, character: character)
 
             // Create WebVTT cue
-            let cue = WebVTT.Cue(
-                identifier: element.id.uuidString,
-                startTime: WebVTT.Timestamp(seconds: startTime),
-                endTime: WebVTT.Timestamp(seconds: endTime),
+            var cue = WebVTT.Cue(
+                startTime: WebVTT.Timestamp(totalMilliseconds: Int(startTime * 1000)),
+                endTime: WebVTT.Timestamp(totalMilliseconds: Int(endTime * 1000)),
                 text: cueText
             )
+            cue.id = element.id.uuidString
             webVTT.cues.append(cue)
 
             currentTime = endTime
@@ -125,15 +125,29 @@ public struct WebVTTGenerator: Sendable {
     ///
     /// WebVTT voice tags format: `<v VoiceName>text</v>`
     /// See: https://www.w3.org/TR/webvtt1/#webvtt-cue-voice-span
+    ///
+    /// Per W3C WebVTT spec, special characters (&, <, >) must be escaped in cue text
+    /// to prevent malformed WebVTT files and parsing errors.
     private func buildCueText(text: String?, character: String?) -> String {
         let textContent = text ?? ""
 
+        // Per WebVTT spec, '&', '<', and '>' must be escaped in cue text
+        let escapedTextContent = textContent
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+
         if let character = character {
+            // Sanitize character name to prevent breaking voice tag structure
+            let sanitizedCharacter = character
+                .replacingOccurrences(of: ">", with: "")
+                .replacingOccurrences(of: "<", with: "")
+
             // Use voice tag for character attribution
-            return "<v \(character)>\(textContent)</v>"
+            return "<v \(sanitizedCharacter)>\(escapedTextContent)</v>"
         } else {
             // Plain text without voice tag
-            return textContent
+            return escapedTextContent
         }
     }
 
