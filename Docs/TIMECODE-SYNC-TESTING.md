@@ -818,17 +818,17 @@ This testing plan ensures timing data generation meets accuracy, performance, an
         audioElements: audioElements,
         modelContext: modelContext,
         to: outputURL,
-        includeTimingData: true,
+        timingDataFormat: .json,
         progress: nil
     )
 
     // Verify timing data
-    let data = try Data(contentsOf: result.timingDataURL!)
+    let data = try Data(contentsOf: result.jsonURL!)
     let timingData = try JSONDecoder().decode(TimingData.self, from: data)
     #expect(timingData.segments.count == 100)
 
     // Verify file size is reasonable (< 100KB for 100 clips)
-    let fileSize = try FileManager.default.attributesOfItem(atPath: result.timingDataURL!.path)[.size] as! Int
+    let fileSize = try FileManager.default.attributesOfItem(atPath: result.jsonURL!.path)[.size] as! Int
     #expect(fileSize < 100_000)
 
     // Cleanup
