@@ -6,7 +6,7 @@ SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X t
 
 **Platforms**:
 - **macOS 26.0+** - Full support (FCPXML export + audio export)
-- **iOS 26.0+** - Partial support (audio export only via `TimelineAudioExporter`)
+- **iOS 26.0+** - Partial support (audio export only via `BackgroundAudioExporter` and `ForegroundAudioExporter`)
 
 ## Pipeline Integration
 
