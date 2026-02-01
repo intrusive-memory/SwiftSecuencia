@@ -5,6 +5,29 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-01-31
+
+### Added
+- **Dual Dialogue Support**: Simultaneous speaker placement in timelines
+  - `ScreenplayMetadata` model for screenplay-specific clip metadata
+  - Dual dialogue grouping and lane assignment in `ScreenplayToTimelineConverter`
+  - Automatic offset advancement by max duration within dialogue groups
+  - Support for 2+ simultaneous speakers (dual, triple, N-way dialogue)
+  - Metadata preservation in `TimelineClip` for FCPXML export
+  - Optional `audioMetadata` parameter in `convertToTimeline()`
+  - `processWithDualDialogue()` and `processSequential()` helper methods
+  - 16 ScreenplayMetadata tests (encoding, conversion, edge cases)
+  - 8 DualDialogIntegrationTests (placement, lanes, offset calculation)
+  - DualDialogFixtures helper module for testing
+  - 301 total tests passing (277 original + 24 new)
+
+### Changed
+- `ConverterError` now conforms to `Equatable` and includes `metadataMismatch` case
+- `convertToTimeline()` accepts optional `audioMetadata` parameter for dual dialogue
+
+### Enhanced
+- **Mid-Century Modern Icon**: Updated app icon for SwiftSecuencia
+
 ## [1.0.7] - 2025-12-24
 
 ### Fixed

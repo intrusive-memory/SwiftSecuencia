@@ -90,7 +90,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "1.0.7")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "1.0.8")
 ]
 ```
 
@@ -179,6 +179,50 @@ try document.write(to: URL(fileURLWithPath: "/path/to/output.fcpxml"))
 
 ## Features
 
+### Dual Dialogue Support
+
+SwiftSecuencia supports simultaneous dialogue (dual/triple/N-way dialogue) common in screenplays. Clips with the same `dualDialogueGroupId` are automatically placed at the same offset on different lanes, with audio mixed during export.
+
+```swift
+// Create metadata for dual dialogue
+let groupId = UUID()
+
+let metadata1 = ScreenplayMetadata(
+    elementType: "Dialogue",
+    characterName: "JOHN",
+    isDualDialogue: true,
+    dualDialogueIndex: 0,        // Lane 0
+    dualDialogueGroupId: groupId
+)
+
+let metadata2 = ScreenplayMetadata(
+    elementType: "Dialogue",
+    characterName: "MARY",
+    isDualDialogue: true,
+    dualDialogueIndex: 1,        // Lane 1
+    dualDialogueGroupId: groupId
+)
+
+// Convert to timeline with metadata
+let converter = ScreenplayToTimelineConverter()
+let timeline = try await converter.convertToTimeline(
+    screenplayName: "My Script",
+    audioElements: [audio1, audio2],
+    audioMetadata: [metadata1, metadata2]  // Optional screenplay metadata
+)
+
+// Result: Both clips at offset 0s, on lanes 0 and 1
+// Duration advanced by max(clip1.duration, clip2.duration)
+```
+
+**Key features:**
+- Automatic lane assignment based on `dualDialogueIndex` (0 → lane 0, 1 → lane 1, etc.)
+- Groups placed at same offset (simultaneous playback)
+- Offset advances by maximum duration of group
+- Works with 2+ simultaneous speakers
+- Automatic audio mixing during M4A export
+- FCPXML export preserves lane attributes (macOS)
+
 ### Supported FCPXML Elements
 
 - **Resources**: Formats, Assets, Effects, Media (compound clips, multicam)
@@ -189,7 +233,7 @@ try document.write(to: URL(fileURLWithPath: "/path/to/output.fcpxml"))
 - **Adjustments**: Transform, Crop, Volume, Blend, Effects
 - **Timing**: Rate conforming, Time remapping, Keyframe animation
 - **Markers**: Standard markers, Chapter markers, Keywords, Ratings
-- **Metadata**: Custom metadata fields
+- **Metadata**: Custom metadata fields, **Screenplay metadata** (element type, character, dual dialogue)
 
 ### FCPXML Versions
 

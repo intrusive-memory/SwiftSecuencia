@@ -6,7 +6,7 @@ SwiftSecuencia is a Swift library for generating and exporting Final Cut Pro X t
 
 **Platforms**:
 - **macOS 26.0+** - Full support (FCPXML export + audio export)
-- **iOS 26.0+** - Partial support (audio export only via `TimelineAudioExporter`)
+- **iOS 26.0+** - Partial support (audio export only via `BackgroundAudioExporter` and `ForegroundAudioExporter`)
 
 ## Pipeline Integration
 
@@ -310,7 +310,7 @@ extension AssetClip: FCPXMLElement {
 - [x] Non-blocking progress updates with fire-and-forget MainActor dispatch
 - [x] Read-only SwiftData access from background thread
 - [x] 237 total tests passing
-- **Status**: v1.0.7 (December 2025)
+- **Status**: v1.0.7 (December 2025) - Integrated in v1.0.8
 
 ### Phase 9: Timing Data Export for Karaoke-Style Sync (✅ COMPLETED)
 - [x] WebVTT generator for W3C-compliant timing data
@@ -324,6 +324,23 @@ extension AssetClip: FCPXMLElement {
 - [x] 277 total tests passing
 - **Status**: Phase 9 complete (December 2025)
 - **Use case**: Karaoke-style text synchronization in web players using TextTrack API (±10ms precision)
+
+### Phase 10: Dual Dialogue Support (✅ COMPLETED)
+- [x] `ScreenplayMetadata` model for screenplay-specific clip metadata
+- [x] Dual dialogue grouping and lane assignment in `ScreenplayToTimelineConverter`
+- [x] Automatic offset advancement by max duration within dialogue groups
+- [x] Support for 2+ simultaneous speakers (dual, triple, N-way dialogue)
+- [x] Metadata preservation in `TimelineClip` for FCPXML export
+- [x] Optional `audioMetadata` parameter in `convertToTimeline()`
+- [x] `processWithDualDialogue()` and `processSequential()` helper methods
+- [x] `ConverterError.metadataMismatch` case for validation
+- [x] Metadata-to-ScreenplayMetadata conversion helpers
+- [x] 16 ScreenplayMetadata tests (encoding, conversion, edge cases)
+- [x] 8 DualDialogIntegrationTests (placement, lanes, offset calculation)
+- [x] DualDialogFixtures helper module for testing
+- [x] 301 total tests passing (277 original + 24 new)
+- **Status**: v1.0.8 (January 2026)
+- **Use case**: Simultaneous speaker placement in screenplays (overlapping dialogue tracks)
 
 ## Audio Export: Foreground vs Background
 
@@ -459,6 +476,96 @@ audioElements → Timeline → export
 This design matches the use case perfectly:
 - **Background**: Preserve work, keep UI responsive, Timeline available for reuse
 - **Foreground**: Maximum speed, sacrifice nothing for performance
+
+## Dual Dialogue Support
+
+SwiftSecuencia supports dual dialogue (simultaneous speakers) through the `ScreenplayMetadata` model and enhanced `ScreenplayToTimelineConverter`.
+
+### ScreenplayMetadata Model
+
+Screenplay-specific metadata for timeline clips:
+
+```swift
+@Model
+public final class ScreenplayMetadata {
+    public var character: String?           // Character name
+    public var parenthetical: String?       // Actor direction (e.g., "whispering")
+    public var dialogue: String?            // Dialogue text
+    public var sceneNumber: String?         // Scene identifier
+    public var dualDialogueGroupId: String? // Groups simultaneous dialogue
+
+    // Convert from SwiftCompartido.Metadata
+    public init(from metadata: Metadata)
+
+    // Convert to SwiftCompartido.Metadata
+    public func toMetadata() -> Metadata
+}
+```
+
+### Dual Dialogue Usage
+
+**Basic Dual Dialogue:**
+```swift
+// Create metadata for two simultaneous speakers
+let aliceMetadata = ScreenplayMetadata(
+    character: "ALICE",
+    dialogue: "We need to talk about this.",
+    dualDialogueGroupId: "group1"  // Same group = simultaneous
+)
+
+let bobMetadata = ScreenplayMetadata(
+    character: "BOB",
+    dialogue: "I completely agree!",
+    dualDialogueGroupId: "group1"  // Same group = simultaneous
+)
+
+// Convert to timeline with dual dialogue support
+let timeline = try await converter.convertToTimeline(
+    screenplayName: "My Script",
+    audioElements: [aliceAudio, bobAudio],
+    audioMetadata: [aliceMetadata, bobMetadata],  // Pass metadata
+    videoFormat: .hd1080p(frameRate: .fps24)
+)
+
+// Result: Both clips start at same offset, different lanes
+// Lane 0: Alice's dialogue
+// Lane 1: Bob's dialogue
+// Audio is mixed during export
+```
+
+**Triple Dialogue (3+ Simultaneous Speakers):**
+```swift
+let metadata = [
+    ScreenplayMetadata(character: "ALICE", dualDialogueGroupId: "group1"),
+    ScreenplayMetadata(character: "BOB", dualDialogueGroupId: "group1"),
+    ScreenplayMetadata(character: "CAROL", dualDialogueGroupId: "group1")
+]
+
+// All three clips placed at same offset on lanes 0, 1, 2
+```
+
+**Mixed Sequential and Dual:**
+```swift
+let metadata = [
+    ScreenplayMetadata(character: "ALICE", dualDialogueGroupId: nil),      // Sequential
+    ScreenplayMetadata(character: "BOB", dualDialogueGroupId: "group1"),   // Dual start
+    ScreenplayMetadata(character: "CAROL", dualDialogueGroupId: "group1"), // Dual end
+    ScreenplayMetadata(character: "DAVE", dualDialogueGroupId: nil)        // Sequential
+]
+
+// Timeline:
+// Offset 0:    Alice (lane 0)
+// Offset 5s:   Bob (lane 0) + Carol (lane 1) - simultaneous
+// Offset 10s:  Dave (lane 0)
+```
+
+### Implementation Details
+
+- **Lane Assignment**: Primary speaker on lane 0, subsequent speakers on lanes 1, 2, 3...
+- **Offset Calculation**: Groups advance timeline by max duration within group
+- **Metadata Validation**: Array length must match audio elements count
+- **Backward Compatibility**: `audioMetadata` parameter is optional (defaults to sequential)
+- **Audio Mixing**: Multi-lane audio automatically mixed during M4A export
 
 ### Future Enhancements (Planned)
 - [ ] Transitions and effects
