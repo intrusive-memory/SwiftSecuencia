@@ -12,6 +12,12 @@ import SwiftCompartido
 
 /// Test fixtures for dual dialogue scenarios.
 enum DualDialogFixtures {
+    /// Helper struct to group audio, metadata, and duration together
+    struct AudioMetadataItem {
+        let audio: TypedDataStorage
+        let metadata: ScreenplayMetadata
+        let duration: Double
+    }
 
     // MARK: - Sample Fountain Text
 
@@ -263,7 +269,7 @@ enum DualDialogFixtures {
         )
 
         // Track dual dialogue groups
-        var dualDialogGroups: [UUID: [(TypedDataStorage, ScreenplayMetadata, Double)]] = [:]
+        var dualDialogGroups: [UUID: [AudioMetadataItem]] = [:]
         var currentOffset = Timecode.zero
 
         // First pass: group dual dialogue elements
@@ -274,7 +280,7 @@ enum DualDialogFixtures {
                 if dualDialogGroups[groupId] == nil {
                     dualDialogGroups[groupId] = []
                 }
-                dualDialogGroups[groupId]?.append((audio, metadata, duration))
+                dualDialogGroups[groupId]?.append(AudioMetadataItem(audio: audio, metadata: metadata, duration: duration))
             } else {
                 // Sequential clip
                 let clip = TimelineClip(
@@ -294,10 +300,13 @@ enum DualDialogFixtures {
         // Second pass: place dual dialogue groups
         for (_, group) in dualDialogGroups.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
             // Find max duration for this group
-            let maxDuration = group.map { $0.2 }.max() ?? 3.0
+            let maxDuration = group.map { $0.duration }.max() ?? 3.0
 
             // Place each clip at current offset on its assigned lane
-            for (audio, metadata, duration) in group {
+            for item in group {
+                let audio = item.audio
+                let metadata = item.metadata
+                let duration = item.duration
                 let lane = metadata.dualDialogueIndex ?? 0
 
                 let clip = TimelineClip(
