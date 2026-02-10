@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 
 @main
-struct Secuencia: ParsableCommand {
+struct Secuencia: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "secuencia",
         abstract: "A command-line tool for generating Final Cut Pro timelines from JSON definitions.",
