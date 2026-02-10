@@ -119,6 +119,7 @@ public struct FCPXMLBundleExporter {
     ///   - progress: Optional Progress object for tracking export progress and cancellation.
     /// - Returns: URL of the created bundle.
     /// - Throws: Export errors if bundle creation fails or operation is cancelled.
+    @MainActor
     public mutating func exportBundle(
         timeline: Timeline,
         assetProvider: AssetProvider,
@@ -277,6 +278,7 @@ public struct FCPXMLBundleExporter {
     ///   - bundleURL: The bundle URL.
     ///   - progress: Optional Progress object for tracking media export progress.
     /// - Returns: Media export result containing asset URL map, measured durations, and audio timing.
+    @MainActor
     private func exportMediaWithProvider(
         timeline: Timeline,
         assetProvider: AssetProvider,
@@ -732,6 +734,7 @@ public struct FCPXMLBundleExporter {
     // MARK: - FCPXML Generation
 
     /// Generates FCPXML string with asset references using AssetProvider (Task 5.13).
+    @MainActor
     private mutating func generateFCPXMLWithProvider(
         timeline: Timeline,
         assetProvider: AssetProvider,
