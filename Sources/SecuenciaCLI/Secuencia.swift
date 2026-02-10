@@ -7,6 +7,6 @@ struct Secuencia: AsyncParsableCommand {
         commandName: "secuencia",
         abstract: "A command-line tool for generating Final Cut Pro timelines from JSON definitions.",
         version: "1.0.0",
-        subcommands: [Build.self]
+        subcommands: [Build.self, Validate.self, Schema.self]
     )
 }
