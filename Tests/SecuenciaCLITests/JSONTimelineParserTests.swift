@@ -6,17 +6,22 @@ struct JSONTimelineParserTests {
     let parser = JSONTimelineParser()
 
     // Helper to get fixture URL
-    func fixtureURL(named name: String) -> URL {
-        let fixturesPath = #file
-            .replacingOccurrences(of: "JSONTimelineParserTests.swift", with: "Fixtures")
-        return URL(fileURLWithPath: fixturesPath)
-            .appendingPathComponent(name)
+    func fixtureURL(named name: String) throws -> URL {
+        let fixtureURL = URL(fileURLWithPath: "Fixtures/\(name)")
+        guard let url = Bundle.module.url(
+            forResource: name,
+            withExtension: nil,
+            subdirectory: "Fixtures"
+        ) else {
+            throw ParserError.fileNotFound(fixtureURL)
+        }
+        return url
     }
 
     // MARK: - Valid Parsing Tests
 
     @Test func parseValidTimelineWithAllFields() throws {
-        let url = fixtureURL(named: "valid-timeline.json")
+        let url = try fixtureURL(named: "valid-timeline.json")
         let definition = try parser.parse(fileAt: url)
 
         // Validate timeline config
@@ -100,15 +105,15 @@ struct JSONTimelineParserTests {
 
     // MARK: - Error Cases
 
-    @Test func parseThrowsOnInvalidClipType() {
-        let url = fixtureURL(named: "invalid-clip-type.json")
+    @Test func parseThrowsOnInvalidClipType() throws {
+        let url = try fixtureURL(named: "invalid-clip-type.json")
         #expect(throws: Error.self) {
             _ = try parser.parse(fileAt: url)
         }
     }
 
-    @Test func parseThrowsOnMarkerMissingMarkerType() {
-        let url = fixtureURL(named: "marker-missing-type.json")
+    @Test func parseThrowsOnMarkerMissingMarkerType() throws {
+        let url = try fixtureURL(named: "marker-missing-type.json")
         #expect(throws: ParserError.self) {
             _ = try parser.parse(fileAt: url)
         }
