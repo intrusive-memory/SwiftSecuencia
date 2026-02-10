@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import secuencia
+@testable import SecuenciaCLI
 
 @Suite("ValidateCommand Tests")
 struct ValidateCommandTests {
