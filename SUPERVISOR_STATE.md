@@ -38,26 +38,26 @@
 ## Work Unit: JSON Parsing
 
 ### State
-- Work unit state: RUNNING
+- Work unit state: COMPLETED
 - Current sprint: 3 of 2
-- Sprint state: DISPATCHED
+- Sprint state: COMPLETED
 - Sprint type: code
 - Attempt: 1 of 3
-- Last verified: Sprint 2 COMPLETED - all 28 tests pass (parsers, fixtures, Package.swift fixed)
-- Notes: Sprint 3 dispatched (File resolution and media probing)
+- Last verified: Sprint 3 COMPLETED - 25 tests pass, file resolution + media probing working
+- Notes: JSON Parsing work unit fully complete (Sprints 2-3)
 
 ---
 
 ## Work Unit: Asset Resolution
 
 ### State
-- Work unit state: COMPLETED
-- Current sprint: 4 of 2
-- Sprint state: COMPLETED
+- Work unit state: RUNNING
+- Current sprint: 5 of 2
+- Sprint state: DISPATCHED
 - Sprint type: code
 - Attempt: 1 of 3
-- Last verified: All AssetProvider tests pass, protocol implemented correctly
-- Notes: Sprint 4 completed successfully - 7 tasks, all exit criteria met
+- Last verified: Sprint 4 COMPLETED - AssetProvider protocol fully implemented
+- Notes: Sprint 5 DISPATCHED - BOTTLENECK (19 tasks: 2 exporter tracks + testing)
 
 ---
 
@@ -90,7 +90,7 @@
 ## Active Agents
 | Work Unit | Sprint | Sprint State | Attempt | Task ID | Output File | Dispatched At |
 |-----------|--------|-------------|---------|---------|-------------|---------------|
-| JSON Parsing | 3 | DISPATCHED | 1/3 | a0a51e6 | /private/tmp/claude-501/-Users-stovak-Projects-SwiftSecuencia/tasks/a0a51e6.output | 2026-02-09T20:18:00Z |
+| Asset Resolution | 5 | DISPATCHED | 1/3 | a2bb085 | /private/tmp/claude-501/-Users-stovak-Projects-SwiftSecuencia/tasks/a2bb085.output | 2026-02-09T20:25:00Z |
 
 ---
 
@@ -113,3 +113,7 @@
 | 2026-02-09T20:17:00Z | JSON Parsing | 2 | Sprint 2 COMPLETED | All 28 tests pass (TimeString, FrameRate, JSONTimeline parsers) |
 | 2026-02-09T20:17:00Z | JSON Parsing | 3 | Ready to dispatch Sprint 3 | Sprint 2 dependencies satisfied |
 | 2026-02-09T20:18:00Z | JSON Parsing | 3 | Sprint 3 DISPATCHED | File resolution, media probing, UUID generation (10 tasks) |
+| 2026-02-09T20:24:00Z | JSON Parsing | 3 | Sprint 3 COMPLETED | All 25 tests pass, file resolution + UUID + media probing working |
+| 2026-02-09T20:24:00Z | JSON Parsing | — | Work unit COMPLETED | Both sprints 2-3 complete, ready for merge at Sprint 6 |
+| 2026-02-09T20:24:00Z | Asset Resolution | 5 | Ready to dispatch Sprint 5 | Sprint 4 complete, now refactoring exporters (19 tasks, ~10h) |
+| 2026-02-09T20:25:00Z | Asset Resolution | 5 | Sprint 5 DISPATCHED | BOTTLENECK sprint: FCPXMLExporter + FCPXMLBundleExporter refactoring (19 tasks) |

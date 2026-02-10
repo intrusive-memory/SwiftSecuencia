@@ -68,7 +68,30 @@ public struct FCPXMLExporter {
         self.version = version
     }
 
-    /// Exports a timeline to FCPXML format.
+    /// Exports a timeline to FCPXML format using an AssetProvider.
+    ///
+    /// - Parameters:
+    ///   - timeline: The timeline to export.
+    ///   - assetProvider: Provider for accessing asset metadata and file URLs.
+    ///   - libraryName: Name for the library element (default: "Exported Library").
+    ///   - eventName: Name for the event element (default: "Exported Event").
+    ///   - projectName: Name for the project (default: timeline name).
+    /// - Returns: FCPXML string representation.
+    /// - Throws: Export errors if timeline is invalid or assets are missing.
+    public mutating func export(
+        timeline: Timeline,
+        assetProvider: AssetProvider,
+        libraryName: String = "Exported Library",
+        eventName: String = "Exported Event",
+        projectName: String? = nil
+    ) throws -> String {
+        // Implementation will be added in subsequent tasks
+        throw FCPXMLExportError.invalidTimeline(reason: "AssetProvider export not yet implemented")
+    }
+
+    /// Exports a timeline to FCPXML format using SwiftData.
+    ///
+    /// This is a backward compatibility wrapper that creates a SwiftDataAssetProvider internally.
     ///
     /// - Parameters:
     ///   - timeline: The timeline to export.
@@ -78,6 +101,7 @@ public struct FCPXMLExporter {
     ///   - projectName: Name for the project (default: timeline name).
     /// - Returns: FCPXML string representation.
     /// - Throws: Export errors if timeline is invalid or assets are missing.
+    @MainActor
     public mutating func export(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
@@ -85,52 +109,15 @@ public struct FCPXMLExporter {
         eventName: String = "Exported Event",
         projectName: String? = nil
     ) throws -> String {
-        // Collect all assets and formats
-        var resourceMap = ResourceMap()
-        let assets = timeline.allAssets(in: modelContext)
-
-        // Generate resources
-        var resourceElements: [XMLElement] = []
-
-        // Add format resource (use timeline's videoFormat if available, otherwise default to 1080p23.98)
-        let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
-        let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
-        resourceElements.append(formatElement)
-
-        // Add asset resources (using frame rate from format)
-        for asset in assets {
-            let assetElement = try generateAssetElement(asset: asset, resourceMap: &resourceMap, frameRate: format.frameRate)
-            resourceElements.append(assetElement)
-        }
-
-        // Generate library > event > project > sequence > spine structure
-        let event = XMLElement(name: "event")
-        event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
-
-        let project = XMLElement(name: "project")
-        let pName = projectName ?? timeline.name
-        project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
-
-        // Create sequence (using frame rate from format)
-        let sequence = try generateSequenceElement(
+        // Create SwiftDataAssetProvider and delegate to AssetProvider method
+        let provider = SwiftDataAssetProvider(modelContext: modelContext)
+        return try export(
             timeline: timeline,
-            modelContext: modelContext,
-            resourceMap: resourceMap,
-            frameRate: format.frameRate
+            assetProvider: provider,
+            libraryName: libraryName,
+            eventName: eventName,
+            projectName: projectName
         )
-
-        project.addChild(sequence)
-        event.addChild(project)
-
-        // Create FCPXML document using Pipeline's initializer
-        let doc = XMLDocument(
-            resources: resourceElements,
-            events: [event],
-            fcpxmlVersion: version
-        )
-
-        // Return formatted XML string
-        return doc.fcpxmlString
     }
 
     // MARK: - Resource Generation
