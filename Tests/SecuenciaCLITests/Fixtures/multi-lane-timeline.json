@@ -9,7 +9,7 @@
     },
     "audio": {
       "layout": "stereo",
-      "rate": "48kHz"
+      "rate": "48000"
     }
   },
   "clips": [
