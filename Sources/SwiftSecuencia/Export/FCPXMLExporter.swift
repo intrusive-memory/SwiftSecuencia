@@ -85,8 +85,11 @@ public struct FCPXMLExporter {
         eventName: String = "Exported Event",
         projectName: String? = nil
     ) throws -> String {
-        // Implementation will be added in subsequent tasks
-        throw FCPXMLExportError.invalidTimeline(reason: "AssetProvider export not yet implemented")
+        // Task 5.2: Collect unique asset IDs from timeline clips
+        let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+
+        // Implementation continues in subsequent tasks
+        throw FCPXMLExportError.invalidTimeline(reason: "AssetProvider export not yet fully implemented")
     }
 
     /// Exports a timeline to FCPXML format using SwiftData.
