@@ -13,6 +13,7 @@ import Pipeline
 /// to Apple's FCPXML specification. DTD validation is performed using xmllint
 /// against official DTD files from Apple/CommandPost.
 
+@MainActor
 @Test func emptyTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -37,6 +38,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func singleClipTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -80,6 +82,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func multiClipTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -141,6 +144,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func multiLaneTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -197,6 +201,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func timelineWithSourceStartPassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -241,6 +246,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func timelineWithNamedClipsPassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -291,6 +297,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func differentVideoFormatsPassDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -341,6 +348,7 @@ import Pipeline
 
 // MARK: - DTD Version Compatibility Tests
 
+@MainActor
 @Test func validateAgainstMultipleDTDVersions() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -381,6 +389,7 @@ import Pipeline
 
 // MARK: - Error Reporting Tests
 
+@MainActor
 @Test func dtdValidationProvidesUsefulErrors() async throws {
     // Create intentionally malformed FCPXML (missing required attributes)
     let malformedXML = """

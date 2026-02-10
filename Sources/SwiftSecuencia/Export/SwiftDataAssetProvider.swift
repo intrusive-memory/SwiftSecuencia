@@ -73,11 +73,49 @@ public struct SwiftDataAssetProvider: @preconcurrency AssetProvider {
             throw AssetProviderError.assetNotFound(id)
         }
 
-        // SwiftDataAssetProvider does not support file URL access for assets with fileReference
-        // because we don't have access to the bundle/storage area context here.
-        // This provider is designed for assets with binaryValue (in-memory data).
-        // For file-based assets, use FileAssetProvider instead.
-        throw AssetProviderError.dataNotSupported
+        // Return fileReference if available
+        if let fileReference = storage.fileReference {
+            return fileReference
+        }
+
+        // If no fileReference, create a temporary file from binaryValue
+        // This supports tests that only set binaryValue
+        if let binaryValue = storage.binaryValue {
+            // Create a temporary file path
+            let tempDir = FileManager.default.temporaryDirectory
+            let ext = fileExtension(for: storage.mimeType)
+            let tempURL = tempDir.appendingPathComponent("\(id.uuidString).\(ext)")
+
+            // Write data if file doesn't exist
+            if !FileManager.default.fileExists(atPath: tempURL.path) {
+                try binaryValue.write(to: tempURL, options: .atomic)
+            }
+
+            return tempURL
+        }
+
+        // No file reference or binary data available
+        throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/placeholder/\(id.uuidString)"))
+    }
+
+    /// Returns file extension for MIME type.
+    private func fileExtension(for mimeType: String) -> String {
+        let components = mimeType.split(separator: "/")
+        guard components.count == 2 else { return "dat" }
+
+        let subtype = String(components[1])
+
+        // Map common MIME types to extensions
+        switch subtype {
+        case "mp4": return "mp4"
+        case "quicktime": return "mov"
+        case "mpeg": return "mp3"
+        case "wav", "x-wav", "vnd.wave": return "wav"
+        case "aiff", "x-aiff": return "aiff"
+        case "png": return "png"
+        case "jpeg": return "jpg"
+        default: return subtype
+        }
     }
 
     public func assetData(for id: UUID) throws -> Data {
