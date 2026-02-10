@@ -1,47 +1,92 @@
 import Foundation
 
 /// Root structure for a JSON timeline definition.
-struct TimelineDefinition: Codable, Sendable {
-    let timeline: TimelineConfig
-    let clips: [ClipDefinition]
+public struct TimelineDefinition: Codable, Sendable {
+    public let timeline: TimelineConfig
+    public let clips: [ClipDefinition]
+
+    public init(timeline: TimelineConfig, clips: [ClipDefinition]) {
+        self.timeline = timeline
+        self.clips = clips
+    }
 }
 
 /// Timeline configuration.
-struct TimelineConfig: Codable, Sendable {
-    let name: String
-    let format: FormatConfig
-    let audio: AudioConfig
+public struct TimelineConfig: Codable, Sendable {
+    public let name: String
+    public let format: FormatConfig
+    public let audio: AudioConfig
+
+    public init(name: String, format: FormatConfig, audio: AudioConfig) {
+        self.name = name
+        self.format = format
+        self.audio = audio
+    }
 }
 
 /// Video format configuration.
-struct FormatConfig: Codable, Sendable {
-    let width: Int
-    let height: Int
-    let frameRate: String
-    let colorSpace: String?
+public struct FormatConfig: Codable, Sendable {
+    public let width: Int
+    public let height: Int
+    public let frameRate: String
+    public let colorSpace: String?
+
+    public init(width: Int, height: Int, frameRate: String, colorSpace: String?) {
+        self.width = width
+        self.height = height
+        self.frameRate = frameRate
+        self.colorSpace = colorSpace
+    }
 }
 
 /// Audio configuration.
-struct AudioConfig: Codable, Sendable {
-    let layout: String
-    let rate: String
+public struct AudioConfig: Codable, Sendable {
+    public let layout: String
+    public let rate: String
+
+    public init(layout: String, rate: String) {
+        self.layout = layout
+        self.rate = rate
+    }
 }
 
 /// Clip definition in the timeline.
-struct ClipDefinition: Codable, Sendable {
-    let name: String
-    let file: String?
-    let offset: String
-    let duration: String?
-    let lane: Int?
-    let type: ClipType
-    let markerType: String?
-    let volume: Double?
-    let opacity: Double?
+public struct ClipDefinition: Codable, Sendable {
+    public let name: String
+    public var file: String?  // Mutable to allow path resolution
+    public let offset: String
+    public var duration: String?  // Mutable to allow duration probing
+    public let lane: Int?
+    public let type: ClipType
+    public let markerType: String?
+    public let volume: Double?
+    public let opacity: Double?
+
+    public init(
+        name: String,
+        file: String?,
+        offset: String,
+        duration: String?,
+        lane: Int?,
+        type: ClipType,
+        markerType: String?,
+        volume: Double?,
+        opacity: Double?
+    ) {
+        self.name = name
+        self.file = file
+        self.offset = offset
+        self.duration = duration
+        self.lane = lane
+        self.type = type
+        self.markerType = markerType
+        self.volume = volume
+        self.opacity = opacity
+    }
 }
 
 /// Type of clip in the timeline.
-enum ClipType: String, Codable, Sendable {
+public enum ClipType: String, Codable, Sendable {
     case video
     case audio
     case image

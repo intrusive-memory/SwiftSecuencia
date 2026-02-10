@@ -90,6 +90,7 @@ let package = Package(
                 "SwiftSecuencia",
             ],
             path: "Tests/SecuenciaCLITests",
+            resources: [.copy("Fixtures")],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
