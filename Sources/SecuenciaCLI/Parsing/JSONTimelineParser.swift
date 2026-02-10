@@ -18,18 +18,18 @@ struct JSONTimelineParser: Sendable {
             throw ParserError.fileNotFound(url)
         }
 
-        // Parse using Universal
-        let json: JSON
+        // Parse using Universal to validate JSON structure
         do {
-            json = try JSON.parse(data)
+            _ = try JSON.parse(data)
         } catch {
             throw ParserError.invalidJSON(url, underlying: error)
         }
 
-        // Decode TimelineDefinition
+        // Decode TimelineDefinition using JSONDecoder
         let definition: TimelineDefinition
         do {
-            definition = try TimelineDefinition(json: json)
+            let decoder = JSONDecoder()
+            definition = try decoder.decode(TimelineDefinition.self, from: data)
         } catch {
             throw ParserError.decodingFailed(url, underlying: error)
         }

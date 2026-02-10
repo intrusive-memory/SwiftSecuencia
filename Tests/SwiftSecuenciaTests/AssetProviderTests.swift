@@ -1,5 +1,7 @@
 import Testing
 import Foundation
+import SwiftData
+import SwiftCompartido
 @testable import SwiftSecuencia
 
 @Suite("FileAssetProvider Tests")
@@ -207,5 +209,227 @@ struct FileAssetProviderTests {
         let data = try provider.assetData(for: assetID)
 
         #expect(data == expectedData)
+    }
+}
+
+// MARK: - SwiftDataAssetProvider Tests
+
+@Suite("SwiftDataAssetProvider Tests")
+@MainActor
+struct SwiftDataAssetProviderTests {
+
+    @Test("Default assetData implementation throws dataNotSupported")
+    func defaultAssetDataThrowsDataNotSupported() async throws {
+        // Create in-memory container
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        // Create a test asset with fileReference but no binaryValue
+        let assetID = UUID()
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-file.m4a")
+        try Data("test".utf8).write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Asset",
+            mimeType: "audio/mp4",
+            binaryValue: nil,  // No binary data
+            fileReference: tempURL
+        )
+        context.insert(storage)
+        try context.save()
+
+        // Create provider
+        let provider = SwiftDataAssetProvider(modelContext: context)
+
+        // Attempting to get data should throw dataNotSupported
+        #expect(throws: AssetProviderError.self) {
+            try provider.assetData(for: assetID)
+        }
+    }
+
+    @Test("Derives hasVideo=true, hasAudio=true for video/quicktime")
+    func derivesVideoAndAudioFlagsForVideo() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Video",
+            mimeType: "video/quicktime",
+            binaryValue: Data("video".utf8)
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let metadata = try provider.assetMetadata(for: assetID)
+
+        #expect(metadata.hasVideo == true)
+        #expect(metadata.hasAudio == true)
+        #expect(metadata.mimeType == "video/quicktime")
+    }
+
+    @Test("Derives hasVideo=false, hasAudio=true for audio/mp4")
+    func derivesAudioOnlyFlagsForAudio() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Audio",
+            mimeType: "audio/mp4",
+            binaryValue: Data("audio".utf8)
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let metadata = try provider.assetMetadata(for: assetID)
+
+        #expect(metadata.hasVideo == false)
+        #expect(metadata.hasAudio == true)
+        #expect(metadata.mimeType == "audio/mp4")
+    }
+
+    @Test("Derives hasVideo=true, hasAudio=false for image/png")
+    func derivesVideoOnlyFlagsForImage() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Image",
+            mimeType: "image/png",
+            binaryValue: Data("image".utf8)
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let metadata = try provider.assetMetadata(for: assetID)
+
+        #expect(metadata.hasVideo == true)
+        #expect(metadata.hasAudio == false)
+        #expect(metadata.mimeType == "image/png")
+    }
+
+    @Test("assetFileURL returns fileReference when available")
+    func assetFileURLReturnsFileReference() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-ref.m4a")
+        try Data("test".utf8).write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Asset",
+            mimeType: "audio/mp4",
+            binaryValue: nil,
+            fileReference: tempURL
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let fileURL = try provider.assetFileURL(for: assetID)
+
+        #expect(fileURL == tempURL)
+    }
+
+    @Test("assetFileURL throws fileNotFound when fileReference is nil")
+    func assetFileURLThrowsWhenNoFileReference() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Asset",
+            mimeType: "audio/mp4",
+            binaryValue: Data("audio".utf8),
+            fileReference: nil  // No file reference
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+
+        #expect(throws: AssetProviderError.self) {
+            try provider.assetFileURL(for: assetID)
+        }
+    }
+
+    @Test("assetData returns binaryValue when available")
+    func assetDataReturnsBinaryValue() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let expectedData = Data("Hello from SwiftData!".utf8)
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Asset",
+            mimeType: "audio/mp4",
+            binaryValue: expectedData
+        )
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let data = try provider.assetData(for: assetID)
+
+        #expect(data == expectedData)
+    }
+
+    @Test("Extracts metadata dimensions and duration")
+    func extractsMetadataDimensionsAndDuration() async throws {
+        let schema = Schema([TypedDataStorage.self])
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = ModelContext(container)
+
+        let assetID = UUID()
+        let storage = TypedDataStorage(
+            id: assetID,
+            name: "Test Video",
+            mimeType: "video/mp4",
+            binaryValue: Data("video".utf8)
+        )
+        storage.metadata = [
+            "duration": 120.5,
+            "width": 1920,
+            "height": 1080
+        ]
+        context.insert(storage)
+        try context.save()
+
+        let provider = SwiftDataAssetProvider(modelContext: context)
+        let metadata = try provider.assetMetadata(for: assetID)
+
+        #expect(metadata.durationSeconds == 120.5)
+        #expect(metadata.width == 1920)
+        #expect(metadata.height == 1080)
     }
 }

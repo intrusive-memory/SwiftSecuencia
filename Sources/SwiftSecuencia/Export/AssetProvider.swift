@@ -9,6 +9,7 @@ import Foundation
 ///
 /// This protocol is NOT `Sendable` because implementations may hold non-Sendable resources
 /// like `ModelContext`. Implementations should use appropriate isolation (e.g., `@MainActor`).
+@MainActor
 public protocol AssetProvider {
     /// Retrieves metadata for an asset.
     ///

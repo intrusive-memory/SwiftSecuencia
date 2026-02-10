@@ -39,35 +39,19 @@ public struct SwiftDataAssetProvider: AssetProvider {
         let hasVideo = mimeType.hasPrefix("video/") || mimeType.hasPrefix("image/")
         let hasAudio = mimeType.hasPrefix("video/") || mimeType.hasPrefix("audio/")
 
-        // Extract duration if available
-        let durationSeconds: Double? = {
-            if let metadata = storage.metadata,
-               let durationValue = metadata["duration"] as? Double {
-                return durationValue
-            }
-            return nil
-        }()
+        // Extract duration if available from TypedDataStorage properties
+        let durationSeconds = storage.durationSeconds
 
         // Extract dimensions if available
-        let width: Int? = {
-            if let metadata = storage.metadata,
-               let widthValue = metadata["width"] as? Int {
-                return widthValue
-            }
-            return nil
-        }()
+        let width = storage.widthPixels
+        let height = storage.heightPixels
 
-        let height: Int? = {
-            if let metadata = storage.metadata,
-               let heightValue = metadata["height"] as? Int {
-                return heightValue
-            }
-            return nil
-        }()
+        // Generate a name from prompt or use a default
+        let name = storage.prompt.isEmpty ? "Asset-\(id.uuidString.prefix(8))" : String(storage.prompt.prefix(50))
 
         return AssetMetadata(
             id: id,
-            name: storage.name,
+            name: name,
             mimeType: mimeType,
             durationSeconds: durationSeconds,
             hasVideo: hasVideo,
@@ -94,7 +78,7 @@ public struct SwiftDataAssetProvider: AssetProvider {
             throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/dev/null"))
         }
 
-        return fileReference
+        return fileReference.fileURL
     }
 
     public func assetData(for id: UUID) throws -> Data {
