@@ -38,13 +38,13 @@ struct Build: AsyncParsableCommand {
     @Argument(help: "Path to the JSON timeline definition file")
     var inputFile: String
 
-    @Option(name: .long, help: "Output path for the FCPXML file or bundle")
+    @Option(name: .long, help: "Output path for the FCPXML file or bundle (default: <input>.fcpxml)")
     var output: String?
 
-    @Flag(name: .long, help: "Produce a .fcpxmld bundle with embedded media")
+    @Flag(name: .long, help: "Produce a .fcpxmld bundle with embedded media instead of standalone FCPXML")
     var bundle: Bool = false
 
-    @Option(name: .long, help: "FCPXML version to generate")
+    @Option(name: .long, help: "FCPXML version to generate (default: 1.11)")
     var formatVersion: String = "1.11"
 
     @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
