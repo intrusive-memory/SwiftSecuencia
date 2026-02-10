@@ -292,7 +292,7 @@ public struct TimelineBuilder: Sendable {
             timeline.markers.append(marker)
 
         case "todo":
-            // TODO markers stored as standard markers with completed=false
+            // Note: TODO markers stored as standard markers with completed=false
             let marker = Marker(
                 start: offset,
                 value: clip.name,
