@@ -84,10 +84,9 @@ struct Validate: AsyncParsableCommand {
         // Overlapping clips on same lane
         let clipsByLane = Dictionary(grouping: probed.clips.filter { $0.type != .marker }, by: { $0.lane ?? 0 })
         for (lane, clips) in clipsByLane {
-            var sortedClips = clips.sorted { a, b in
-                guard let aOffset = a.offset, let bOffset = b.offset else { return false }
-                guard let aParsed = try? timeParser.parse(aOffset),
-                      let bParsed = try? timeParser.parse(bOffset) else { return false }
+            let sortedClips = clips.sorted { a, b in
+                guard let aParsed = try? timeParser.parse(a.offset),
+                      let bParsed = try? timeParser.parse(b.offset) else { return false }
                 return aParsed.seconds < bParsed.seconds
             }
 
@@ -95,13 +94,11 @@ struct Validate: AsyncParsableCommand {
                 let currentClip = sortedClips[i]
                 let nextClip = sortedClips[i + 1]
 
-                guard let currentOffset = currentClip.offset,
-                      let currentDuration = currentClip.duration,
-                      let nextOffset = nextClip.offset else { continue }
+                guard let currentDuration = currentClip.duration else { continue }
 
-                guard let currentStart = try? timeParser.parse(currentOffset),
+                guard let currentStart = try? timeParser.parse(currentClip.offset),
                       let currentDur = try? timeParser.parse(currentDuration),
-                      let nextStart = try? timeParser.parse(nextOffset) else { continue }
+                      let nextStart = try? timeParser.parse(nextClip.offset) else { continue }
 
                 let currentEnd = currentStart.seconds + currentDur.seconds
                 if currentEnd > nextStart.seconds {
@@ -112,10 +109,9 @@ struct Validate: AsyncParsableCommand {
 
         // Gaps in primary storyline (lane 0)
         if let primaryClips = clipsByLane[0]?.filter({ $0.type != .marker }) {
-            var sorted = primaryClips.sorted { a, b in
-                guard let aOffset = a.offset, let bOffset = b.offset else { return false }
-                guard let aParsed = try? timeParser.parse(aOffset),
-                      let bParsed = try? timeParser.parse(bOffset) else { return false }
+            let sorted = primaryClips.sorted { a, b in
+                guard let aParsed = try? timeParser.parse(a.offset),
+                      let bParsed = try? timeParser.parse(b.offset) else { return false }
                 return aParsed.seconds < bParsed.seconds
             }
 
@@ -123,13 +119,11 @@ struct Validate: AsyncParsableCommand {
                 let currentClip = sorted[i]
                 let nextClip = sorted[i + 1]
 
-                guard let currentOffset = currentClip.offset,
-                      let currentDuration = currentClip.duration,
-                      let nextOffset = nextClip.offset else { continue }
+                guard let currentDuration = currentClip.duration else { continue }
 
-                guard let currentStart = try? timeParser.parse(currentOffset),
+                guard let currentStart = try? timeParser.parse(currentClip.offset),
                       let currentDur = try? timeParser.parse(currentDuration),
-                      let nextStart = try? timeParser.parse(nextOffset) else { continue }
+                      let nextStart = try? timeParser.parse(nextClip.offset) else { continue }
 
                 let currentEnd = currentStart.seconds + currentDur.seconds
                 let gap = nextStart.seconds - currentEnd
@@ -150,5 +144,3 @@ struct Validate: AsyncParsableCommand {
         }
     }
 }
-
-extension ClipType: CaseIterable {}

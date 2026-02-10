@@ -86,7 +86,7 @@ public struct ClipDefinition: Codable, Sendable {
 }
 
 /// Type of clip in the timeline.
-public enum ClipType: String, Codable, Sendable {
+public enum ClipType: String, Codable, Sendable, CaseIterable {
     case video
     case audio
     case image
