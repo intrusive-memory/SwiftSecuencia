@@ -73,14 +73,11 @@ public struct SwiftDataAssetProvider: @preconcurrency AssetProvider {
             throw AssetProviderError.assetNotFound(id)
         }
 
-        // Return the file reference if available
-        guard let fileRef = storage.fileReference else {
-            throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/dev/null"))
-        }
-
-        // TODO: Fix this - need to determine the correct bundle URL for the file reference
-        // For now, throw an error as this path is not yet properly implemented
-        throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/dev/null"))
+        // SwiftDataAssetProvider does not support file URL access for assets with fileReference
+        // because we don't have access to the bundle/storage area context here.
+        // This provider is designed for assets with binaryValue (in-memory data).
+        // For file-based assets, use FileAssetProvider instead.
+        throw AssetProviderError.dataNotSupported
     }
 
     public func assetData(for id: UUID) throws -> Data {
