@@ -1,0 +1,38 @@
+{
+  "timeline": {
+    "name": "Test Timeline",
+    "format": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": "23.98",
+      "colorSpace": "rec709"
+    },
+    "audio": {
+      "layout": "stereo",
+      "rate": "48kHz"
+    }
+  },
+  "clips": [
+    {
+      "name": "Title Card",
+      "file": "title.png",
+      "offset": "0s",
+      "duration": "3s",
+      "lane": 0,
+      "type": "image"
+    },
+    {
+      "name": "Narration",
+      "file": "audio.m4a",
+      "offset": "0s",
+      "lane": -1,
+      "type": "audio"
+    },
+    {
+      "name": "Chapter 1",
+      "offset": "0s",
+      "type": "marker",
+      "markerType": "chapter"
+    }
+  ]
+}

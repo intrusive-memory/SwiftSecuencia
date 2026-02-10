@@ -226,18 +226,14 @@ struct SwiftDataAssetProviderTests {
         let container = try ModelContainer(for: schema, configurations: configuration)
         let context = ModelContext(container)
 
-        // Create a test asset with fileReference but no binaryValue
+        // Create a test asset with no binaryValue
         let assetID = UUID()
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-file.m4a")
-        try Data("test".utf8).write(to: tempURL)
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Asset",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "audio/mp4",
-            binaryValue: nil,  // No binary data
-            fileReference: tempURL
+            binaryValue: nil  // No binary data
         )
         context.insert(storage)
         try context.save()
@@ -261,7 +257,8 @@ struct SwiftDataAssetProviderTests {
         let assetID = UUID()
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Video",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "video/quicktime",
             binaryValue: Data("video".utf8)
         )
@@ -286,7 +283,8 @@ struct SwiftDataAssetProviderTests {
         let assetID = UUID()
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Audio",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "audio/mp4",
             binaryValue: Data("audio".utf8)
         )
@@ -311,7 +309,8 @@ struct SwiftDataAssetProviderTests {
         let assetID = UUID()
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Image",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "image/png",
             binaryValue: Data("image".utf8)
         )
@@ -326,36 +325,8 @@ struct SwiftDataAssetProviderTests {
         #expect(metadata.mimeType == "image/png")
     }
 
-    @Test("assetFileURL returns fileReference when available")
-    func assetFileURLReturnsFileReference() async throws {
-        let schema = Schema([TypedDataStorage.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: schema, configurations: configuration)
-        let context = ModelContext(container)
-
-        let assetID = UUID()
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-ref.m4a")
-        try Data("test".utf8).write(to: tempURL)
-        defer { try? FileManager.default.removeItem(at: tempURL) }
-
-        let storage = TypedDataStorage(
-            id: assetID,
-            name: "Test Asset",
-            mimeType: "audio/mp4",
-            binaryValue: nil,
-            fileReference: tempURL
-        )
-        context.insert(storage)
-        try context.save()
-
-        let provider = SwiftDataAssetProvider(modelContext: context)
-        let fileURL = try provider.assetFileURL(for: assetID)
-
-        #expect(fileURL == tempURL)
-    }
-
-    @Test("assetFileURL throws fileNotFound when fileReference is nil")
-    func assetFileURLThrowsWhenNoFileReference() async throws {
+    @Test("assetFileURL throws dataNotSupported")
+    func assetFileURLThrowsDataNotSupported() async throws {
         let schema = Schema([TypedDataStorage.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: configuration)
@@ -364,16 +335,17 @@ struct SwiftDataAssetProviderTests {
         let assetID = UUID()
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Asset",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "audio/mp4",
-            binaryValue: Data("audio".utf8),
-            fileReference: nil  // No file reference
+            binaryValue: Data("audio".utf8)
         )
         context.insert(storage)
         try context.save()
 
         let provider = SwiftDataAssetProvider(modelContext: context)
 
+        // SwiftDataAssetProvider does not support file URL access
         #expect(throws: AssetProviderError.self) {
             try provider.assetFileURL(for: assetID)
         }
@@ -390,7 +362,8 @@ struct SwiftDataAssetProviderTests {
         let expectedData = Data("Hello from SwiftData!".utf8)
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Asset",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "audio/mp4",
             binaryValue: expectedData
         )
@@ -413,15 +386,14 @@ struct SwiftDataAssetProviderTests {
         let assetID = UUID()
         let storage = TypedDataStorage(
             id: assetID,
-            name: "Test Video",
+            providerId: "test",
+            requestorID: "test",
             mimeType: "video/mp4",
-            binaryValue: Data("video".utf8)
+            binaryValue: Data("video".utf8),
+            durationSeconds: 120.5,
+            width: 1920,
+            height: 1080
         )
-        storage.metadata = [
-            "duration": 120.5,
-            "width": 1920,
-            "height": 1080
-        ]
         context.insert(storage)
         try context.save()
 
