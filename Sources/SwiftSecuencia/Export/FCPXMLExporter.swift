@@ -88,6 +88,22 @@ public struct FCPXMLExporter {
         // Task 5.2: Collect unique asset IDs from timeline clips
         let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
+        // Task 5.3: Fetch metadata for each asset and generate format
+        var resourceMap = ResourceMap()
+        var resourceElements: [XMLElement] = []
+
+        // Add format resource
+        let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
+        let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
+        resourceElements.append(formatElement)
+
+        // Fetch metadata for all unique assets
+        for assetID in uniqueAssetIDs {
+            let metadata = try assetProvider.assetMetadata(for: assetID)
+            // Store metadata for use in asset element generation (Task 5.4)
+            // For now, we'll regenerate in Task 5.4
+        }
+
         // Implementation continues in subsequent tasks
         throw FCPXMLExportError.invalidTimeline(reason: "AssetProvider export not yet fully implemented")
     }
