@@ -27,6 +27,19 @@ struct AudioConfig: Codable, Sendable {
     let rate: String
 }
 
+/// Clip definition in the timeline.
+struct ClipDefinition: Codable, Sendable {
+    let name: String
+    let file: String?
+    let offset: String
+    let duration: String?
+    let lane: Int?
+    let type: ClipType
+    let markerType: String?
+    let volume: Double?
+    let opacity: Double?
+}
+
 /// Type of clip in the timeline.
 enum ClipType: String, Codable, Sendable {
     case video
