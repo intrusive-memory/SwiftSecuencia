@@ -18,12 +18,17 @@ let package = Package(
             name: "Pipeline",
             targets: ["Pipeline"]
         ),
+        .executable(
+            name: "secuencia",
+            targets: ["SecuenciaCLI"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
         .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
         .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
         .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     ],
     targets: [
         .target(
@@ -49,6 +54,21 @@ let package = Package(
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
         ),
+        .executableTarget(
+            name: "SecuenciaCLI",
+            dependencies: [
+                "SwiftSecuencia",
+                .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Sources/SecuenciaCLI",
+            resources: [
+                .process("Resources/")
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
         .testTarget(
             name: "SwiftSecuenciaTests",
             dependencies: [
@@ -57,6 +77,17 @@ let package = Package(
                 .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],
             path: "Tests/SwiftSecuenciaTests",
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
+        .testTarget(
+            name: "SecuenciaCLITests",
+            dependencies: [
+                "SecuenciaCLI",
+                "SwiftSecuencia",
+            ],
+            path: "Tests/SecuenciaCLITests",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
