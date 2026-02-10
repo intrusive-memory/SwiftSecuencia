@@ -212,11 +212,11 @@ struct EndToEndTests {
 
         // Verify markers are at correct offsets
         let marker1 = timeline.chapterMarkers[0]
-        let offset1Seconds = Double(marker1.offset.value) / Double(marker1.offset.timescale)
+        let offset1Seconds = Double(marker1.start.value) / Double(marker1.start.timescale)
         #expect(abs(offset1Seconds - 0.0) < 0.01)
 
         let marker2 = timeline.chapterMarkers[1]
-        let offset2Seconds = Double(marker2.offset.value) / Double(marker2.offset.timescale)
+        let offset2Seconds = Double(marker2.start.value) / Double(marker2.start.timescale)
         #expect(abs(offset2Seconds - 3.0) < 0.01)
 
         // Note: FCPXMLExporter does not yet export chapter markers to FCPXML.
