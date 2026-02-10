@@ -29,6 +29,7 @@ let package = Package(
         .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
         .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+        .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
     ],
     targets: [
         .target(
@@ -60,6 +61,7 @@ let package = Package(
                 "SwiftSecuencia",
                 .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "Universal", package: "universal"),
             ],
             path: "Sources/SecuenciaCLI",
             resources: [
