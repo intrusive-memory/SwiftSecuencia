@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swiftsecuencia.org/schemas/timeline-v1.json",
+  "title": "SwiftSecuencia Timeline Definition",
+  "description": "JSON schema for defining video timelines that SwiftSecuencia can convert to Final Cut Pro FCPXML format",
+  "type": "object",
+  "required": ["timeline", "clips"],
+  "properties": {
+    "timeline": {
+      "$ref": "#/$defs/TimelineConfig"
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClipDefinition"
+      },
+      "description": "Array of clips, markers, and media elements that make up the timeline"
+    }
+  },
+  "$defs": {
+    "TimelineConfig": {
+      "type": "object",
+      "description": "Timeline configuration including format and audio settings",
+      "required": ["name", "format", "audio"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the timeline that will appear in Final Cut Pro"
+        },
+        "format": {
+          "$ref": "#/$defs/FormatConfig"
+        },
+        "audio": {
+          "$ref": "#/$defs/AudioConfig"
+        }
+      }
+    },
+    "FormatConfig": {
+      "type": "object",
+      "description": "Video format configuration",
+      "required": ["width", "height", "frameRate"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "description": "Video width in pixels",
+          "examples": [1920, 3840, 1280]
+        },
+        "height": {
+          "type": "integer",
+          "description": "Video height in pixels",
+          "examples": [1080, 2160, 720]
+        },
+        "frameRate": {
+          "type": "string",
+          "description": "Video frame rate as a string",
+          "enum": ["23.98", "24", "25", "29.97", "30", "50", "59.94", "60"],
+          "examples": ["23.98", "24", "29.97", "60"]
+        },
+        "colorSpace": {
+          "type": "string",
+          "description": "Color space for the video",
+          "enum": ["rec709", "rec2020", "dciP3"]
+        }
+      }
+    },
+    "AudioConfig": {
+      "type": "object",
+      "description": "Audio configuration",
+      "required": ["layout", "rate"],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "description": "Audio channel layout",
+          "enum": ["mono", "stereo", "surround"]
+        },
+        "rate": {
+          "type": "string",
+          "description": "Audio sample rate",
+          "enum": ["44.1kHz", "48kHz", "96kHz"]
+        }
+      }
+    },
+    "ClipDefinition": {
+      "type": "object",
+      "description": "Definition of a single clip, marker, or media element",
+      "required": ["name", "offset", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the clip or marker"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to the media file (relative to JSON file or absolute). Required for video, audio, and image clips."
+        },
+        "offset": {
+          "type": "string",
+          "description": "Start time of the clip on the timeline. Supports integer seconds (3s), decimal seconds (3.5s), or rational format (1001/24000s)",
+          "examples": ["0s", "3s", "3.5s", "10.25s", "1001/24000s"]
+        },
+        "duration": {
+          "type": "string",
+          "description": "Duration of the clip. Optional for audio/video - will be probed if omitted. Same format as offset.",
+          "examples": ["3s", "10.5s", "1001/24000s"]
+        },
+        "lane": {
+          "type": "integer",
+          "description": "Timeline lane. 0 = primary storyline, positive = above (B-roll/titles), negative = below (audio/music)",
+          "default": 0
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of clip",
+          "enum": ["video", "audio", "image", "marker"]
+        },
+        "markerType": {
+          "type": "string",
+          "description": "Type of marker. Required when type is 'marker'",
+          "enum": ["standard", "chapter", "todo"]
+        },
+        "volume": {
+          "type": "number",
+          "description": "Audio volume (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "opacity": {
+          "type": "number",
+          "description": "Visual opacity (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": ["video", "audio", "image"]
+              }
+            }
+          },
+          "then": {
+            "required": ["file"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "marker"
+              }
+            }
+          },
+          "then": {
+            "required": ["markerType"]
+          }
+        }
+      ]
+    }
+  }
+}
