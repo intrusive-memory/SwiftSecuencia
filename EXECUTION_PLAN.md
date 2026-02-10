@@ -213,20 +213,27 @@ The `type` field combined with the file extension determines MIME type and asset
 **Entry criteria**: Sprint 1 exit criteria satisfied.
 
 **Parallelization**:
-- Phase 1: Tasks 1, 2, 3 can run in parallel (3 parser implementations)
-- Phase 2: Tasks 4, 5, 6 can run in parallel (3 test files)
+- Phase 1: Task 0 (add Universal dependency) must complete first
+- Phase 2: Tasks 1, 2, 3 can run in parallel (3 parser implementations)
+- Phase 3: Tasks 4, 5, 6 can run in parallel (3 test files)
 
 **Tasks**:
+0. **Add Universal dependency to Package.swift**:
+   - Add `.package(url: "https://github.com/marcprux/universal.git", from: "5.3.0")` to dependencies
+   - Add `.product(name: "Universal", package: "universal")` to SecuenciaCLI target dependencies
+   - Commit: "Add Universal package for multi-format parsing"
+
 1. Create `Sources/SecuenciaCLI/Parsing/JSONTimelineParser.swift`:
    - `struct JSONTimelineParser`
    - Method `parse(fileAt url: URL) throws -> TimelineDefinition`:
-     - Read JSON data from file
-     - Decode using `JSONDecoder`
+     - Read data from file
+     - Parse using Universal: `let json = try JSON.parse(data)`
+     - Decode TimelineDefinition: `try TimelineDefinition(json: json)`
      - Validate required fields: `timeline.name`, `timeline.format`, `timeline.audio` must be present
      - For non-marker clips: `file` must be non-nil
      - For marker clips: `markerType` must be non-nil
    - This method does NOT resolve file paths or probe durations — that is Sprint 3
-2. Create `Sources/SecuenciaCLI/Parsing/TimeStringParser.swift`:
+2. Create `Sources/SecuenciaCLI/Parsing/TimeStringParser.swift` (no changes from original plan):
    - `struct TimeStringParser`
    - Method `parse(_ string: String) throws -> Timecode`:
      - `"0s"`, `"3s"` → integer seconds
@@ -268,7 +275,9 @@ The `type` field combined with the file extension determines MIME type and asset
 
 **Exit criteria**:
 - [ ] Build succeeds
-- [ ] All tests pass
+- [ ] All tests pass (7 tasks total: 0-6)
+- [ ] Universal package dependency added to Package.swift (Task 0)
+- [ ] JSONTimelineParser uses Universal's JSON.parse() (Task 1)
 - [ ] Time strings `"0s"`, `"3.5s"`, and `"1001/24000s"` all parse to correct Timecode values
 - [ ] All 8 standard frame rate strings parse to correct FrameRate values
 - [ ] Invalid inputs produce descriptive errors (not crashes)
@@ -1103,7 +1112,7 @@ IMPORTANT:
 |--------|-------|
 | Work units | 5 |
 | Total sprints | 10 |
-| Total tasks | 95 (atomically split for maximum context safety) |
+| Total tasks | 96 (atomically split for maximum context safety, includes Universal integration) |
 | Dependency structure | Graph with parallel branches |
 | Dispatch mode | dynamic |
 | Max parallelism | 3 concurrent work units (Sprints 2 ∥ 3 ∥ 4) |
