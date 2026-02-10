@@ -108,8 +108,33 @@ public struct FCPXMLExporter {
             resourceElements.append(assetElement)
         }
 
-        // Implementation continues in subsequent tasks
-        throw FCPXMLExportError.invalidTimeline(reason: "AssetProvider export not yet fully implemented")
+        // Task 5.6: Complete document structure (library > event > project > sequence > spine)
+        let event = XMLElement(name: "event")
+        event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
+
+        let project = XMLElement(name: "project")
+        let pName = projectName ?? timeline.name
+        project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
+
+        // Create sequence
+        let sequence = try generateSequenceElementWithProvider(
+            timeline: timeline,
+            resourceMap: resourceMap,
+            frameRate: format.frameRate
+        )
+
+        project.addChild(sequence)
+        event.addChild(project)
+
+        // Create FCPXML document using Pipeline's initializer
+        let doc = XMLDocument(
+            resources: resourceElements,
+            events: [event],
+            fcpxmlVersion: version
+        )
+
+        // Return formatted XML string
+        return doc.fcpxmlString
     }
 
     /// Exports a timeline to FCPXML format using SwiftData.
@@ -268,7 +293,54 @@ public struct FCPXMLExporter {
 
     // MARK: - Sequence Generation
 
-    /// Generates a sequence XML element with spine and clips.
+    /// Generates a sequence XML element with spine and clips (AssetProvider version).
+    private func generateSequenceElementWithProvider(
+        timeline: Timeline,
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        let element = XMLElement(name: "sequence")
+
+        // Reference the format
+        guard let formatID = resourceMap.formatID else {
+            throw FCPXMLExportError.missingFormat
+        }
+        element.addAttribute(XMLNode.attribute(withName: "format", stringValue: formatID) as! XMLNode)
+
+        // Add duration (frame-aligned)
+        let alignedDuration = timeline.duration.aligned(to: frameRate)
+        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: alignedDuration.fcpxmlString) as! XMLNode)
+
+        // Add tcStart (always 0 for now)
+        element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
+
+        // Generate spine
+        let spine = try generateSpineElementWithProvider(timeline: timeline, resourceMap: resourceMap, frameRate: frameRate)
+        element.addChild(spine)
+
+        return element
+    }
+
+    /// Generates a spine XML element with all storyline clips (AssetProvider version).
+    private func generateSpineElementWithProvider(
+        timeline: Timeline,
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        let element = XMLElement(name: "spine")
+
+        // Get all clips sorted by offset then lane
+        let allClips = timeline.sortedClips
+
+        for clip in allClips {
+            let clipElement = try generateAssetClipElement(clip: clip, resourceMap: resourceMap, frameRate: frameRate)
+            element.addChild(clipElement)
+        }
+
+        return element
+    }
+
+    /// Generates a sequence XML element with spine and clips (legacy with ModelContext).
     private func generateSequenceElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,
