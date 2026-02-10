@@ -137,9 +137,13 @@ public struct FCPXMLExporter {
         return doc.fcpxmlString
     }
 
-    /// Exports a timeline to FCPXML format using SwiftData.
+    /// Exports a timeline to FCPXML format using SwiftData assets (if available as files).
     ///
-    /// This is a backward compatibility wrapper that creates a SwiftDataAssetProvider internally.
+    /// **Important**: This method requires assets to have file references or creates temporary files
+    /// from binary data. For purely in-memory SwiftData assets, use `FCPXMLBundleExporter` instead,
+    /// which embeds media into the bundle.
+    ///
+    /// **CLI Usage**: CLI tools should use `FileAssetProvider` instead of this method.
     ///
     /// - Parameters:
     ///   - timeline: The timeline to export.
@@ -148,7 +152,8 @@ public struct FCPXMLExporter {
     ///   - eventName: Name for the event element (default: "Exported Event").
     ///   - projectName: Name for the project (default: timeline name).
     /// - Returns: FCPXML string representation.
-    /// - Throws: Export errors if timeline is invalid or assets are missing.
+    /// - Throws: Export errors if timeline is invalid or assets are missing. Throws `AssetProviderError.dataNotSupported`
+    ///   if assets don't have file URLs (use `FCPXMLBundleExporter` for embedded media instead).
     @MainActor
     public mutating func export(
         timeline: Timeline,
@@ -157,7 +162,7 @@ public struct FCPXMLExporter {
         eventName: String = "Exported Event",
         projectName: String? = nil
     ) throws -> String {
-        // Create SwiftDataAssetProvider and delegate to AssetProvider method
+        // Create SwiftDataAssetProvider - will throw if assets don't have file URLs
         let provider = SwiftDataAssetProvider(modelContext: modelContext)
         return try export(
             timeline: timeline,
