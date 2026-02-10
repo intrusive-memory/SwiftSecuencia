@@ -97,11 +97,15 @@ public struct FCPXMLExporter {
         let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
         resourceElements.append(formatElement)
 
-        // Fetch metadata for all unique assets
+        // Task 5.4 & 5.5: Generate asset elements with file URLs and hasVideo/hasAudio
         for assetID in uniqueAssetIDs {
-            let metadata = try assetProvider.assetMetadata(for: assetID)
-            // Store metadata for use in asset element generation (Task 5.4)
-            // For now, we'll regenerate in Task 5.4
+            let assetElement = try generateAssetElement(
+                assetID: assetID,
+                assetProvider: assetProvider,
+                resourceMap: &resourceMap,
+                frameRate: format.frameRate
+            )
+            resourceElements.append(assetElement)
         }
 
         // Implementation continues in subsequent tasks
@@ -165,7 +169,56 @@ public struct FCPXMLExporter {
         return element
     }
 
-    /// Generates an asset XML element.
+    /// Generates an asset XML element using AssetProvider.
+    private mutating func generateAssetElement(
+        assetID: UUID,
+        assetProvider: AssetProvider,
+        resourceMap: inout ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        // Fetch metadata from provider
+        let metadata = try assetProvider.assetMetadata(for: assetID)
+
+        let resourceID = nextResourceID()
+        resourceMap.assetIDs[assetID] = resourceID
+
+        let element = XMLElement(name: "asset")
+        element.addAttribute(XMLNode.attribute(withName: "id", stringValue: resourceID) as! XMLNode)
+
+        // Use metadata name
+        if !metadata.name.isEmpty {
+            element.addAttribute(XMLNode.attribute(withName: "name", stringValue: metadata.name) as! XMLNode)
+        }
+
+        // Add duration if available (frame-aligned)
+        if let duration = metadata.durationSeconds {
+            let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
+            element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
+        }
+
+        // Task 5.5: Set hasVideo/hasAudio from metadata
+        if metadata.hasVideo {
+            element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
+        }
+        if metadata.hasAudio {
+            element.addAttribute(XMLNode.attribute(withName: "hasAudio", stringValue: "1") as! XMLNode)
+        }
+
+        // Task 5.4: Get file URL from provider
+        let fileURL = try assetProvider.assetFileURL(for: assetID)
+        let srcURL = fileURL.path.hasPrefix("/") ? "file://\(fileURL.path)" : "file:///\(fileURL.path)"
+
+        // Add required media-rep child element
+        let mediaRep = XMLElement(name: "media-rep")
+        mediaRep.addAttribute(XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
+        mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
+        element.addChild(mediaRep)
+
+        return element
+    }
+
+    /// Generates an asset XML element from TypedDataStorage (legacy method).
+    /// This is kept for backward compatibility with FCPXMLBundleExporter.
     private mutating func generateAssetElement(
         asset: TypedDataStorage,
         resourceMap: inout ResourceMap,
