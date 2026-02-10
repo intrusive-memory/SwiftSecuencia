@@ -10,7 +10,7 @@ import SwiftCompartido
 /// - Important: This struct must be used on the `@MainActor` because `ModelContext`
 ///   is not `Sendable` and requires main actor isolation.
 @MainActor
-public struct SwiftDataAssetProvider: AssetProvider {
+public struct SwiftDataAssetProvider: @preconcurrency AssetProvider {
     private let modelContext: ModelContext
 
     /// Creates a SwiftData asset provider.
@@ -43,8 +43,8 @@ public struct SwiftDataAssetProvider: AssetProvider {
         let durationSeconds = storage.durationSeconds
 
         // Extract dimensions if available
-        let width = storage.widthPixels
-        let height = storage.heightPixels
+        let width = storage.width
+        let height = storage.height
 
         // Generate a name from prompt or use a default
         let name = storage.prompt.isEmpty ? "Asset-\(id.uuidString.prefix(8))" : String(storage.prompt.prefix(50))
@@ -74,11 +74,13 @@ public struct SwiftDataAssetProvider: AssetProvider {
         }
 
         // Return the file reference if available
-        guard let fileReference = storage.fileReference else {
+        guard let fileRef = storage.fileReference else {
             throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/dev/null"))
         }
 
-        return fileReference.fileURL
+        // TODO: Fix this - need to determine the correct bundle URL for the file reference
+        // For now, throw an error as this path is not yet properly implemented
+        throw AssetProviderError.fileNotFound(id, URL(fileURLWithPath: "/dev/null"))
     }
 
     public func assetData(for id: UUID) throws -> Data {
