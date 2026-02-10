@@ -110,6 +110,82 @@ struct TimelineDefinitionTests {
         #expect(clip4.markerType == "chapter")
     }
 
+    @Test("Missing optional fields decode to nil")
+    func missingOptionalFields() throws {
+        let minimalJSON = """
+        {
+          "timeline": {
+            "name": "Minimal Timeline",
+            "format": {
+              "width": 1920,
+              "height": 1080,
+              "frameRate": "24"
+            },
+            "audio": {
+              "layout": "stereo",
+              "rate": "48kHz"
+            }
+          },
+          "clips": [
+            {
+              "name": "Test Clip",
+              "file": "test.mov",
+              "offset": "0s",
+              "type": "video"
+            }
+          ]
+        }
+        """
+
+        let data = Data(minimalJSON.utf8)
+        let decoder = JSONDecoder()
+
+        let definition = try decoder.decode(TimelineDefinition.self, from: data)
+
+        // Verify optional fields are nil
+        #expect(definition.timeline.format.colorSpace == nil)
+        #expect(definition.clips[0].duration == nil)
+        #expect(definition.clips[0].lane == nil)
+        #expect(definition.clips[0].markerType == nil)
+        #expect(definition.clips[0].volume == nil)
+        #expect(definition.clips[0].opacity == nil)
+    }
+
+    @Test("Invalid type value produces DecodingError")
+    func invalidTypeValue() throws {
+        let invalidJSON = """
+        {
+          "timeline": {
+            "name": "Invalid Timeline",
+            "format": {
+              "width": 1920,
+              "height": 1080,
+              "frameRate": "24"
+            },
+            "audio": {
+              "layout": "stereo",
+              "rate": "48kHz"
+            }
+          },
+          "clips": [
+            {
+              "name": "Bad Clip",
+              "file": "test.mov",
+              "offset": "0s",
+              "type": "invalid_type"
+            }
+          ]
+        }
+        """
+
+        let data = Data(invalidJSON.utf8)
+        let decoder = JSONDecoder()
+
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(TimelineDefinition.self, from: data)
+        }
+    }
+
     @Test("Encode and decode roundtrip preserves all fields")
     func encodeDecodeRoundtrip() throws {
         let data = Data(exampleJSON.utf8)
