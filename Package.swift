@@ -60,6 +60,7 @@ let package = Package(
             dependencies: [
                 "SwiftSecuencia",
                 .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftFijos", package: "SwiftFijos"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Universal", package: "universal"),
             ],

@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import SwiftSecuencia
 import SwiftData
+import SwiftFijos
 
 #if os(macOS)
 import Pipeline
@@ -45,6 +46,9 @@ struct Build: AsyncParsableCommand {
 
     @Option(name: .long, help: "FCPXML version to generate")
     var formatVersion: String = "1.11"
+
+    @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
+    var strict: Bool = false
 
     @MainActor
     mutating func run() async throws {
@@ -143,6 +147,17 @@ struct Build: AsyncParsableCommand {
                 eventName: definition.timeline.name
             )
 
+            // Validate XML against DTD
+            let validationPassed = try validateFCPXML(
+                xmlString: xmlString,
+                version: .from(string: formatVersion)
+            )
+
+            // If strict mode and validation failed, don't write output
+            if strict && !validationPassed {
+                throw ValidationError("DTD validation failed in strict mode. Output not written.")
+            }
+
             let outputURL = URL(fileURLWithPath: outputPath)
             try xmlString.write(to: outputURL, atomically: true, encoding: .utf8)
 
@@ -151,6 +166,48 @@ struct Build: AsyncParsableCommand {
         #else
         throw ValidationError("FCPXML export is only available on macOS")
         #endif
+    }
+
+    /// Validates FCPXML against the DTD for the specified version.
+    /// Returns true if validation passes or is skipped, false if it fails.
+    private func validateFCPXML(xmlString: String, version: FCPXMLVersion) throws -> Bool {
+        // Check if DTD is available for this version
+        guard dtdAvailableFor(version: version) else {
+            fputs("⚠️  DTD validation skipped: no DTD available for FCPXML version \(version.stringValue)\n", stderr)
+            return true // Skip validation, treat as pass
+        }
+
+        let validator = FCPXMLDTDValidator()
+        let result = try validator.validate(xmlContent: xmlString, version: version)
+
+        if result.isValid {
+            // Validation passed
+            return true
+        } else {
+            // Validation failed - print errors to stderr
+            if strict {
+                fputs("❌ DTD validation failed:\n", stderr)
+            } else {
+                fputs("⚠️  DTD validation warnings:\n", stderr)
+            }
+
+            for error in result.errors {
+                fputs("  - \(error)\n", stderr)
+            }
+
+            return false
+        }
+    }
+
+    /// Checks if a DTD file is available for the given FCPXML version.
+    private func dtdAvailableFor(version: FCPXMLVersion) -> Bool {
+        let dtdFilename = version.dtdFilenameWithExtension
+        do {
+            _ = try SwiftFijos.Fijos.getFixture(dtdFilename)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Prints export success summary.
