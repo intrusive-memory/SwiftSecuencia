@@ -62,11 +62,57 @@ public struct SwiftDataAssetProvider: @preconcurrency AssetProvider {
     }
 
     public func assetFileURL(for id: UUID) throws -> URL {
-        // SwiftData storage doesn't provide direct file URLs
-        // TypedDataStorage stores data in SwiftData, not as accessible file URLs
+        // Fetch the TypedDataStorage asset from SwiftData
+        let descriptor = FetchDescriptor<TypedDataStorage>(
+            predicate: #Predicate { storage in
+                storage.id == id
+            }
+        )
+
+        guard let storage = try modelContext.fetch(descriptor).first else {
+            throw AssetProviderError.assetNotFound(id)
+        }
+
+        // Create a temporary file from binaryValue to support DTD validation tests
+        // Note: fileReference support requires StorageAreaReference which isn't available in this context
+        // For production use with file references, use FileAssetProvider instead
+        if let binaryValue = storage.binaryValue {
+            // Create a temporary file path
+            let tempDir = FileManager.default.temporaryDirectory
+            let ext = fileExtension(for: storage.mimeType)
+            let tempURL = tempDir.appendingPathComponent("\(id.uuidString).\(ext)")
+
+            // Write data if file doesn't exist
+            if !FileManager.default.fileExists(atPath: tempURL.path) {
+                try binaryValue.write(to: tempURL)
+            }
+
+            return tempURL
+        }
+
+        // SwiftData storage without binary data doesn't provide direct file URLs
         // CLI and other file-based workflows should use FileAssetProvider instead
-        // FCPXMLBundleExporter uses assetData() which is supported
         throw AssetProviderError.dataNotSupported
+    }
+
+    /// Returns file extension for MIME type.
+    private func fileExtension(for mimeType: String) -> String {
+        let components = mimeType.split(separator: "/")
+        guard components.count == 2 else { return "dat" }
+
+        let subtype = String(components[1])
+
+        // Map common MIME types to extensions
+        switch subtype {
+        case "mp4": return "mp4"
+        case "quicktime": return "mov"
+        case "mpeg": return "mp3"
+        case "wav", "x-wav", "vnd.wave": return "wav"
+        case "aiff", "x-aiff": return "aiff"
+        case "png": return "png"
+        case "jpeg": return "jpg"
+        default: return subtype
+        }
     }
 
     public func assetData(for id: UUID) throws -> Data {
