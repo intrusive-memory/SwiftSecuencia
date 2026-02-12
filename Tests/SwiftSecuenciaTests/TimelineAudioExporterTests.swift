@@ -13,7 +13,7 @@ import AVFoundation
 
 // Use selective import to avoid ambiguity with AudioExportFormat
 // (both SwiftSecuencia and SwiftCompartido define it)
-import struct SwiftCompartido.TypedDataStorage
+import class SwiftCompartido.TypedDataStorage
 
 @Suite("TimelineAudioExporter Tests")
 struct TimelineAudioExporterTests {
