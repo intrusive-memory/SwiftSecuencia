@@ -89,6 +89,7 @@ let package = Package(
             dependencies: [
                 "SecuenciaCLI",
                 "SwiftSecuencia",
+                .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],
             path: "Tests/SecuenciaCLITests",
             resources: [.copy("Fixtures")],
