@@ -9,7 +9,6 @@ import Testing
 import Foundation
 import SwiftData
 @testable import SwiftSecuencia
-import SwiftCompartido
 import AVFoundation
 
 @Suite("TimelineAudioExporter Tests")
