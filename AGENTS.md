@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines for SwiftSecuencia
 
-**Last Updated**: 2026-02-09
-**Version**: 2.0.0
+**Last Updated**: 2026-02-11
+**Version**: 2.0.1
 **AI Agents**: This document is the single source of truth for Claude, Gemini, and other AI development assistants.
 
 ---
@@ -420,9 +420,9 @@ let dtdURL = try Fijos.getFixture("FCPXMLv1_11.dtd")
 ## Version Management
 
 ### Current Version
-- **Library**: 2.0.0 (SwiftSecuencia.swift)
-- **Git Tag**: v2.0.0
-- **Latest Release**: CLI Implementation
+- **Library**: 2.0.1 (SwiftSecuencia.swift)
+- **Git Tag**: v2.0.1
+- **Latest Release**: CI Fixes (Patch)
 
 ### Versioning Rules
 
@@ -601,7 +601,7 @@ secuencia schema > schema.json
 ```
 
 ### Version Info
-- **Current**: 2.0.0
+- **Current**: 2.0.1
 - **Swift**: 6.2+
 - **macOS**: 26.0+
 - **iOS**: 26.0+ (audio only)

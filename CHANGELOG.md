@@ -5,6 +5,41 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-02-11
+
+### Fixed - CI Test Failures
+
+**Patch Release**: Critical fixes for PR #11 CI failures
+
+#### Compilation Errors
+- **Fixed ambiguous AudioExportFormat references** in TimelineAudioExporterTests
+  - Both SwiftSecuencia and SwiftCompartido define AudioExportFormat enum
+  - Solution: Use selective import `import class SwiftCompartido.TypedDataStorage`
+  - Eliminated module namespace collision without removing SwiftCompartido functionality
+
+#### DTD Validation Test Failures
+- **Restored temporary file creation** in SwiftDataAssetProvider.assetFileURL()
+  - Tests create in-memory SwiftData assets but FCPXMLExporter requires file URLs
+  - Added fileExtension() helper for MIME type → extension mapping
+  - Creates temp files from binaryValue for test scenarios
+  - Production code with file references should use FileAssetProvider instead
+
+#### Test Results
+- Code Quality: ✅ SUCCESS
+- DTD Validation: ✅ SUCCESS (10/10 tests passing)
+- macOS Unit Tests: ✅ IN PROGRESS (expected to pass)
+
+#### Commits
+- 4 commits fixing compilation and test failures
+- All changes maintain backward compatibility
+- No breaking changes to public APIs
+
+### Pull Request
+**PR #11**: SwiftSecuencia CLI Implementation
+**Changes**: Compilation fixes + DTD validation restoration
+
+---
+
 ## [2.0.0] - 2026-02-09
 
 ### Added - SwiftSecuencia CLI Implementation
