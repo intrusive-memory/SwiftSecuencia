@@ -325,8 +325,8 @@ struct SwiftDataAssetProviderTests {
         #expect(metadata.mimeType == "image/png")
     }
 
-    @Test("assetFileURL throws dataNotSupported")
-    func assetFileURLThrowsDataNotSupported() async throws {
+    @Test("assetFileURL creates temp file from binaryValue")
+    func assetFileURLCreatesTempFile() async throws {
         let schema = Schema([TypedDataStorage.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: configuration)
@@ -345,10 +345,10 @@ struct SwiftDataAssetProviderTests {
 
         let provider = SwiftDataAssetProvider(modelContext: context)
 
-        // SwiftDataAssetProvider does not support file URL access
-        #expect(throws: AssetProviderError.self) {
-            try provider.assetFileURL(for: assetID)
-        }
+        // SwiftDataAssetProvider creates temp file from binaryValue for test scenarios
+        let fileURL = try provider.assetFileURL(for: assetID)
+        #expect(FileManager.default.fileExists(atPath: fileURL.path))
+        #expect(fileURL.pathExtension == "m4a") // audio/mp4 → .m4a
     }
 
     @Test("assetData returns binaryValue when available")

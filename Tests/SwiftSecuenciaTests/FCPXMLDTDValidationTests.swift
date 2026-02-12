@@ -30,7 +30,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -74,7 +75,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -136,7 +138,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -193,7 +196,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -238,7 +242,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -289,7 +294,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -334,7 +340,8 @@ import Pipeline
         let xml = try exporter.export(timeline: timeline, modelContext: context)
 
         let validator = FCPXMLDTDValidator()
-        let result = try validator.validate(xmlContent: xml, version: .v1_11)
+        let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
         if !result.isValid {
             Issue.record("DTD validation failed for format \(format.fcpxmlFormatName):\n\(result.errors.joined(separator: "\n"))")
@@ -377,7 +384,9 @@ import Pipeline
         let xml = try exporter.export(timeline: timeline, modelContext: context)
 
         let validator = FCPXMLDTDValidator()
-        let result = try validator.validate(xmlContent: xml, version: version)
+        let dtdFilename = "Fixtures/FCPXMLv\(version.stringValue.replacingOccurrences(of: ".", with: "_"))"
+        let dtdURL = Bundle.module.url(forResource: dtdFilename, withExtension: "dtd")
+        let result = try validator.validate(xmlContent: xml, version: version, dtdURL: dtdURL)
 
         let versionStr = version.stringValue
         if !result.isValid {
@@ -412,7 +421,8 @@ import Pipeline
     """
 
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: malformedXML, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: malformedXML, version: .v1_11, dtdURL: dtdURL)
 
     #expect(!result.isValid, "Malformed XML should fail validation")
     #expect(!result.errors.isEmpty, "Should provide error messages")

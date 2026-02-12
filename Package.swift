@@ -80,6 +80,9 @@ let package = Package(
                 .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],
             path: "Tests/SwiftSecuenciaTests",
+            resources: [
+                .copy("Fixtures")
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]

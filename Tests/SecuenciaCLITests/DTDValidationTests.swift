@@ -33,6 +33,12 @@ struct DTDValidationTests {
             .appendingPathComponent(filename)
     }
 
+    /// Returns the URL for a DTD file from the test bundle.
+    private func dtdURL(for version: FCPXMLVersion) -> URL? {
+        let dtdFilename = version.dtdFilenameWithExtension
+        return Bundle.module.url(forResource: "Fixtures/\(dtdFilename.replacingOccurrences(of: ".dtd", with: ""))", withExtension: "dtd")
+    }
+
     /// Builds FCPXML string from a JSON fixture file.
     @MainActor
     private func buildFCPXML(
@@ -94,7 +100,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: fcpxmlString,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Validation should pass
@@ -114,7 +121,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: fcpxmlString,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Validation should pass
@@ -134,7 +142,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: fcpxmlString,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Validation should pass
@@ -175,7 +184,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: invalidXML,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Validation should fail
@@ -195,7 +205,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: fcpxmlString,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Should pass (exit code would be 0)
@@ -234,7 +245,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: invalidXML,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Should fail (exit code would be non-zero in strict mode)
@@ -273,7 +285,8 @@ struct DTDValidationTests {
             // Should not throw, even if DTD lookup fails
             let result = try validator.validate(
                 xmlContent: fcpxmlString,
-                version: version
+                version: version,
+                dtdURL: dtdURL(for: version)
             )
             // Should either pass validation or fail gracefully
             #expect(result.isValid || !result.errors.isEmpty)
@@ -312,7 +325,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: invalidXML,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Should have errors in result (which would be printed to stderr)
@@ -333,7 +347,8 @@ struct DTDValidationTests {
         let validator = FCPXMLDTDValidator()
         let result = try validator.validate(
             xmlContent: fcpxmlString,
-            version: .v1_11
+            version: .v1_11,
+            dtdURL: dtdURL(for: .v1_11)
         )
 
         // Then: Validation should pass
