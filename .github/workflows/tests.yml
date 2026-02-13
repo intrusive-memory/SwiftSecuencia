@@ -166,7 +166,7 @@ jobs:
             -destination 'platform=macOS' \
             -only-testing:SwiftSecuenciaTests/FCPXMLDTDValidationTests 2>&1 | tee dtd_validation_output.txt
 
-          if grep -q "Test Succeeded" dtd_validation_output.txt; then
+          if grep -q "TEST SUCCEEDED" dtd_validation_output.txt; then
             echo "✅ All FCPXML DTD validation tests passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### DTD Validation Results" >> $GITHUB_STEP_SUMMARY
@@ -187,7 +187,7 @@ jobs:
             -destination 'platform=macOS' \
             -parallel-testing-enabled NO 2>&1 | tee test_output_macos.txt
 
-          if grep -q "Test Succeeded" test_output_macos.txt; then
+          if grep -q "TEST SUCCEEDED" test_output_macos.txt; then
             echo "✅ All macOS unit tests passed" >> $GITHUB_STEP_SUMMARY
             # Count tests from xcodebuild output
             TEST_COUNT=$(grep -E "Test Case.*passed" test_output_macos.txt | wc -l | tr -d ' ')
