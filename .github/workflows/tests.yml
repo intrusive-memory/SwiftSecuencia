@@ -67,7 +67,7 @@ jobs:
       - name: Swift build check
         run: |
           echo "🔨 Verifying Swift package builds..."
-          swift build --configuration debug
+          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
           echo "✅ Swift package builds successfully" >> $GITHUB_STEP_SUMMARY
 
   # Step 2: iOS Unit Tests (DISABLED - TODO: Fix iOS testing setup)
@@ -155,14 +155,18 @@ jobs:
       - name: Build for macOS
         run: |
           echo "🔨 Building for macOS"
-          swift build
+          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
 
       - name: Run FCPXML DTD validation tests
         run: |
           echo "🔍 Running FCPXML DTD validation tests..."
-          swift test --filter FCPXMLDTDValidation 2>&1 | tee dtd_validation_output.txt
+          set -o pipefail
+          xcodebuild test \
+            -scheme SwiftSecuencia-Package \
+            -destination 'platform=macOS' \
+            -only-testing:SwiftSecuenciaTests/FCPXMLDTDValidationTests 2>&1 | tee dtd_validation_output.txt
 
-          if grep -q "Test run with .* tests in .* suites passed" dtd_validation_output.txt; then
+          if grep -q "Test Succeeded" dtd_validation_output.txt; then
             echo "✅ All FCPXML DTD validation tests passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### DTD Validation Results" >> $GITHUB_STEP_SUMMARY
@@ -177,11 +181,16 @@ jobs:
       - name: Run all unit tests on macOS
         run: |
           echo "🧪 Running all unit tests on macOS"
-          swift test --parallel 2>&1 | tee test_output_macos.txt
+          set -o pipefail
+          xcodebuild test \
+            -scheme SwiftSecuencia-Package \
+            -destination 'platform=macOS' \
+            -parallel-testing-enabled NO 2>&1 | tee test_output_macos.txt
 
-          if grep -q "Test run with .* tests in .* suites passed" test_output_macos.txt; then
+          if grep -q "Test Succeeded" test_output_macos.txt; then
             echo "✅ All macOS unit tests passed" >> $GITHUB_STEP_SUMMARY
-            TEST_COUNT=$(grep -o "[0-9]* tests" test_output_macos.txt | tail -1 | grep -o "[0-9]*")
+            # Count tests from xcodebuild output
+            TEST_COUNT=$(grep -E "Test Case.*passed" test_output_macos.txt | wc -l | tr -d ' ')
             echo "- Executed $TEST_COUNT tests successfully" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ macOS unit tests failed" >> $GITHUB_STEP_SUMMARY
