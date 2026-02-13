@@ -5,6 +5,59 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-02-13
+
+### Fixed - CLI Architecture Refactor
+
+**Critical Fixes**: Resolved blocking test failures and architecture issues
+
+#### SecuenciaCLI Architecture
+- **Extracted SecuenciaCLICore library** from SecuenciaCLI executable
+  - Problem: Swift Package Manager prohibits importing executable targets in tests
+  - Solution: Created library target with all business logic; executable is thin wrapper
+  - Impact: All 116 CLI tests now compile and pass
+  - Files moved: Commands/, Parsing/, Builder/, Models/, SwiftData/, Resources/
+
+- **Public API for commands**
+  - Made Build, Validate, Schema structs public
+  - Added public init() to satisfy ParsableCommand protocol
+  - Commands accessible from executable entry point
+
+- **Resource access helper**
+  - Created SchemaResource enum for Bundle.module access
+  - Fixes "Schema resource not found" errors in tests
+  - Tests use SchemaResource.schemaURL instead of Bundle.module
+
+#### SwiftDataAssetProvider
+- **Fixed audio/mp4 file extension**
+  - Problem: audio/mp4 MIME type incorrectly mapped to .mp4 extension
+  - Fix: Check MIME type prefix; return .m4a for audio/mp4, .mp4 for video/mp4
+  - Impact: Resolved 1 failing test in AssetProviderTests
+
+#### Documentation
+- **Streamlined AGENTS.md** (18KB → 9KB)
+  - Removed verbose implementation details
+  - Updated architecture diagrams for SecuenciaCLICore
+  - Updated test counts (431 total: 315 + 116)
+  - Moved CLI details to Docs/CLI-ARCHITECTURE.md
+
+- **Created Docs/CLI-ARCHITECTURE.md**
+  - Comprehensive CLI implementation guide
+  - Architecture rationale and diagrams
+  - JSON format documentation
+  - Testing strategy and fixtures
+
+#### Test Results
+- SecuenciaCLITests: 116/116 passing ✅
+- SwiftSecuenciaTests: 315/315 passing ✅
+- **Total**: 431/431 passing ✅
+
+#### Commits
+- `293d5b5` Fix CLI architecture: Extract SecuenciaCLICore library
+- `83a8d90` Fix SwiftDataAssetProvider: Use .m4a extension for audio/mp4
+
+---
+
 ## [2.0.1] - 2026-02-11
 
 ### Fixed - CI Test Failures
