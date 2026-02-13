@@ -1,13 +1,15 @@
 import ArgumentParser
 import Foundation
 
-struct Schema: ParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct Schema: ParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "schema",
         abstract: "Output the JSON Schema for SwiftSecuencia timeline definitions."
     )
 
-    func run() throws {
+    public init() {}
+
+    public func run() throws {
         // Load schema.json from Bundle.module resources
         guard let resourceURL = Bundle.module.url(forResource: "schema", withExtension: "json") else {
             fputs("Error: Could not find schema.json resource\n", stderr)

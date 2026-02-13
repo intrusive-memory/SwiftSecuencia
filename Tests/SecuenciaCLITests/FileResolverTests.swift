@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 @Suite("FileResolver Path Resolution Tests")
 struct FileResolverPathResolutionTests {

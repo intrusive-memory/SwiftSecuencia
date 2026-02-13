@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 #if os(macOS)
 import SwiftSecuencia

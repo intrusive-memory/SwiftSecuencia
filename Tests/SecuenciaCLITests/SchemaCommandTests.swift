@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 @Suite("SchemaCommand Tests")
 struct SchemaCommandTests {
@@ -11,7 +11,7 @@ struct SchemaCommandTests {
 
         // Capture stdout by running the command
         // For testing, we can verify the schema file exists and is valid JSON
-        guard let schemaURL = Bundle.module.url(forResource: "schema", withExtension: "json") else {
+        guard let schemaURL = SchemaResource.schemaURL else {
             Issue.record("Schema resource not found in bundle")
             return
         }
@@ -25,7 +25,7 @@ struct SchemaCommandTests {
 
     /// Test that schema contains required $schema key
     @Test func schemaContainsDollarSchemaKey() throws {
-        guard let schemaURL = Bundle.module.url(forResource: "schema", withExtension: "json") else {
+        guard let schemaURL = SchemaResource.schemaURL else {
             Issue.record("Schema resource not found in bundle")
             return
         }
@@ -180,7 +180,7 @@ struct SchemaCommandTests {
 
     /// Test that schema contains all required enum values
     @Test func schemaContainsAllEnumValues() throws {
-        guard let schemaURL = Bundle.module.url(forResource: "schema", withExtension: "json") else {
+        guard let schemaURL = SchemaResource.schemaURL else {
             Issue.record("Schema resource not found in bundle")
             return
         }

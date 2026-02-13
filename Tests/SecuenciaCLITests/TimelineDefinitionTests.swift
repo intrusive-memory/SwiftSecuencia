@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 @Suite("TimelineDefinition Tests")
 struct TimelineDefinitionTests {

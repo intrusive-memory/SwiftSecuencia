@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 struct TimeStringParserTests {
     let parser = TimeStringParser()

@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 
 @Suite("MediaProbe MIME Type Tests")
 struct MediaProbeMIMETypeTests {

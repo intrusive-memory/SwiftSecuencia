@@ -18,6 +18,10 @@ let package = Package(
             name: "Pipeline",
             targets: ["Pipeline"]
         ),
+        .library(
+            name: "SecuenciaCLICore",
+            targets: ["SecuenciaCLICore"]
+        ),
         .executable(
             name: "secuencia",
             targets: ["SecuenciaCLI"]
@@ -55,8 +59,8 @@ let package = Package(
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
         ),
-        .executableTarget(
-            name: "SecuenciaCLI",
+        .target(
+            name: "SecuenciaCLICore",
             dependencies: [
                 "SwiftSecuencia",
                 .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
@@ -64,10 +68,21 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Universal", package: "universal"),
             ],
-            path: "Sources/SecuenciaCLI",
+            path: "Sources/SecuenciaCLICore",
             resources: [
                 .process("Resources/")
             ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
+        .executableTarget(
+            name: "SecuenciaCLI",
+            dependencies: [
+                "SecuenciaCLICore",
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Sources/SecuenciaCLI",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
@@ -90,7 +105,7 @@ let package = Package(
         .testTarget(
             name: "SecuenciaCLITests",
             dependencies: [
-                "SecuenciaCLI",
+                "SecuenciaCLICore",
                 "SwiftSecuencia",
                 .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],

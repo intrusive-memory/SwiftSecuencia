@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import SwiftData
-@testable import SecuenciaCLI
+@testable import SecuenciaCLICore
 import SwiftSecuencia
 import SwiftCompartido
 

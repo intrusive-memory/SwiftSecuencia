@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
 
-struct Validate: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(
+public struct Validate: AsyncParsableCommand {
+    public static let configuration = CommandConfiguration(
         commandName: "validate",
         abstract: "Validate a JSON timeline definition without generating FCPXML output."
     )
@@ -10,9 +10,11 @@ struct Validate: AsyncParsableCommand {
     @Argument(
         help: "Path to the JSON timeline definition file to validate"
     )
-    var inputFile: String
+    public var inputFile: String
 
-    mutating func run() async throws {
+    public init() {}
+
+    public mutating func run() async throws {
         let inputURL = URL(fileURLWithPath: inputFile)
 
         // Step 1: Parse JSON
