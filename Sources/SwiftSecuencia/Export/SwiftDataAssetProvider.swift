@@ -100,11 +100,14 @@ public struct SwiftDataAssetProvider: @preconcurrency AssetProvider {
         let components = mimeType.split(separator: "/")
         guard components.count == 2 else { return "dat" }
 
+        let type = String(components[0])
         let subtype = String(components[1])
 
         // Map common MIME types to extensions
         switch subtype {
-        case "mp4": return "mp4"
+        case "mp4":
+            // audio/mp4 uses .m4a extension, video/mp4 uses .mp4
+            return type == "audio" ? "m4a" : "mp4"
         case "quicktime": return "mov"
         case "mpeg": return "mp3"
         case "wav", "x-wav", "vnd.wave": return "wav"
