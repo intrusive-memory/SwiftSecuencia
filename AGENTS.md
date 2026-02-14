@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines
 
 **Last Updated**: 2026-02-13
-**Version**: 2.0.2-dev
+**Version**: 2.0.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -93,7 +93,7 @@ SwiftSecuencia/
 
 ### Key Architecture Points
 
-**CLI Architecture** (v2.0.2 refactor):
+**CLI Architecture** (v2.0.0):
 - `SecuenciaCLI` (executable) - Entry point only, cannot be imported by tests
 - `SecuenciaCLICore` (library) - All business logic, tests import this
 - Commands are `public` structs conforming to `AsyncParsableCommand`
@@ -278,8 +278,8 @@ let outputURL = try await Task.detached(priority: .high) {
 
 ## Version & Release Info
 
-**Current**: 2.0.2-dev (post-CLI architecture refactor)
-**Previous**: 2.0.1 (CI fixes), 2.0.0 (CLI implementation)
+**Current**: 2.0.0 (CLI implementation with SecuenciaCLICore library, CI fixes)
+**Previous**: 1.0.8 (Dual Dialogue Support)
 
 ### Versioning
 - **Major**: Architectural changes, new major features
