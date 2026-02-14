@@ -1,4 +1,4 @@
-# Claude Development Guidelines
+# Gemini Development Guidelines
 
 **🤖 AI Agents**: This file redirects to the unified agent documentation.
 

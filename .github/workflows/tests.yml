@@ -67,7 +67,7 @@ jobs:
       - name: Swift build check
         run: |
           echo "🔨 Verifying Swift package builds..."
-          swift build --configuration debug
+          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
           echo "✅ Swift package builds successfully" >> $GITHUB_STEP_SUMMARY
 
   # Step 2: iOS Unit Tests (DISABLED - TODO: Fix iOS testing setup)
@@ -155,35 +155,50 @@ jobs:
       - name: Build for macOS
         run: |
           echo "🔨 Building for macOS"
-          swift build
+          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
 
       - name: Run FCPXML DTD validation tests
         run: |
           echo "🔍 Running FCPXML DTD validation tests..."
-          swift test --filter FCPXMLDTDValidation 2>&1 | tee dtd_validation_output.txt
+          set +e
+          xcodebuild test \
+            -scheme SwiftSecuencia-Package \
+            -destination 'platform=macOS' \
+            -only-testing:SwiftSecuenciaTests/FCPXMLDTDValidationTests 2>&1 | tee dtd_validation_output.txt
+          set -e
 
-          if grep -q "Test run with .* tests in .* suites passed" dtd_validation_output.txt; then
+          if grep -q "TEST SUCCEEDED" dtd_validation_output.txt; then
             echo "✅ All FCPXML DTD validation tests passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### DTD Validation Results" >> $GITHUB_STEP_SUMMARY
             echo "- Validates generated FCPXML against official DTD files (v1.9-v1.13)" >> $GITHUB_STEP_SUMMARY
             echo "- Ensures compliance with Apple's FCPXML specification" >> $GITHUB_STEP_SUMMARY
             echo "- Tests empty timelines, single/multi-clip, multi-lane, and various video formats" >> $GITHUB_STEP_SUMMARY
+            exit 0
           else
             echo "❌ FCPXML DTD validation failed" >> $GITHUB_STEP_SUMMARY
+            cat dtd_validation_output.txt
             exit 1
           fi
 
       - name: Run all unit tests on macOS
         run: |
           echo "🧪 Running all unit tests on macOS"
-          swift test --parallel 2>&1 | tee test_output_macos.txt
+          set +e
+          xcodebuild test \
+            -scheme SwiftSecuencia-Package \
+            -destination 'platform=macOS' \
+            -parallel-testing-enabled NO 2>&1 | tee test_output_macos.txt
+          set -e
 
-          if grep -q "Test run with .* tests in .* suites passed" test_output_macos.txt; then
+          if grep -q "TEST SUCCEEDED" test_output_macos.txt; then
             echo "✅ All macOS unit tests passed" >> $GITHUB_STEP_SUMMARY
-            TEST_COUNT=$(grep -o "[0-9]* tests" test_output_macos.txt | tail -1 | grep -o "[0-9]*")
+            # Count tests from xcodebuild output
+            TEST_COUNT=$(grep -E "Test Case.*passed" test_output_macos.txt | wc -l | tr -d ' ')
             echo "- Executed $TEST_COUNT tests successfully" >> $GITHUB_STEP_SUMMARY
+            exit 0
           else
             echo "❌ macOS unit tests failed" >> $GITHUB_STEP_SUMMARY
+            cat test_output_macos.txt
             exit 1
           fi

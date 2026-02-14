@@ -9,8 +9,11 @@ import Testing
 import Foundation
 import SwiftData
 @testable import SwiftSecuencia
-import SwiftCompartido
 import AVFoundation
+
+// Use selective import to avoid ambiguity with AudioExportFormat
+// (both SwiftSecuencia and SwiftCompartido define it)
+import class SwiftCompartido.TypedDataStorage
 
 @Suite("TimelineAudioExporter Tests")
 struct TimelineAudioExporterTests {

@@ -13,6 +13,7 @@ import Pipeline
 /// to Apple's FCPXML specification. DTD validation is performed using xmllint
 /// against official DTD files from Apple/CommandPost.
 
+@MainActor
 @Test func emptyTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -29,7 +30,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -37,6 +39,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func singleClipTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -72,7 +75,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -80,6 +84,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func multiClipTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -133,7 +138,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -141,6 +147,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func multiLaneTimelinePassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -189,7 +196,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -197,6 +205,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func timelineWithSourceStartPassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -233,7 +242,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -241,6 +251,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func timelineWithNamedClipsPassesDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -283,7 +294,8 @@ import Pipeline
 
     // Validate against DTD
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: xml, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
     if !result.isValid {
         Issue.record("DTD validation failed:\n\(result.errors.joined(separator: "\n"))")
@@ -291,6 +303,7 @@ import Pipeline
     #expect(result.isValid, "Generated FCPXML must pass DTD validation")
 }
 
+@MainActor
 @Test func differentVideoFormatsPassDTDValidation() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -327,7 +340,8 @@ import Pipeline
         let xml = try exporter.export(timeline: timeline, modelContext: context)
 
         let validator = FCPXMLDTDValidator()
-        let result = try validator.validate(xmlContent: xml, version: .v1_11)
+        let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: xml, version: .v1_11, dtdURL: dtdURL)
 
         if !result.isValid {
             Issue.record("DTD validation failed for format \(format.fcpxmlFormatName):\n\(result.errors.joined(separator: "\n"))")
@@ -341,6 +355,7 @@ import Pipeline
 
 // MARK: - DTD Version Compatibility Tests
 
+@MainActor
 @Test func validateAgainstMultipleDTDVersions() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -369,7 +384,9 @@ import Pipeline
         let xml = try exporter.export(timeline: timeline, modelContext: context)
 
         let validator = FCPXMLDTDValidator()
-        let result = try validator.validate(xmlContent: xml, version: version)
+        let dtdFilename = "Fixtures/FCPXMLv\(version.stringValue.replacingOccurrences(of: ".", with: "_"))"
+        let dtdURL = Bundle.module.url(forResource: dtdFilename, withExtension: "dtd")
+        let result = try validator.validate(xmlContent: xml, version: version, dtdURL: dtdURL)
 
         let versionStr = version.stringValue
         if !result.isValid {
@@ -381,6 +398,7 @@ import Pipeline
 
 // MARK: - Error Reporting Tests
 
+@MainActor
 @Test func dtdValidationProvidesUsefulErrors() async throws {
     // Create intentionally malformed FCPXML (missing required attributes)
     let malformedXML = """
@@ -403,7 +421,8 @@ import Pipeline
     """
 
     let validator = FCPXMLDTDValidator()
-    let result = try validator.validate(xmlContent: malformedXML, version: .v1_11)
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: malformedXML, version: .v1_11, dtdURL: dtdURL)
 
     #expect(!result.isValid, "Malformed XML should fail validation")
     #expect(!result.errors.isEmpty, "Should provide error messages")

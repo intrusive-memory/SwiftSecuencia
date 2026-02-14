@@ -68,11 +68,11 @@ public struct FCPXMLExporter {
         self.version = version
     }
 
-    /// Exports a timeline to FCPXML format.
+    /// Exports a timeline to FCPXML format using an AssetProvider.
     ///
     /// - Parameters:
     ///   - timeline: The timeline to export.
-    ///   - modelContext: The model context to fetch assets from.
+    ///   - assetProvider: Provider for accessing asset metadata and file URLs.
     ///   - libraryName: Name for the library element (default: "Exported Library").
     ///   - eventName: Name for the event element (default: "Exported Event").
     ///   - projectName: Name for the project (default: timeline name).
@@ -80,30 +80,35 @@ public struct FCPXMLExporter {
     /// - Throws: Export errors if timeline is invalid or assets are missing.
     public mutating func export(
         timeline: Timeline,
-        modelContext: SwiftData.ModelContext,
+        assetProvider: AssetProvider,
         libraryName: String = "Exported Library",
         eventName: String = "Exported Event",
         projectName: String? = nil
     ) throws -> String {
-        // Collect all assets and formats
-        var resourceMap = ResourceMap()
-        let assets = timeline.allAssets(in: modelContext)
+        // Task 5.2: Collect unique asset IDs from timeline clips
+        let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
-        // Generate resources
+        // Task 5.3: Fetch metadata for each asset and generate format
+        var resourceMap = ResourceMap()
         var resourceElements: [XMLElement] = []
 
-        // Add format resource (use timeline's videoFormat if available, otherwise default to 1080p23.98)
+        // Add format resource
         let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
         let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
         resourceElements.append(formatElement)
 
-        // Add asset resources (using frame rate from format)
-        for asset in assets {
-            let assetElement = try generateAssetElement(asset: asset, resourceMap: &resourceMap, frameRate: format.frameRate)
+        // Task 5.4 & 5.5: Generate asset elements with file URLs and hasVideo/hasAudio
+        for assetID in uniqueAssetIDs {
+            let assetElement = try generateAssetElement(
+                assetID: assetID,
+                assetProvider: assetProvider,
+                resourceMap: &resourceMap,
+                frameRate: format.frameRate
+            )
             resourceElements.append(assetElement)
         }
 
-        // Generate library > event > project > sequence > spine structure
+        // Task 5.6: Complete document structure (library > event > project > sequence > spine)
         let event = XMLElement(name: "event")
         event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
 
@@ -111,10 +116,9 @@ public struct FCPXMLExporter {
         let pName = projectName ?? timeline.name
         project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
 
-        // Create sequence (using frame rate from format)
-        let sequence = try generateSequenceElement(
+        // Create sequence
+        let sequence = try generateSequenceElementWithProvider(
             timeline: timeline,
-            modelContext: modelContext,
             resourceMap: resourceMap,
             frameRate: format.frameRate
         )
@@ -131,6 +135,42 @@ public struct FCPXMLExporter {
 
         // Return formatted XML string
         return doc.fcpxmlString
+    }
+
+    /// Exports a timeline to FCPXML format using SwiftData assets (if available as files).
+    ///
+    /// **Important**: This method requires assets to have file references or creates temporary files
+    /// from binary data. For purely in-memory SwiftData assets, use `FCPXMLBundleExporter` instead,
+    /// which embeds media into the bundle.
+    ///
+    /// **CLI Usage**: CLI tools should use `FileAssetProvider` instead of this method.
+    ///
+    /// - Parameters:
+    ///   - timeline: The timeline to export.
+    ///   - modelContext: The model context to fetch assets from.
+    ///   - libraryName: Name for the library element (default: "Exported Library").
+    ///   - eventName: Name for the event element (default: "Exported Event").
+    ///   - projectName: Name for the project (default: timeline name).
+    /// - Returns: FCPXML string representation.
+    /// - Throws: Export errors if timeline is invalid or assets are missing. Throws `AssetProviderError.dataNotSupported`
+    ///   if assets don't have file URLs (use `FCPXMLBundleExporter` for embedded media instead).
+    @MainActor
+    public mutating func export(
+        timeline: Timeline,
+        modelContext: SwiftData.ModelContext,
+        libraryName: String = "Exported Library",
+        eventName: String = "Exported Event",
+        projectName: String? = nil
+    ) throws -> String {
+        // Create SwiftDataAssetProvider - will throw if assets don't have file URLs
+        let provider = SwiftDataAssetProvider(modelContext: modelContext)
+        return try export(
+            timeline: timeline,
+            assetProvider: provider,
+            libraryName: libraryName,
+            eventName: eventName,
+            projectName: projectName
+        )
     }
 
     // MARK: - Resource Generation
@@ -159,7 +199,56 @@ public struct FCPXMLExporter {
         return element
     }
 
-    /// Generates an asset XML element.
+    /// Generates an asset XML element using AssetProvider.
+    private mutating func generateAssetElement(
+        assetID: UUID,
+        assetProvider: AssetProvider,
+        resourceMap: inout ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        // Fetch metadata from provider
+        let metadata = try assetProvider.assetMetadata(for: assetID)
+
+        let resourceID = nextResourceID()
+        resourceMap.assetIDs[assetID] = resourceID
+
+        let element = XMLElement(name: "asset")
+        element.addAttribute(XMLNode.attribute(withName: "id", stringValue: resourceID) as! XMLNode)
+
+        // Use metadata name
+        if !metadata.name.isEmpty {
+            element.addAttribute(XMLNode.attribute(withName: "name", stringValue: metadata.name) as! XMLNode)
+        }
+
+        // Add duration if available (frame-aligned)
+        if let duration = metadata.durationSeconds {
+            let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
+            element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
+        }
+
+        // Task 5.5: Set hasVideo/hasAudio from metadata
+        if metadata.hasVideo {
+            element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
+        }
+        if metadata.hasAudio {
+            element.addAttribute(XMLNode.attribute(withName: "hasAudio", stringValue: "1") as! XMLNode)
+        }
+
+        // Task 5.4: Get file URL from provider
+        let fileURL = try assetProvider.assetFileURL(for: assetID)
+        let srcURL = fileURL.path.hasPrefix("/") ? "file://\(fileURL.path)" : "file:///\(fileURL.path)"
+
+        // Add required media-rep child element
+        let mediaRep = XMLElement(name: "media-rep")
+        mediaRep.addAttribute(XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
+        mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
+        element.addChild(mediaRep)
+
+        return element
+    }
+
+    /// Generates an asset XML element from TypedDataStorage (legacy method).
+    /// This is kept for backward compatibility with FCPXMLBundleExporter.
     private mutating func generateAssetElement(
         asset: TypedDataStorage,
         resourceMap: inout ResourceMap,
@@ -209,7 +298,54 @@ public struct FCPXMLExporter {
 
     // MARK: - Sequence Generation
 
-    /// Generates a sequence XML element with spine and clips.
+    /// Generates a sequence XML element with spine and clips (AssetProvider version).
+    private func generateSequenceElementWithProvider(
+        timeline: Timeline,
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        let element = XMLElement(name: "sequence")
+
+        // Reference the format
+        guard let formatID = resourceMap.formatID else {
+            throw FCPXMLExportError.missingFormat
+        }
+        element.addAttribute(XMLNode.attribute(withName: "format", stringValue: formatID) as! XMLNode)
+
+        // Add duration (frame-aligned)
+        let alignedDuration = timeline.duration.aligned(to: frameRate)
+        element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: alignedDuration.fcpxmlString) as! XMLNode)
+
+        // Add tcStart (always 0 for now)
+        element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
+
+        // Generate spine
+        let spine = try generateSpineElementWithProvider(timeline: timeline, resourceMap: resourceMap, frameRate: frameRate)
+        element.addChild(spine)
+
+        return element
+    }
+
+    /// Generates a spine XML element with all storyline clips (AssetProvider version).
+    private func generateSpineElementWithProvider(
+        timeline: Timeline,
+        resourceMap: ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        let element = XMLElement(name: "spine")
+
+        // Get all clips sorted by offset then lane
+        let allClips = timeline.sortedClips
+
+        for clip in allClips {
+            let clipElement = try generateAssetClipElement(clip: clip, resourceMap: resourceMap, frameRate: frameRate)
+            element.addChild(clipElement)
+        }
+
+        return element
+    }
+
+    /// Generates a sequence XML element with spine and clips (legacy with ModelContext).
     private func generateSequenceElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext,

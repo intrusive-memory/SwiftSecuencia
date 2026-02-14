@@ -106,7 +106,112 @@ public struct FCPXMLBundleExporter {
         self.includeMedia = includeMedia
     }
 
-    /// Exports a timeline to an FCPXML bundle (.fcpxmld).
+    /// Exports a timeline to an FCPXML bundle (.fcpxmld) using an AssetProvider.
+    ///
+    /// - Parameters:
+    ///   - timeline: The timeline to export.
+    ///   - assetProvider: Provider for accessing asset metadata and data.
+    ///   - to: The directory where the bundle will be created.
+    ///   - bundleName: Name for the bundle (without extension). If nil, uses timeline name.
+    ///   - libraryName: Name for the library element (default: "Exported Library").
+    ///   - eventName: Name for the event element (default: "Exported Event").
+    ///   - projectName: Name for the project (default: timeline name).
+    ///   - progress: Optional Progress object for tracking export progress and cancellation.
+    /// - Returns: URL of the created bundle.
+    /// - Throws: Export errors if bundle creation fails or operation is cancelled.
+    @MainActor
+    public mutating func exportBundle(
+        timeline: Timeline,
+        assetProvider: AssetProvider,
+        to directory: URL,
+        bundleName: String? = nil,
+        libraryName: String = "Exported Library",
+        eventName: String = "Exported Event",
+        projectName: String? = nil,
+        progress: Progress? = nil
+    ) async throws -> URL {
+        // Set up progress tracking
+        let exportProgress = progress ?? Progress(totalUnitCount: 100)
+        exportProgress.localizedDescription = "Exporting FCPXML bundle"
+
+        let name = bundleName ?? timeline.name
+        let bundleURL = directory.appendingPathComponent("\(name).fcpxmld")
+
+        // Task 5.10: Create bundle directory structure (5%)
+        exportProgress.localizedAdditionalDescription = "Creating bundle structure"
+        try createBundleStructure(at: bundleURL)
+        exportProgress.completedUnitCount = 5
+
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Tasks 5.11-5.12: Export media files if enabled (70%)
+        var assetURLMap: [UUID: String] = [:]
+        var measuredDurations: [UUID: Double] = [:]
+        var audioTiming: [UUID: AudioTiming] = [:]
+        if includeMedia {
+            exportProgress.localizedAdditionalDescription = "Exporting media files"
+            let mediaProgress = Progress(totalUnitCount: 70, parent: exportProgress, pendingUnitCount: 70)
+
+            let result = try await exportMediaWithProvider(
+                timeline: timeline,
+                assetProvider: assetProvider,
+                to: bundleURL,
+                progress: mediaProgress
+            )
+            assetURLMap = result.assetURLMap
+            measuredDurations = result.measuredDurations
+            audioTiming = result.audioTiming
+        } else {
+            exportProgress.completedUnitCount = 75
+        }
+
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Task 5.13: Generate FCPXML with relative media paths (15%)
+        exportProgress.localizedAdditionalDescription = "Generating FCPXML"
+        let fcpxml = try generateFCPXMLWithProvider(
+            timeline: timeline,
+            assetProvider: assetProvider,
+            assetURLMap: assetURLMap,
+            measuredDurations: measuredDurations,
+            audioTiming: audioTiming,
+            libraryName: libraryName,
+            eventName: eventName,
+            projectName: projectName
+        )
+        exportProgress.completedUnitCount = 90
+
+        // Check for cancellation
+        if exportProgress.isCancelled {
+            throw FCPXMLExportError.cancelled
+        }
+
+        // Step 4: Write FCPXML to bundle (5%)
+        exportProgress.localizedAdditionalDescription = "Writing FCPXML"
+        let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
+        try fcpxml.write(to: fcpxmlURL, atomically: true, encoding: .utf8)
+        exportProgress.completedUnitCount = 95
+
+        // Task 5.14: Generate and write Info.plist (5%)
+        exportProgress.localizedAdditionalDescription = "Writing Info.plist"
+        try generateInfoPlist(bundleName: name, to: bundleURL)
+        exportProgress.completedUnitCount = 100
+
+        // Mark export as complete
+        exportProgress.localizedAdditionalDescription = "Export complete"
+
+        return bundleURL
+    }
+
+    /// Exports a timeline to an FCPXML bundle (.fcpxmld) using SwiftData.
+    ///
+    /// This is a backward compatibility wrapper that creates a SwiftDataAssetProvider internally.
     ///
     /// - Parameters:
     ///   - timeline: The timeline to export.
@@ -130,83 +235,18 @@ public struct FCPXMLBundleExporter {
         projectName: String? = nil,
         progress: Progress? = nil
     ) async throws -> URL {
-        // Set up progress tracking
-        let exportProgress = progress ?? Progress(totalUnitCount: 100)
-        exportProgress.localizedDescription = "Exporting FCPXML bundle"
-
-        let name = bundleName ?? timeline.name
-        let bundleURL = directory.appendingPathComponent("\(name).fcpxmld")
-
-        // Step 1: Create bundle directory structure (5%)
-        exportProgress.localizedAdditionalDescription = "Creating bundle structure"
-        try createBundleStructure(at: bundleURL)
-        exportProgress.completedUnitCount = 5
-
-        // Check for cancellation
-        if exportProgress.isCancelled {
-            throw FCPXMLExportError.cancelled
-        }
-
-        // Step 2: Export media files if enabled (70%)
-        var assetURLMap: [UUID: String] = [:]
-        var measuredDurations: [UUID: Double] = [:]
-        var audioTiming: [UUID: AudioTiming] = [:]
-        if includeMedia {
-            exportProgress.localizedAdditionalDescription = "Exporting media files"
-            let mediaProgress = Progress(totalUnitCount: 70, parent: exportProgress, pendingUnitCount: 70)
-
-            let result = try await exportMedia(
-                timeline: timeline,
-                modelContext: modelContext,
-                to: bundleURL,
-                progress: mediaProgress
-            )
-            assetURLMap = result.assetURLMap
-            measuredDurations = result.measuredDurations
-            audioTiming = result.audioTiming
-        } else {
-            exportProgress.completedUnitCount = 75
-        }
-
-        // Check for cancellation
-        if exportProgress.isCancelled {
-            throw FCPXMLExportError.cancelled
-        }
-
-        // Step 3: Generate FCPXML with relative media paths (15%)
-        exportProgress.localizedAdditionalDescription = "Generating FCPXML"
-        let fcpxml = try generateFCPXML(
+        // Create SwiftDataAssetProvider and delegate to AssetProvider method
+        let provider = SwiftDataAssetProvider(modelContext: modelContext)
+        return try await exportBundle(
             timeline: timeline,
-            modelContext: modelContext,
-            assetURLMap: assetURLMap,
-            measuredDurations: measuredDurations,
-            audioTiming: audioTiming,
+            assetProvider: provider,
+            to: directory,
+            bundleName: bundleName,
             libraryName: libraryName,
             eventName: eventName,
-            projectName: projectName
+            projectName: projectName,
+            progress: progress
         )
-        exportProgress.completedUnitCount = 90
-
-        // Check for cancellation
-        if exportProgress.isCancelled {
-            throw FCPXMLExportError.cancelled
-        }
-
-        // Step 4: Write FCPXML to bundle (5%)
-        exportProgress.localizedAdditionalDescription = "Writing FCPXML"
-        let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
-        try fcpxml.write(to: fcpxmlURL, atomically: true, encoding: .utf8)
-        exportProgress.completedUnitCount = 95
-
-        // Step 5: Generate and write Info.plist (5%)
-        exportProgress.localizedAdditionalDescription = "Writing Info.plist"
-        try generateInfoPlist(bundleName: name, to: bundleURL)
-        exportProgress.completedUnitCount = 100
-
-        // Mark export as complete
-        exportProgress.localizedAdditionalDescription = "Export complete"
-
-        return bundleURL
     }
 
     // MARK: - Bundle Structure
@@ -230,7 +270,139 @@ public struct FCPXMLBundleExporter {
 
     // MARK: - Media Export
 
-    /// Exports media files from TypedDataStorage to the Media folder.
+    /// Exports media files using AssetProvider to the Media folder (Tasks 5.11-5.12).
+    ///
+    /// - Parameters:
+    ///   - timeline: The timeline containing clips.
+    ///   - assetProvider: Provider for accessing asset data.
+    ///   - bundleURL: The bundle URL.
+    ///   - progress: Optional Progress object for tracking media export progress.
+    /// - Returns: Media export result containing asset URL map, measured durations, and audio timing.
+    @MainActor
+    private func exportMediaWithProvider(
+        timeline: Timeline,
+        assetProvider: AssetProvider,
+        to bundleURL: URL,
+        progress: Progress? = nil
+    ) async throws -> MediaExportResult {
+        // Collect unique asset IDs
+        let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+        var assetURLMap: [UUID: String] = [:]
+        var measuredDurations: [UUID: Double] = [:]
+        var audioTiming: [UUID: AudioTiming] = [:]
+
+        // Set up progress tracking for individual assets
+        let mediaProgress = progress ?? Progress(totalUnitCount: Int64(uniqueAssetIDs.count))
+        mediaProgress.localizedDescription = "Exporting media files"
+
+        let mediaURL = bundleURL.appendingPathComponent("Media")
+
+        for (index, assetID) in uniqueAssetIDs.enumerated() {
+            // Update progress description with current asset
+            mediaProgress.localizedAdditionalDescription = "Processing asset \(index + 1) of \(uniqueAssetIDs.count)"
+
+            // Check for cancellation before processing each asset
+            if mediaProgress.isCancelled {
+                throw FCPXMLExportError.cancelled
+            }
+
+            // Fetch asset metadata and data
+            let metadata = try assetProvider.assetMetadata(for: assetID)
+            let assetData = try assetProvider.assetData(for: assetID)
+
+            // Check if this is an audio file that needs conversion
+            let isAudio = metadata.mimeType.hasPrefix("audio/")
+
+            if isAudio {
+                // Task 5.12: Audio conversion integration
+                let inputExt = fileExtension(for: metadata.mimeType)
+
+                // Check if already M4A - if so, copy directly (Task 5.11)
+                if inputExt == "m4a" {
+                    let filename = "\(assetID.uuidString).m4a"
+                    let fileURL = mediaURL.appendingPathComponent(filename)
+                    try assetData.write(to: fileURL, options: .atomic)
+                    assetURLMap[assetID] = "Media/\(filename)"
+
+                    // Measure duration from the M4A file
+                    do {
+                        let audioAsset = AVURLAsset(url: fileURL)
+                        let duration = try await audioAsset.load(.duration).seconds
+                        measuredDurations[assetID] = duration
+                        audioTiming[assetID] = AudioTiming(duration: duration, trimStart: 0, trimEnd: 0)
+                    } catch {
+                        // Fall back to metadata duration
+                        if let duration = metadata.durationSeconds {
+                            measuredDurations[assetID] = duration
+                        }
+                    }
+                } else {
+                    // Convert non-M4A audio to M4A (Task 5.12)
+                    do {
+                        let filename = "\(assetID.uuidString).m4a"
+                        let fileURL = mediaURL.appendingPathComponent(filename)
+
+                        let audioProgress = Progress(totalUnitCount: 100)
+                        audioProgress.localizedDescription = "Converting \(metadata.name)"
+
+                        let timing = try await Self.convertAudioToM4A(
+                            audioData: assetData,
+                            inputExtension: inputExt,
+                            outputURL: fileURL,
+                            progress: audioProgress
+                        )
+
+                        assetURLMap[assetID] = "Media/\(filename)"
+                        measuredDurations[assetID] = timing.duration
+                        audioTiming[assetID] = timing
+                    } catch {
+                        // Conversion failed - write original audio file instead
+                        let filename = "\(assetID.uuidString).\(inputExt)"
+                        let fileURL = mediaURL.appendingPathComponent(filename)
+                        try assetData.write(to: fileURL, options: .atomic)
+                        assetURLMap[assetID] = "Media/\(filename)"
+
+                        if let duration = metadata.durationSeconds {
+                            measuredDurations[assetID] = duration
+                        }
+                    }
+                }
+            } else {
+                // Task 5.11: Direct media copy for video and images
+                let ext = fileExtension(for: metadata.mimeType)
+                let filename = "\(assetID.uuidString).\(ext)"
+                let fileURL = mediaURL.appendingPathComponent(filename)
+
+                try assetData.write(to: fileURL, options: .atomic)
+                assetURLMap[assetID] = "Media/\(filename)"
+
+                // Measure duration for video files
+                if metadata.mimeType.hasPrefix("video/") {
+                    do {
+                        let videoAsset = AVURLAsset(url: fileURL)
+                        let videoDuration = try await videoAsset.load(.duration).seconds
+                        measuredDurations[assetID] = videoDuration
+                    } catch {
+                        // Fall back to metadata
+                        if let duration = metadata.durationSeconds {
+                            measuredDurations[assetID] = duration
+                        }
+                    }
+                }
+            }
+
+            // Update progress after processing each asset
+            mediaProgress.completedUnitCount = Int64(index + 1)
+        }
+
+        return MediaExportResult(
+            assetURLMap: assetURLMap,
+            measuredDurations: measuredDurations,
+            audioTiming: audioTiming
+        )
+    }
+
+    /// Exports media files from TypedDataStorage to the Media folder (legacy with ModelContext).
     ///
     /// - Parameters:
     ///   - timeline: The timeline containing clips.
@@ -561,7 +733,111 @@ public struct FCPXMLBundleExporter {
 
     // MARK: - FCPXML Generation
 
-    /// Generates FCPXML string with asset references.
+    /// Generates FCPXML string with asset references using AssetProvider (Task 5.13).
+    @MainActor
+    private mutating func generateFCPXMLWithProvider(
+        timeline: Timeline,
+        assetProvider: AssetProvider,
+        assetURLMap: [UUID: String],
+        measuredDurations: [UUID: Double],
+        audioTiming: [UUID: AudioTiming],
+        libraryName: String,
+        eventName: String,
+        projectName: String?
+    ) throws -> String {
+        // If we have asset URLs, generate bundle FCPXML with relative paths
+        if !assetURLMap.isEmpty {
+            return try generateBundleFCPXMLWithProvider(
+                timeline: timeline,
+                assetProvider: assetProvider,
+                assetURLMap: assetURLMap,
+                measuredDurations: measuredDurations,
+                audioTiming: audioTiming,
+                libraryName: libraryName,
+                eventName: eventName,
+                projectName: projectName
+            )
+        } else {
+            // Use FCPXMLExporter with AssetProvider for absolute paths
+            var exporter = FCPXMLExporter(version: version)
+            return try exporter.export(
+                timeline: timeline,
+                assetProvider: assetProvider,
+                libraryName: libraryName,
+                eventName: eventName,
+                projectName: projectName
+            )
+        }
+    }
+
+    /// Generates FCPXML with relative media paths for bundle using AssetProvider.
+    private mutating func generateBundleFCPXMLWithProvider(
+        timeline: Timeline,
+        assetProvider: AssetProvider,
+        assetURLMap: [UUID: String],
+        measuredDurations: [UUID: Double],
+        audioTiming: [UUID: AudioTiming],
+        libraryName: String,
+        eventName: String,
+        projectName: String?
+    ) throws -> String {
+        // Collect all unique asset IDs
+        let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+
+        var resourceMap = ResourceMap()
+        resourceMap.audioTiming = audioTiming
+        var resourceElements: [XMLElement] = []
+
+        // Add format resource
+        let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
+        let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
+        resourceElements.append(formatElement)
+
+        // Add asset resources with relative paths
+        for assetID in uniqueAssetIDs {
+            let metadata = try assetProvider.assetMetadata(for: assetID)
+            let assetElement = try generateAssetElementWithProvider(
+                assetID: assetID,
+                metadata: metadata,
+                relativePath: assetURLMap[assetID],
+                measuredDuration: measuredDurations[assetID],
+                resourceMap: &resourceMap,
+                frameRate: format.frameRate
+            )
+            resourceElements.append(assetElement)
+        }
+
+        // Generate library > event > project > sequence > spine structure
+        let event = XMLElement(name: "event")
+        event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
+
+        let project = XMLElement(name: "project")
+        let pName = projectName ?? timeline.name
+        project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
+
+        // Create sequence
+        let sequence = try generateSequenceElement(
+            timeline: timeline,
+            modelContext: nil,  // Not needed anymore
+            resourceMap: resourceMap,
+            frameRate: format.frameRate
+        )
+
+        project.addChild(sequence)
+        event.addChild(project)
+
+        // Create FCPXML document using Pipeline's initializer
+        let doc = XMLDocument(
+            resources: resourceElements,
+            events: [event],
+            fcpxmlVersion: version
+        )
+
+        // Return formatted XML string
+        return doc.fcpxmlString
+    }
+
+    /// Generates FCPXML string with asset references (legacy with ModelContext).
     @MainActor
     private mutating func generateFCPXML(
         timeline: Timeline,
@@ -699,6 +975,52 @@ public struct FCPXMLBundleExporter {
         return element
     }
 
+    /// Generates an asset XML element using AssetProvider metadata.
+    private mutating func generateAssetElementWithProvider(
+        assetID: UUID,
+        metadata: AssetMetadata,
+        relativePath: String?,
+        measuredDuration: Double?,
+        resourceMap: inout ResourceMap,
+        frameRate: FrameRate
+    ) throws -> XMLElement {
+        let resourceID = nextResourceID()
+        resourceMap.assetIDs[assetID] = resourceID
+
+        let element = XMLElement(name: "asset")
+        element.addAttribute(XMLNode.attribute(withName: "id", stringValue: resourceID) as! XMLNode)
+
+        // Use metadata name
+        if !metadata.name.isEmpty {
+            element.addAttribute(XMLNode.attribute(withName: "name", stringValue: metadata.name) as! XMLNode)
+        }
+
+        // Add duration - prefer measured duration from audio conversion, fall back to asset metadata
+        let durationSeconds = measuredDuration ?? metadata.durationSeconds
+        if let duration = durationSeconds {
+            let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
+            element.addAttribute(XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
+        }
+
+        // Set hasVideo/hasAudio from metadata
+        if metadata.hasVideo {
+            element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
+        }
+        if metadata.hasAudio {
+            element.addAttribute(XMLNode.attribute(withName: "hasAudio", stringValue: "1") as! XMLNode)
+        }
+
+        // Add media-rep child element with relative or placeholder path
+        let srcURL = relativePath ?? "file:///placeholder/\(assetID.uuidString)"
+        let mediaRep = XMLElement(name: "media-rep")
+        mediaRep.addAttribute(XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
+        mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
+        element.addChild(mediaRep)
+
+        return element
+    }
+
+    /// Generates an asset XML element from TypedDataStorage (legacy method).
     private mutating func generateAssetElement(
         asset: TypedDataStorage,
         relativePath: String?,
@@ -748,7 +1070,7 @@ public struct FCPXMLBundleExporter {
 
     private func generateSequenceElement(
         timeline: Timeline,
-        modelContext: SwiftData.ModelContext,
+        modelContext: SwiftData.ModelContext?,
         resourceMap: ResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
@@ -793,7 +1115,7 @@ public struct FCPXMLBundleExporter {
 
     private func generateSpineElement(
         timeline: Timeline,
-        modelContext: SwiftData.ModelContext,
+        modelContext: SwiftData.ModelContext?,
         resourceMap: ResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {

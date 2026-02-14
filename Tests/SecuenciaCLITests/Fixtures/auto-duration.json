@@ -1,0 +1,31 @@
+{
+  "timeline": {
+    "name": "Auto Duration Timeline",
+    "format": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": "24",
+      "colorSpace": "rec709"
+    },
+    "audio": {
+      "layout": "stereo",
+      "rate": "48000"
+    }
+  },
+  "clips": [
+    {
+      "name": "Video with Auto Duration",
+      "file": "media/test-video.mov",
+      "offset": "0s",
+      "lane": 0,
+      "type": "video"
+    },
+    {
+      "name": "Audio with Auto Duration",
+      "file": "media/test-audio.m4a",
+      "offset": "1s",
+      "lane": -1,
+      "type": "audio"
+    }
+  ]
+}

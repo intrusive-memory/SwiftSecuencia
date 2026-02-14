@@ -1,0 +1,23 @@
+{
+  "timeline": {
+    "name": "Invalid Timeline",
+    "format": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": "24",
+      "colorSpace": "rec709"
+    },
+    "audio": {
+      "layout": "stereo",
+      "rate": "48kHz"
+    }
+  },
+  "clips": [
+    {
+      "name": "Invalid Clip",
+      "file": "file.mov",
+      "offset": "0s",
+      "type": "invalid"
+    }
+  ]
+}

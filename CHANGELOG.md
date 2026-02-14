@@ -5,6 +5,265 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-02-13
+
+### Fixed - CLI Architecture Refactor
+
+**Critical Fixes**: Resolved blocking test failures and architecture issues
+
+#### SecuenciaCLI Architecture
+- **Extracted SecuenciaCLICore library** from SecuenciaCLI executable
+  - Problem: Swift Package Manager prohibits importing executable targets in tests
+  - Solution: Created library target with all business logic; executable is thin wrapper
+  - Impact: All 116 CLI tests now compile and pass
+  - Files moved: Commands/, Parsing/, Builder/, Models/, SwiftData/, Resources/
+
+- **Public API for commands**
+  - Made Build, Validate, Schema structs public
+  - Added public init() to satisfy ParsableCommand protocol
+  - Commands accessible from executable entry point
+
+- **Resource access helper**
+  - Created SchemaResource enum for Bundle.module access
+  - Fixes "Schema resource not found" errors in tests
+  - Tests use SchemaResource.schemaURL instead of Bundle.module
+
+#### SwiftDataAssetProvider
+- **Fixed audio/mp4 file extension**
+  - Problem: audio/mp4 MIME type incorrectly mapped to .mp4 extension
+  - Fix: Check MIME type prefix; return .m4a for audio/mp4, .mp4 for video/mp4
+  - Impact: Resolved 1 failing test in AssetProviderTests
+
+#### Documentation
+- **Streamlined AGENTS.md** (18KB → 9KB)
+  - Removed verbose implementation details
+  - Updated architecture diagrams for SecuenciaCLICore
+  - Updated test counts (431 total: 315 + 116)
+  - Moved CLI details to Docs/CLI-ARCHITECTURE.md
+
+- **Created Docs/CLI-ARCHITECTURE.md**
+  - Comprehensive CLI implementation guide
+  - Architecture rationale and diagrams
+  - JSON format documentation
+  - Testing strategy and fixtures
+
+#### Test Results
+- SecuenciaCLITests: 116/116 passing ✅
+- SwiftSecuenciaTests: 315/315 passing ✅
+- **Total**: 431/431 passing ✅
+
+#### Commits
+- `293d5b5` Fix CLI architecture: Extract SecuenciaCLICore library
+- `83a8d90` Fix SwiftDataAssetProvider: Use .m4a extension for audio/mp4
+
+---
+
+## [2.0.1] - 2026-02-11
+
+### Fixed - CI Test Failures
+
+**Patch Release**: Critical fixes for PR #11 CI failures
+
+#### Compilation Errors
+- **Fixed ambiguous AudioExportFormat references** in TimelineAudioExporterTests
+  - Both SwiftSecuencia and SwiftCompartido define AudioExportFormat enum
+  - Solution: Use selective import `import class SwiftCompartido.TypedDataStorage`
+  - Eliminated module namespace collision without removing SwiftCompartido functionality
+
+#### DTD Validation Test Failures
+- **Restored temporary file creation** in SwiftDataAssetProvider.assetFileURL()
+  - Tests create in-memory SwiftData assets but FCPXMLExporter requires file URLs
+  - Added fileExtension() helper for MIME type → extension mapping
+  - Creates temp files from binaryValue for test scenarios
+  - Production code with file references should use FileAssetProvider instead
+
+#### Test Results
+- Code Quality: ✅ SUCCESS
+- DTD Validation: ✅ SUCCESS (10/10 tests passing)
+- macOS Unit Tests: ✅ IN PROGRESS (expected to pass)
+
+#### Commits
+- 4 commits fixing compilation and test failures
+- All changes maintain backward compatibility
+- No breaking changes to public APIs
+
+### Pull Request
+**PR #11**: SwiftSecuencia CLI Implementation
+**Changes**: Compilation fixes + DTD validation restoration
+
+---
+
+## [2.0.0] - 2026-02-09
+
+### Added - SwiftSecuencia CLI Implementation
+
+**Major Feature Release**: Complete command-line interface for JSON-to-FCPXML conversion
+
+#### Three New CLI Subcommands
+
+1. **`secuencia build`** - Generate FCPXML from JSON timeline definitions
+   - Standalone `.fcpxml` file export
+   - `.fcpxmld` bundle export with embedded media (`--bundle`)
+   - FCPXML version selection (`--format-version 1.8-1.13`)
+   - DTD validation with `--strict` mode
+   - Complete pipeline: JSON → Parse → Resolve → Probe → Build → Export
+
+2. **`secuencia validate`** - Validate JSON timeline without generating FCPXML
+   - JSON structure parsing and validation
+   - File path resolution (relative to JSON file)
+   - Media duration probing (ffprobe integration)
+   - Summary reports: clip counts, asset counts, total duration, lane range
+   - Warnings: short clips, overlapping clips, gaps in primary storyline
+
+3. **`secuencia schema`** - Output JSON Schema (draft 2020-12)
+   - Complete schema for programmatic validation
+   - All configuration types and enums documented
+   - Examples for time string formats
+   - Compatible with ajv-cli and other JSON Schema validators
+
+#### New CLI Components
+
+**Command Infrastructure**:
+- `BuildCommand.swift` - Full build pipeline with DTD validation
+- `ValidateCommand.swift` - JSON validation without export
+- `SchemaCommand.swift` - Schema output for programmatic validation
+- `Secuencia.swift` - Main entry point with ArgumentParser integration
+
+**Pipeline Components**:
+- `FileResolver.swift` - Relative path resolution and asset deduplication
+- `MediaProbe.swift` - ffprobe integration for duration probing
+- `TimelineBuilder.swift` - JSON → SwiftData Timeline conversion
+- `SwiftDataBootstrap.swift` - In-memory SwiftData container management
+
+**Data Models**:
+- `TimelineDefinition.swift` - JSON schema models (Codable)
+- `ClipDefinition.swift` - Clip metadata and properties
+- `TimeStringParser.swift` - Time format parsing (3s, 1001/24000s, 10.5s)
+- `FrameRateParser.swift` - Frame rate string parsing
+
+**Resources**:
+- `schema.json` - Complete JSON Schema (4.8KB)
+- `Fixtures/` - Test media files (video, audio, image)
+- `Fixtures/` - Test JSON timeline definitions
+
+#### Test Coverage
+
+**31 new CLI tests** across 5 test suites:
+- `BuildCommandTests` (6 tests) - Full build pipeline integration
+- `EndToEndTests` (9 tests) - Complete JSON-to-FCPXML scenarios
+- `DTDValidationTests` (10 tests) - DTD validation with --strict mode
+- `ValidateCommandTests` (3 tests) - JSON validation without export
+- `SchemaCommandTests` (3 tests) - Schema output validation
+
+**Test Fixtures**:
+- Media files: test-video.mov, test-audio.m4a, test-audio.wav, test-image.png
+- JSON files: simple-timeline.json, multi-lane-timeline.json, markers-timeline.json, auto-duration.json
+
+#### Documentation
+
+**AI Agent Guidelines**:
+- `AGENTS.md` - Unified AI agent development guidelines (comprehensive)
+- `CLAUDE.md` - Redirect to AGENTS.md
+- `GEMINI.md` - Redirect to AGENTS.md
+
+**README Updates**:
+- Complete CLI usage section with all three subcommands
+- JSON Schema documentation with field descriptions
+- Time string format reference table
+- MIME type derivation table
+- File path resolution rules
+- Installation and usage examples
+
+#### Performance
+
+- **Build time**: < 5 seconds
+- **Test suite**: ~0.2 seconds (31 CLI tests)
+- **FCPXML generation**: < 1 second for typical timelines
+- **Bundle export**: Variable (depends on media file sizes)
+
+#### Dependencies
+
+**New Dependencies**:
+- `swift-argument-parser` (1.7.0) - CLI argument parsing
+
+**Existing Dependencies** (unchanged):
+- SwiftCompartido (development)
+- SwiftFijos (development)
+- swift-timecode (3.0.0)
+- WebVTT (1.0.0+)
+- ZIPFoundation (0.9.20)
+- universal (5.3.0)
+
+### Changed
+
+- **Version**: Bumped to 2.0.0 (major version for CLI feature)
+- **SwiftSecuencia.swift**: Updated version string to "2.0.0"
+- **Documentation**: Reorganized for AI agent consistency
+
+### Developer Impact
+
+**No Breaking Changes**: All existing library APIs remain unchanged. CLI is additive functionality.
+
+**New Capabilities**:
+- Generate FCPXML from JSON definitions without writing Swift code
+- Validate timeline JSON before export
+- Programmatically validate JSON against schema
+- Build automation workflows with CLI tool
+
+### Migration Guide
+
+**From 1.0.x to 2.0.0**:
+
+No code changes required. CLI is optional new functionality:
+
+```bash
+# New CLI usage (optional)
+secuencia build timeline.json
+secuencia validate timeline.json
+secuencia schema > schema.json
+
+# Existing library APIs unchanged
+import SwiftSecuencia
+let timeline = Timeline(name: "My Timeline")
+// ... continues to work exactly as before
+```
+
+**Installation**:
+
+Update Package.swift dependency:
+```swift
+.package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "2.0.0")
+```
+
+Build CLI binary:
+```bash
+swift build -c release
+cp .build/release/secuencia /usr/local/bin/
+```
+
+### Commits
+
+**Total**: 61 commits across 10 sprints
+- Sprint 1: CLI Scaffold (8 commits)
+- Sprint 2-3: JSON Parsing (25 commits)
+- Sprint 4-5: Asset Resolution (14 commits)
+- Sprint 6-7: CLI Pipeline (9 commits)
+- Sprint 8-9-10: Validation (14 commits)
+- Final state updates (1 commit)
+
+### Pull Request
+
+**PR #11**: SwiftSecuencia CLI Implementation - Complete
+**URL**: https://github.com/intrusive-memory/SwiftSecuencia/pull/11
+**Changes**: +11,957 additions, -34 deletions
+
+---
+
+## [1.0.9] - 2026-02-02
+
+### Added
+- Small icon asset (`icon-sm.png`) for mobile-responsive dependency graph visualization
+
 ## [1.0.8] - 2026-01-31
 
 ### Added
@@ -198,6 +457,8 @@ SwiftSecuencia v1.0.0 is **production-ready** for generating Final Cut Pro timel
 - Confirm audio plays and mixes properly
 - Report any issues on GitHub
 
+[1.0.9]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.9
+[1.0.8]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.8
 [1.0.7]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.7
 [1.0.3]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.3
 [1.0.2]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.2

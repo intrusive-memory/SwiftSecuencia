@@ -90,7 +90,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "1.0.8")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "2.0.0")
 ]
 ```
 
@@ -175,6 +175,244 @@ let xmlString = try document.fcpxmlString()
 
 // Or write directly to file
 try document.write(to: URL(fileURLWithPath: "/path/to/output.fcpxml"))
+```
+
+## CLI
+
+SwiftSecuencia includes a command-line tool for generating FCPXML timelines from JSON definitions.
+
+### Installation
+
+Build the CLI binary:
+
+```bash
+swift build -c release
+cp .build/release/secuencia /usr/local/bin/
+```
+
+Or run directly without installing:
+
+```bash
+swift run secuencia build timeline.json
+```
+
+### Usage
+
+The CLI provides three subcommands:
+
+#### `secuencia build` - Generate FCPXML
+
+Convert a JSON timeline definition to Final Cut Pro FCPXML format:
+
+```bash
+# Generate standalone FCPXML file
+secuencia build timeline.json
+
+# Generate .fcpxmld bundle with embedded media
+secuencia build --bundle timeline.json
+
+# Specify custom output path
+secuencia build --output myproject.fcpxml timeline.json
+
+# Use specific FCPXML version
+secuencia build --format-version 1.13 timeline.json
+
+# Strict DTD validation (fail on warnings)
+secuencia build --strict timeline.json
+```
+
+**Expected output:**
+```
+✅ Export successful!
+Output: /path/to/timeline.fcpxml
+Timeline: Tutorial Video
+Format: 1920x1080 @ 23.98 fps
+Clips: 4
+Unique assets: 3
+Total duration: 45.00s
+Lanes: -1...1
+```
+
+#### `secuencia validate` - Validate JSON
+
+Validate a JSON timeline definition without generating FCPXML:
+
+```bash
+secuencia validate timeline.json
+```
+
+**Expected output:**
+```
+Parsing JSON...
+Resolving file paths...
+Probing media durations...
+
+✅ Validation successful!
+
+Timeline Summary:
+  Name: Tutorial Video
+  Format: 1920×1080 @ 23.98 fps
+  Color Space: rec709
+  Audio: stereo, 48kHz
+
+Clips:
+  Total: 4
+  audio: 1
+  image: 1
+  marker: 1
+  video: 1
+
+Assets:
+  Unique files: 3
+  Total duration: 45.00s
+  Lane range: -1 to 1
+
+⚠️  Warnings:
+  - Clip 'Title Card' is very short (0.100s)
+  - Gap of 2.00s in primary storyline between 'Act 1' and 'Act 2'
+```
+
+#### `secuencia schema` - Output JSON Schema
+
+Print the JSON Schema for programmatic validation:
+
+```bash
+secuencia schema > timeline-schema.json
+```
+
+Use with validation tools like [ajv](https://ajv.js.org/):
+
+```bash
+npm install -g ajv-cli
+ajv validate -s timeline-schema.json -d timeline.json
+```
+
+### JSON Schema Documentation
+
+SwiftSecuencia accepts JSON files describing timelines. This schema defines the contract between SwiftSecuencia and any tool generating timeline definitions.
+
+#### Example Timeline
+
+```json
+{
+  "timeline": {
+    "name": "Tutorial Video",
+    "format": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": "23.98",
+      "colorSpace": "rec709"
+    },
+    "audio": {
+      "layout": "stereo",
+      "rate": "48kHz"
+    }
+  },
+  "clips": [
+    {
+      "name": "Title Card",
+      "file": "media/title-card.png",
+      "offset": "0s",
+      "duration": "3s",
+      "lane": 0,
+      "type": "image"
+    },
+    {
+      "name": "Screen Recording",
+      "file": "media/screen.mov",
+      "offset": "3s",
+      "duration": "42s",
+      "lane": 0,
+      "type": "video"
+    },
+    {
+      "name": "Narration",
+      "file": "media/narration.m4a",
+      "offset": "3s",
+      "lane": -1,
+      "type": "audio"
+    },
+    {
+      "name": "Chapter 1",
+      "offset": "0s",
+      "type": "marker",
+      "markerType": "chapter"
+    }
+  ]
+}
+```
+
+#### Field Descriptions
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `timeline.name` | string | ✅ | Name of the timeline (appears in Final Cut Pro) |
+| `timeline.format.width` | integer | ✅ | Video width in pixels (e.g., 1920, 3840) |
+| `timeline.format.height` | integer | ✅ | Video height in pixels (e.g., 1080, 2160) |
+| `timeline.format.frameRate` | string | ✅ | Frame rate: `"23.98"`, `"24"`, `"25"`, `"29.97"`, `"30"`, `"50"`, `"59.94"`, `"60"` |
+| `timeline.format.colorSpace` | string | ❌ | Color space: `"rec709"`, `"rec2020"`, `"dciP3"` |
+| `timeline.audio.layout` | string | ✅ | Audio layout: `"mono"`, `"stereo"`, `"surround"` |
+| `timeline.audio.rate` | string | ✅ | Sample rate: `"44.1kHz"`, `"48kHz"`, `"96kHz"` |
+| `clips[].name` | string | ✅ | Name of the clip or marker |
+| `clips[].file` | string | ⚠️ | Path to media file (required for video/audio/image, not for markers) |
+| `clips[].offset` | string | ✅ | Start time on timeline (see Time String Formats below) |
+| `clips[].duration` | string | ❌ | Clip duration (probed from file if omitted for audio/video) |
+| `clips[].lane` | integer | ❌ | Timeline lane (default: 0). Positive = above, negative = below |
+| `clips[].type` | string | ✅ | Clip type: `"video"`, `"audio"`, `"image"`, `"marker"` |
+| `clips[].markerType` | string | ⚠️ | Marker type: `"standard"`, `"chapter"`, `"todo"` (required when type is `"marker"`) |
+| `clips[].volume` | number | ❌ | Audio volume (0.0 to 1.0) |
+| `clips[].opacity` | number | ❌ | Visual opacity (0.0 to 1.0) |
+
+#### Time String Formats
+
+Time values (`offset`, `duration`) support three formats:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| **Integer seconds** | `"3s"`, `"120s"` | Whole seconds with `s` suffix |
+| **Decimal seconds** | `"3.5s"`, `"10.25s"` | Fractional seconds with `s` suffix |
+| **Rational (FCPXML)** | `"1001/24000s"` | Numerator/denominator for precise frame timing |
+
+All formats require the `s` suffix. Negative values are not allowed.
+
+#### MIME Type Derivation
+
+The `type` field combined with file extension determines MIME type:
+
+| Type | Extensions | MIME Type | hasVideo | hasAudio |
+|------|-----------|-----------|----------|----------|
+| `video` | `.mov`, `.mp4` | `video/quicktime`, `video/mp4` | ✅ | ✅ |
+| `audio` | `.m4a`, `.mp3`, `.wav`, `.aiff` | `audio/mp4`, `audio/mpeg`, `audio/wav`, `audio/aiff` | ❌ | ✅ |
+| `image` | `.png`, `.jpg`, `.jpeg`, `.tiff` | `image/png`, `image/jpeg`, `image/tiff` | ✅ | ❌ |
+| `marker` | — | N/A | — | — |
+
+#### File Path Resolution
+
+- **Relative paths**: Resolved relative to the JSON file's directory
+- **Absolute paths**: Used as-is (must start with `/`)
+- **Validation**: All paths verified to exist before export
+- **Deduplication**: Multiple clips referencing the same file share a single asset in FCPXML
+
+#### Programmatic Access
+
+For JSON Schema validation in your own tools:
+
+```bash
+# Get the schema
+secuencia schema > schema.json
+
+# Validate your timeline
+ajv validate -s schema.json -d my-timeline.json
+```
+
+Or in Swift:
+
+```swift
+import Foundation
+
+let schemaData = try Data(contentsOf: URL(fileURLWithPath: "schema.json"))
+let schema = try JSONSerialization.jsonObject(with: schemaData)
+// Use JSONSchema validation library of your choice
 ```
 
 ## Features

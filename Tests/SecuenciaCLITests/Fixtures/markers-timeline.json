@@ -1,0 +1,53 @@
+{
+  "timeline": {
+    "name": "Timeline with Markers",
+    "format": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": "24",
+      "colorSpace": "rec709"
+    },
+    "audio": {
+      "layout": "stereo",
+      "rate": "48000"
+    }
+  },
+  "clips": [
+    {
+      "name": "Chapter 1",
+      "offset": "0s",
+      "type": "marker",
+      "markerType": "chapter"
+    },
+    {
+      "name": "Title Image",
+      "file": "media/test-image.png",
+      "offset": "0s",
+      "duration": "3s",
+      "lane": 0,
+      "type": "image"
+    },
+    {
+      "name": "Chapter 2",
+      "offset": "3s",
+      "type": "marker",
+      "markerType": "chapter"
+    },
+    {
+      "name": "Main Video",
+      "file": "media/test-video.mov",
+      "offset": "3s",
+      "duration": "1s",
+      "lane": 0,
+      "type": "video"
+    },
+    {
+      "name": "Background Audio",
+      "file": "media/test-audio.m4a",
+      "offset": "0s",
+      "duration": "2s",
+      "lane": -1,
+      "type": "audio"
+    }
+  ]
+}

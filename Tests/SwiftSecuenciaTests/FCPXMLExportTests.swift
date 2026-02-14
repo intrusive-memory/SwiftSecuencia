@@ -6,6 +6,7 @@ import SwiftCompartido
 
 // MARK: - Basic Export Tests
 
+@MainActor
 @Test func exportEmptyTimelineGeneratesValidXML() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -32,6 +33,7 @@ import SwiftCompartido
     #expect(xml.contains("</fcpxml>"))
 }
 
+@MainActor
 @Test func exportTimelineWithSingleClip() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -72,6 +74,7 @@ import SwiftCompartido
     #expect(xml.contains("duration=\"719719/24000s\""))
 }
 
+@MainActor
 @Test func exportTimelineWithMultipleClips() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -123,6 +126,7 @@ import SwiftCompartido
 
 // MARK: - Resource Generation Tests
 
+@MainActor
 @Test func exportGeneratesFormatResource() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -144,6 +148,7 @@ import SwiftCompartido
     #expect(xml.contains("height=\"1080\""))
 }
 
+@MainActor
 @Test func exportGeneratesAssetResources() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -192,6 +197,7 @@ import SwiftCompartido
 
 // MARK: - Clip Attribute Tests
 
+@MainActor
 @Test func exportClipWithSourceStart() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -227,6 +233,7 @@ import SwiftCompartido
     #expect(xml.contains("start=\"120120/24000s\""))
 }
 
+@MainActor
 @Test func exportClipWithName() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -261,6 +268,7 @@ import SwiftCompartido
     #expect(xml.contains("name=\"My Custom Clip Name\""))
 }
 
+@MainActor
 @Test func exportClipOnNonZeroLane() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -296,6 +304,7 @@ import SwiftCompartido
 
 // MARK: - XML Structure Tests
 
+@MainActor
 @Test func exportGeneratesValidXMLStructure() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -337,6 +346,7 @@ import SwiftCompartido
     #expect(spine != nil)
 }
 
+@MainActor
 @Test func exportWithCustomProjectName() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
@@ -357,6 +367,7 @@ import SwiftCompartido
     #expect(!xml.contains("<project name=\"Timeline Name\">"))
 }
 
+@MainActor
 @Test func exportUsesTimelineNameAsDefaultProjectName() async throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)

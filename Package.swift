@@ -18,12 +18,22 @@ let package = Package(
             name: "Pipeline",
             targets: ["Pipeline"]
         ),
+        .library(
+            name: "SecuenciaCLICore",
+            targets: ["SecuenciaCLICore"]
+        ),
+        .executable(
+            name: "secuencia",
+            targets: ["SecuenciaCLI"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
         .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
         .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
         .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+        .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
     ],
     targets: [
         .target(
@@ -49,6 +59,34 @@ let package = Package(
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
         ),
+        .target(
+            name: "SecuenciaCLICore",
+            dependencies: [
+                "SwiftSecuencia",
+                .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
+                .product(name: "SwiftFijos", package: "SwiftFijos"),
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .product(name: "Universal", package: "universal"),
+            ],
+            path: "Sources/SecuenciaCLICore",
+            resources: [
+                .process("Resources/")
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
+        .executableTarget(
+            name: "SecuenciaCLI",
+            dependencies: [
+                "SecuenciaCLICore",
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            path: "Sources/SecuenciaCLI",
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
         .testTarget(
             name: "SwiftSecuenciaTests",
             dependencies: [
@@ -57,6 +95,22 @@ let package = Package(
                 .product(name: "SwiftFijos", package: "SwiftFijos"),
             ],
             path: "Tests/SwiftSecuenciaTests",
+            resources: [
+                .copy("Fixtures")
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("StrictConcurrency"),
+            ]
+        ),
+        .testTarget(
+            name: "SecuenciaCLITests",
+            dependencies: [
+                "SecuenciaCLICore",
+                "SwiftSecuencia",
+                .product(name: "SwiftFijos", package: "SwiftFijos"),
+            ],
+            path: "Tests/SecuenciaCLITests",
+            resources: [.copy("Fixtures")],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]
