@@ -15,10 +15,6 @@ let package = Package(
             targets: ["SwiftSecuencia"]
         ),
         .library(
-            name: "Pipeline",
-            targets: ["Pipeline"]
-        ),
-        .library(
             name: "SecuenciaCLICore",
             targets: ["SecuenciaCLICore"]
         ),
@@ -34,20 +30,13 @@ let package = Package(
         .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
         .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
+        .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.3.1"),
     ],
     targets: [
         .target(
-            name: "Pipeline",
-            dependencies: [],
-            path: "Sources/Pipeline",
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ]
-        ),
-        .target(
             name: "SwiftSecuencia",
             dependencies: [
-                .target(name: "Pipeline", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
+                .product(name: "PipelineNeo", package: "pipeline-neo", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
                 .product(name: "SwiftCompartido", package: "SwiftCompartido"),
                 .product(name: "SwiftFijos", package: "SwiftFijos"),  // DTD validation macOS-only
                 .product(name: "SwiftTimecode", package: "swift-timecode"),
@@ -63,7 +52,6 @@ let package = Package(
             name: "SecuenciaCLICore",
             dependencies: [
                 "SwiftSecuencia",
-                .target(name: "Pipeline", condition: .when(platforms: [.macOS])),
                 .product(name: "SwiftFijos", package: "SwiftFijos"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Universal", package: "universal"),

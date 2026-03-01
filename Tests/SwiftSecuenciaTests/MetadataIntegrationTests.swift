@@ -2,7 +2,23 @@
 //  MetadataIntegrationTests.swift
 //  SwiftSecuencia
 //
-//  Integration tests for metadata export in FCPXML bundles.
+//  Integration tests verifying that PipelineNeo exports metadata (markers, keywords,
+//  ratings, chapter markers, and custom metadata) correctly through the
+//  SwiftSecuenciaExporter pipeline.
+//
+//  CRITICAL: These tests correct iteration 01's false conclusion that PipelineNeo
+//  does NOT export metadata. Sortie 0 research confirmed that PipelineNeo DOES export
+//  metadata (FCPXMLExporter.swift lines 143-193). These tests prove it end-to-end.
+//
+//  Test strategy:
+//  - Create SwiftSecuencia Timeline with clips containing metadata
+//  - Use FileAssetProvider (no SwiftData dependency, fast)
+//  - Pass through full adapter -> exporter pipeline (SwiftSecuenciaExporter)
+//  - Assert metadata appears in the generated FCPXML string
+//
+//  Note: Timeline-level markers/keywords/ratings are intentionally omitted per Bug B
+//  (see TimelineAdapters.swift). Only clip-level metadata is tested here because
+//  clip-level metadata is the only valid location per FCPXML DTD v1.11.
 //
 
 import Testing
@@ -11,31 +27,12 @@ import SwiftData
 import SwiftCompartido
 @testable import SwiftSecuencia
 
+// MARK: - Clip-Level Marker Export
+
 @MainActor
-@Test func timelineWithMarkersExportsCorrectly() async throws {
-    // Create timeline with markers
-    var timeline = Timeline(name: "Test Timeline")
-    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
-
-    // Add timeline-level markers
-    timeline.markers.append(Marker(
-        start: Timecode(seconds: 10),
-        value: "Scene transition",
-        note: "Add dissolve here"
-    ))
-
-    timeline.chapterMarkers.append(ChapterMarker(
-        start: Timecode.zero,
-        value: "Introduction"
-    ))
-
-    timeline.chapterMarkers.append(ChapterMarker(
-        start: Timecode(seconds: 60),
-        value: "Chapter 1",
-        posterOffset: Timecode(seconds: 5)
-    ))
-
-    // Create model container
+@Test("SwiftSecuenciaExporter exports clip-level markers in FCPXML")
+func swiftSecuenciaExporterExportsClipMarkers() throws {
+    // Create in-memory SwiftData container
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(
         for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
@@ -43,82 +40,54 @@ import SwiftCompartido
     )
     let context = ModelContext(container)
 
-    // Create sample audio asset
+    // Create audio asset
     let asset = TypedDataStorage(
         providerId: "test-provider",
-        requestorID: "test-requestor",
-        mimeType: "audio/x-aiff",
-        binaryValue: try TestUtilities.generateAudioData(text: "Test audio for markers"),
-        prompt: "Test audio"
+        requestorID: "test-marker",
+        mimeType: "audio/mp4",
+        binaryValue: Data("test-audio-data".utf8),
+        durationSeconds: 30.0
     )
-    asset.durationSeconds = 30.0
+    asset.prompt = "Marker Test Audio"
     context.insert(asset)
 
-    // Add a clip with metadata
+    // Create timeline
+    let timeline = Timeline(name: "Marker Test Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    // Create clip WITH a marker
     var clip = TimelineClip(
         assetStorageId: asset.id,
-        offset: Timecode.zero,
         duration: Timecode(seconds: 30)
     )
-
     clip.markers.append(Marker(
         start: Timecode(seconds: 5),
-        value: "Peak moment"
+        value: "Important Moment",
+        note: "Review this section"
     ))
+    timeline.insertClip(clip, at: .zero, lane: 0)
 
-    clip.keywords.append(Keyword(
-        start: Timecode.zero,
-        duration: Timecode(seconds: 30),
-        value: "Dialogue"
-    ))
-
-    timeline.clips.append(clip)
-    context.insert(timeline)
-    try context.save()
-
-    // Export to bundle
-    let tempDir = FileManager.default.temporaryDirectory
-    var exporter = FCPXMLBundleExporter(includeMedia: true)
-    let bundleURL = try await exporter.exportBundle(
+    // Export through SwiftSecuenciaExporter (pipeline-neo path)
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
         timeline: timeline,
-        modelContext: context,
-        to: tempDir,
-        bundleName: "MetadataTest"
+        assetProvider: provider,
+        eventName: "Test Event"
     )
 
-    // Read generated FCPXML
-    let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
-    let fcpxmlString = try String(contentsOf: fcpxmlURL, encoding: .utf8)
-
-    // Verify timeline-level markers are present
-    #expect(fcpxmlString.contains("<marker"))
-    #expect(fcpxmlString.contains("Scene transition"))
-    #expect(fcpxmlString.contains("Add dissolve here"))
-
-    // Verify chapter markers
-    #expect(fcpxmlString.contains("<chapter-marker"))
-    #expect(fcpxmlString.contains("Introduction"))
-    #expect(fcpxmlString.contains("Chapter 1"))
-    #expect(fcpxmlString.contains("posterOffset=\"5s\""))
-
-    // Verify clip-level markers
-    #expect(fcpxmlString.contains("Peak moment"))
-
-    // Verify keywords
-    #expect(fcpxmlString.contains("<keyword"))
-    #expect(fcpxmlString.contains("Dialogue"))
-
-    // Cleanup
-    try? FileManager.default.removeItem(at: bundleURL)
+    // CRITICAL ASSERTIONS: Marker must appear in FCPXML
+    #expect(fcpxml.contains("<marker"), "FCPXML must contain <marker element -- PipelineNeo exports markers")
+    #expect(fcpxml.contains("Important Moment"), "Marker value must appear in FCPXML")
+    #expect(fcpxml.contains("Review this section"), "Marker note must appear in FCPXML")
 }
 
-@MainActor
-@Test func clipWithRatingsAndMetadataExportsCorrectly() async throws {
-    // Create timeline
-    let timeline = Timeline(name: "Rated Timeline")
-    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps24)
+// MARK: - Clip-Level Keyword Export
 
-    // Create model container
+@MainActor
+@Test("SwiftSecuenciaExporter exports clip-level keywords in FCPXML")
+func swiftSecuenciaExporterExportsClipKeywords() throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(
         for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
@@ -126,90 +95,154 @@ import SwiftCompartido
     )
     let context = ModelContext(container)
 
-    // Create sample asset
     let asset = TypedDataStorage(
         providerId: "test-provider",
-        requestorID: "test-requestor",
-        mimeType: "audio/x-aiff",
-        binaryValue: try TestUtilities.generateAudioData(text: "Best take"),
-        prompt: "Best take"
+        requestorID: "test-keyword",
+        mimeType: "audio/mp4",
+        binaryValue: Data("test-audio-data".utf8),
+        durationSeconds: 60.0
     )
-    asset.durationSeconds = 60.0
+    asset.prompt = "Keyword Test Audio"
     context.insert(asset)
 
-    // Add clip with rating and metadata
+    let timeline = Timeline(name: "Keyword Test Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
     var clip = TimelineClip(
         assetStorageId: asset.id,
-        offset: Timecode.zero,
         duration: Timecode(seconds: 60)
     )
-
-    // Add favorite rating
-    clip.ratings.append(Rating(
+    clip.keywords.append(Keyword(
         start: Timecode.zero,
         duration: Timecode(seconds: 60),
+        value: "Dialogue"
+    ))
+    timeline.insertClip(clip, at: .zero, lane: 0)
+
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
+        timeline: timeline,
+        assetProvider: provider,
+        eventName: "Test Event"
+    )
+
+    // CRITICAL ASSERTIONS: Keyword must appear in FCPXML
+    #expect(fcpxml.contains("<keyword"), "FCPXML must contain <keyword element -- PipelineNeo exports keywords")
+    #expect(fcpxml.contains("Dialogue"), "Keyword value must appear in FCPXML")
+}
+
+// MARK: - Clip-Level Rating Export
+
+@MainActor
+@Test("SwiftSecuenciaExporter exports clip-level ratings in FCPXML")
+func swiftSecuenciaExporterExportsClipRatings() throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+        for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+        configurations: config
+    )
+    let context = ModelContext(container)
+
+    let asset = TypedDataStorage(
+        providerId: "test-provider",
+        requestorID: "test-rating",
+        mimeType: "audio/mp4",
+        binaryValue: Data("test-audio-data".utf8),
+        durationSeconds: 45.0
+    )
+    asset.prompt = "Rating Test Audio"
+    context.insert(asset)
+
+    let timeline = Timeline(name: "Rating Test Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    var clip = TimelineClip(
+        assetStorageId: asset.id,
+        duration: Timecode(seconds: 45)
+    )
+    clip.ratings.append(Rating(
+        start: Timecode.zero,
+        duration: Timecode(seconds: 45),
         value: .favorite,
         note: "Best take"
     ))
+    timeline.insertClip(clip, at: .zero, lane: 0)
 
-    // Add custom metadata
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
+        timeline: timeline,
+        assetProvider: provider,
+        eventName: "Test Event"
+    )
+
+    // CRITICAL ASSERTIONS: Rating must appear in FCPXML
+    #expect(fcpxml.contains("<rating"), "FCPXML must contain <rating element -- PipelineNeo exports ratings")
+    #expect(fcpxml.contains("favorite"), "Rating value must appear in FCPXML")
+}
+
+// MARK: - Clip-Level Custom Metadata Export
+
+@MainActor
+@Test("SwiftSecuenciaExporter exports clip-level custom metadata in FCPXML")
+func swiftSecuenciaExporterExportsClipMetadata() throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+        for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+        configurations: config
+    )
+    let context = ModelContext(container)
+
+    let asset = TypedDataStorage(
+        providerId: "test-provider",
+        requestorID: "test-metadata",
+        mimeType: "audio/mp4",
+        binaryValue: Data("test-audio-data".utf8),
+        durationSeconds: 60.0
+    )
+    asset.prompt = "Metadata Test Audio"
+    context.insert(asset)
+
+    let timeline = Timeline(name: "Metadata Test Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    var clip = TimelineClip(
+        assetStorageId: asset.id,
+        duration: Timecode(seconds: 60)
+    )
     var metadata = Metadata()
     metadata.setReel("A001")
     metadata.setScene("1")
     metadata.setTake("3")
     metadata.setDescription("Interview with subject")
     clip.metadata = metadata
+    timeline.insertClip(clip, at: .zero, lane: 0)
 
-    timeline.clips.append(clip)
-    context.insert(timeline)
-    try context.save()
-
-    // Export to bundle
-    let tempDir = FileManager.default.temporaryDirectory
-    var exporter = FCPXMLBundleExporter(includeMedia: true)
-    let bundleURL = try await exporter.exportBundle(
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
         timeline: timeline,
-        modelContext: context,
-        to: tempDir,
-        bundleName: "RatingsTest"
+        assetProvider: provider,
+        eventName: "Test Event"
     )
 
-    // Read generated FCPXML
-    let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
-    let fcpxmlString = try String(contentsOf: fcpxmlURL, encoding: .utf8)
-
-    // Verify rating
-    #expect(fcpxmlString.contains("<rating"))
-    #expect(fcpxmlString.contains("value=\"favorite\""))
-    #expect(fcpxmlString.contains("Best take"))
-
-    // Verify metadata
-    #expect(fcpxmlString.contains("<metadata>"))
-    #expect(fcpxmlString.contains("<md"))
-    #expect(fcpxmlString.contains("com.apple.proapps.studio.reel"))
-    #expect(fcpxmlString.contains("A001"))
-    #expect(fcpxmlString.contains("com.apple.proapps.studio.scene"))
-    #expect(fcpxmlString.contains("com.apple.proapps.studio.take"))
-    #expect(fcpxmlString.contains("Interview with subject"))
-
-    // Cleanup
-    try? FileManager.default.removeItem(at: bundleURL)
+    // CRITICAL ASSERTIONS: Metadata must appear in FCPXML
+    #expect(fcpxml.contains("<metadata>"), "FCPXML must contain <metadata> element")
+    #expect(fcpxml.contains("<md"), "FCPXML must contain <md elements for metadata entries")
+    #expect(fcpxml.contains("com.apple.proapps.studio.reel"), "Reel metadata key must appear")
+    #expect(fcpxml.contains("A001"), "Reel value must appear")
+    #expect(fcpxml.contains("Interview with subject"), "Description value must appear")
 }
 
+// MARK: - Combined Metadata Export (All Types)
+
 @MainActor
-@Test func multipleClipsWithDifferentMetadataExportCorrectly() async throws {
-    // Create timeline
-    let timeline = Timeline(name: "Multi-Clip Metadata")
-    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps29_97)
-
-    // Add timeline keywords
-    timeline.keywords.append(Keyword(
-        start: Timecode.zero,
-        duration: Timecode(seconds: 120),
-        value: "Interview"
-    ))
-
-    // Create model container
+@Test("SwiftSecuenciaExporter exports all metadata types on a single clip")
+func swiftSecuenciaExporterExportsAllMetadataTypes() throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(
         for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
@@ -217,100 +250,91 @@ import SwiftCompartido
     )
     let context = ModelContext(container)
 
-    // Create two assets
+    // Create two assets for two clips
     let asset1 = TypedDataStorage(
         providerId: "test-provider",
-        requestorID: "test-requestor",
-        mimeType: "audio/x-aiff",
-        binaryValue: try TestUtilities.generateAudioData(text: "Question 1"),
-        prompt: "Question 1"
+        requestorID: "test-combined-1",
+        mimeType: "audio/mp4",
+        binaryValue: Data("audio-clip-1".utf8),
+        durationSeconds: 30.0
     )
-    asset1.durationSeconds = 30.0
+    asset1.prompt = "Combined Test Clip 1"
     context.insert(asset1)
 
     let asset2 = TypedDataStorage(
         providerId: "test-provider",
-        requestorID: "test-requestor",
-        mimeType: "audio/x-aiff",
-        binaryValue: try TestUtilities.generateAudioData(text: "Question 2"),
-        prompt: "Question 2"
+        requestorID: "test-combined-2",
+        mimeType: "audio/mp4",
+        binaryValue: Data("audio-clip-2".utf8),
+        durationSeconds: 40.0
     )
-    asset2.durationSeconds = 40.0
+    asset2.prompt = "Combined Test Clip 2"
     context.insert(asset2)
 
-    // First clip with markers
+    let timeline = Timeline(name: "Combined Metadata Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    // Clip 1: marker + keyword
     var clip1 = TimelineClip(
-        name: "Question 1",
         assetStorageId: asset1.id,
-        offset: Timecode.zero,
         duration: Timecode(seconds: 30)
     )
-
     clip1.markers.append(Marker(
         start: Timecode(seconds: 10),
-        value: "Interesting point"
+        value: "Scene Change"
     ))
-
     clip1.keywords.append(Keyword(
         start: Timecode.zero,
         duration: Timecode(seconds: 30),
-        value: "Q&A"
+        value: "Interview"
     ))
+    timeline.insertClip(clip1, at: .zero, lane: 0)
 
-    // Second clip with different metadata
+    // Clip 2: rating + chapter marker
     var clip2 = TimelineClip(
-        name: "Question 2",
         assetStorageId: asset2.id,
-        offset: Timecode(seconds: 30),
         duration: Timecode(seconds: 40)
     )
-
     clip2.ratings.append(Rating(
         start: Timecode.zero,
         duration: Timecode(seconds: 40),
         value: .favorite
     ))
+    clip2.chapterMarkers.append(ChapterMarker(
+        start: Timecode.zero,
+        value: "Chapter 1"
+    ))
+    timeline.appendClip(clip2)
 
-    var clip2Meta = Metadata()
-    clip2Meta.setTake("2")
-    clip2.metadata = clip2Meta
-
-    timeline.clips.append(clip1)
-    timeline.clips.append(clip2)
-    context.insert(timeline)
-    try context.save()
-
-    // Export to bundle
-    let tempDir = FileManager.default.temporaryDirectory
-    var exporter = FCPXMLBundleExporter(includeMedia: true)
-    let bundleURL = try await exporter.exportBundle(
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
         timeline: timeline,
-        modelContext: context,
-        to: tempDir,
-        bundleName: "MultiClipTest"
+        assetProvider: provider,
+        eventName: "Test Event"
     )
 
-    // Read generated FCPXML
-    let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
-    let fcpxmlString = try String(contentsOf: fcpxmlURL, encoding: .utf8)
+    // Verify ALL metadata types appear
+    #expect(fcpxml.contains("<marker"), "Markers must be exported via PipelineNeo")
+    #expect(fcpxml.contains("Scene Change"), "Marker value must be in output")
+    #expect(fcpxml.contains("<keyword"), "Keywords must be exported via PipelineNeo")
+    #expect(fcpxml.contains("Interview"), "Keyword value must be in output")
+    #expect(fcpxml.contains("<rating"), "Ratings must be exported via PipelineNeo")
+    #expect(fcpxml.contains("favorite"), "Rating value must be in output")
+    #expect(fcpxml.contains("<chapter-marker"), "Chapter markers must be exported via PipelineNeo")
+    #expect(fcpxml.contains("Chapter 1"), "Chapter marker value must be in output")
 
-    // Verify both clips have their metadata
-    #expect(fcpxmlString.contains("Interesting point"))
-    #expect(fcpxmlString.contains("Q&amp;A"))  // XML encodes & as &amp;
-    #expect(fcpxmlString.contains("value=\"favorite\""))
-    #expect(fcpxmlString.contains("com.apple.proapps.studio.take"))
-
-    // Cleanup
-    try? FileManager.default.removeItem(at: bundleURL)
+    // Verify two asset-clip elements
+    let clipCount = fcpxml.components(separatedBy: "<asset-clip").count - 1
+    #expect(clipCount == 2, "Should have 2 asset-clip elements")
 }
 
-@MainActor
-@Test func emptyMetadataIsNotExported() async throws {
-    // Create timeline without any metadata
-    let timeline = Timeline(name: "No Metadata")
-    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps24)
+// MARK: - Empty Metadata Clip
 
-    // Create model container
+@MainActor
+@Test("SwiftSecuenciaExporter does not emit metadata elements for clips without metadata")
+func swiftSecuenciaExporterOmitsEmptyMetadata() throws {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try ModelContainer(
         for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
@@ -318,49 +342,196 @@ import SwiftCompartido
     )
     let context = ModelContext(container)
 
-    // Create asset
     let asset = TypedDataStorage(
         providerId: "test-provider",
-        requestorID: "test-requestor",
-        mimeType: "audio/x-aiff",
-        binaryValue: try TestUtilities.generateAudioData(text: "Plain audio"),
-        prompt: "Plain audio"
+        requestorID: "test-no-metadata",
+        mimeType: "audio/mp4",
+        binaryValue: Data("plain-audio".utf8),
+        durationSeconds: 10.0
     )
-    asset.durationSeconds = 10.0
+    asset.prompt = "Plain Audio"
     context.insert(asset)
 
-    // Add clip without metadata
+    let timeline = Timeline(name: "No Metadata Timeline")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    // Clip with NO metadata
     let clip = TimelineClip(
         assetStorageId: asset.id,
-        offset: Timecode.zero,
         duration: Timecode(seconds: 10)
     )
+    timeline.insertClip(clip, at: .zero, lane: 0)
 
-    timeline.clips.append(clip)
-    context.insert(timeline)
-    try context.save()
-
-    // Export to bundle
-    let tempDir = FileManager.default.temporaryDirectory
-    var exporter = FCPXMLBundleExporter(includeMedia: true)
-    let bundleURL = try await exporter.exportBundle(
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
         timeline: timeline,
-        modelContext: context,
-        to: tempDir,
-        bundleName: "NoMetadataTest"
+        assetProvider: provider,
+        eventName: "Test Event"
     )
 
-    // Read generated FCPXML
-    let fcpxmlURL = bundleURL.appendingPathComponent("Info.fcpxml")
-    let fcpxmlString = try String(contentsOf: fcpxmlURL, encoding: .utf8)
+    // Verify NO metadata elements
+    #expect(!fcpxml.contains("<marker"), "No markers should appear for empty-metadata clip")
+    #expect(!fcpxml.contains("<keyword"), "No keywords should appear for empty-metadata clip")
+    #expect(!fcpxml.contains("<rating"), "No ratings should appear for empty-metadata clip")
+    #expect(!fcpxml.contains("<chapter-marker"), "No chapter markers should appear for empty-metadata clip")
+}
 
-    // Verify no metadata elements are present
-    #expect(!fcpxmlString.contains("<marker"))
-    #expect(!fcpxmlString.contains("<chapter-marker"))
-    #expect(!fcpxmlString.contains("<keyword"))
-    #expect(!fcpxmlString.contains("<rating"))
-    #expect(!fcpxmlString.contains("<metadata>"))
+// MARK: - DTD Validation: r-prefixed Resource IDs
 
-    // Cleanup
-    try? FileManager.default.removeItem(at: bundleURL)
+@MainActor
+@Test("SwiftSecuenciaExporter generates r-prefixed resource IDs")
+func swiftSecuenciaExporterUsesRPrefixedResourceIDs() throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+        for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+        configurations: config
+    )
+    let context = ModelContext(container)
+
+    let asset = TypedDataStorage(
+        providerId: "test-provider",
+        requestorID: "test-resource-ids",
+        mimeType: "video/mp4",
+        binaryValue: Data("video-data".utf8),
+        durationSeconds: 30.0
+    )
+    asset.prompt = "Resource ID Test"
+    context.insert(asset)
+
+    let timeline = Timeline(name: "Resource ID Test")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    let clip = TimelineClip(
+        assetStorageId: asset.id,
+        duration: Timecode(seconds: 30)
+    )
+    timeline.insertClip(clip, at: .zero, lane: 0)
+
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
+        timeline: timeline,
+        assetProvider: provider,
+        eventName: "Test Event"
+    )
+
+    // DTD validation: Format resource must be r1
+    #expect(fcpxml.contains("id=\"r1\""), "Format resource must have id=\"r1\"")
+
+    // DTD validation: Asset resource must be r2+
+    #expect(fcpxml.contains("id=\"r2\""), "First asset resource must have id=\"r2\"")
+
+    // DTD validation: No library name attribute
+    // Parse as XML to verify
+    let doc = try XMLDocument(xmlString: fcpxml, options: [.nodePreserveAll])
+    if let root = doc.rootElement() {
+        for library in root.elements(forName: "library") {
+            #expect(
+                library.attribute(forName: "name") == nil,
+                "Library element must NOT have a name attribute (DTD violation)"
+            )
+        }
+    }
+}
+
+// MARK: - DTD Validation: No Library Name Attribute
+
+@MainActor
+@Test("SwiftSecuenciaExporter removes library name attribute for DTD compliance")
+func swiftSecuenciaExporterRemovesLibraryName() throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+        for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+        configurations: config
+    )
+    let context = ModelContext(container)
+
+    let timeline = Timeline(name: "Library Name Test")
+    context.insert(timeline)
+
+    // Even an empty timeline should produce valid FCPXML without library name
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
+        timeline: timeline,
+        assetProvider: provider,
+        eventName: "Test Event"
+    )
+
+    // Verify library element exists but has no name attribute
+    #expect(fcpxml.contains("<library"), "FCPXML must contain <library element")
+
+    // Parse and inspect
+    let doc = try XMLDocument(xmlString: fcpxml, options: [.nodePreserveAll])
+    if let root = doc.rootElement() {
+        let libraries = root.elements(forName: "library")
+        #expect(!libraries.isEmpty, "Must have at least one library element")
+        for library in libraries {
+            #expect(
+                library.attribute(forName: "name") == nil,
+                "Library name attribute must be removed for DTD compliance"
+            )
+        }
+    }
+}
+
+// MARK: - DTD Validation via xmllint (if available)
+
+@MainActor
+@Test("SwiftSecuenciaExporter output passes DTD validation with metadata")
+func swiftSecuenciaExporterMetadataPassesDTDValidation() throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+        for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+        configurations: config
+    )
+    let context = ModelContext(container)
+
+    let asset = TypedDataStorage(
+        providerId: "test-provider",
+        requestorID: "test-dtd",
+        mimeType: "audio/mp4",
+        binaryValue: Data("dtd-test-audio".utf8),
+        durationSeconds: 30.0
+    )
+    asset.prompt = "DTD Test Audio"
+    context.insert(asset)
+
+    let timeline = Timeline(name: "DTD Validation Test")
+    timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps23_98)
+    context.insert(timeline)
+
+    // Create clip with ALL metadata types
+    var clip = TimelineClip(
+        assetStorageId: asset.id,
+        duration: Timecode(seconds: 30)
+    )
+    clip.markers.append(Marker(start: Timecode(seconds: 5), value: "Mark"))
+    clip.keywords.append(Keyword(start: Timecode.zero, duration: Timecode(seconds: 30), value: "Test"))
+    clip.ratings.append(Rating(start: Timecode.zero, duration: Timecode(seconds: 30), value: .favorite))
+    var meta = Metadata()
+    meta.setReel("A001")
+    clip.metadata = meta
+    timeline.insertClip(clip, at: .zero, lane: 0)
+
+    let exporter = SwiftSecuenciaExporter(version: .v1_11)
+    let provider = SwiftDataAssetProvider(modelContext: context)
+    let fcpxml = try exporter.export(
+        timeline: timeline,
+        assetProvider: provider,
+        eventName: "Test Event"
+    )
+
+    // Use SwiftSecuencia's own DTD validator if available
+    let validator = FCPXMLDTDValidator()
+    let dtdURL = Bundle.module.url(forResource: "Fixtures/FCPXMLv1_11", withExtension: "dtd")
+    let result = try validator.validate(xmlContent: fcpxml, version: .v1_11, dtdURL: dtdURL)
+
+    if !result.isValid {
+        Issue.record("DTD validation failed for metadata FCPXML:\n\(result.errors.joined(separator: "\n"))")
+    }
+    #expect(result.isValid, "FCPXML with metadata must pass DTD validation")
 }

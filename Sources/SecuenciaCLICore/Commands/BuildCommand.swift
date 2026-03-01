@@ -4,9 +4,6 @@ import SwiftSecuencia
 import SwiftData
 import SwiftFijos
 
-#if os(macOS)
-import Pipeline
-#endif
 
 // MARK: - FCPXMLVersion Extension
 
@@ -109,28 +106,34 @@ public struct Build: AsyncParsableCommand {
         #if os(macOS)
         if bundle {
             // Bundle export mode
+            let bundleName: String
             let outputDir: URL
+
             if let outputPath = output {
-                outputDir = URL(fileURLWithPath: outputPath).deletingLastPathComponent()
+                let outputURL = URL(fileURLWithPath: outputPath)
+                outputDir = outputURL.deletingLastPathComponent()
+                // Remove bundle extension if present
+                bundleName = outputURL.deletingPathExtension().lastPathComponent
             } else {
                 outputDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                bundleName = definition.timeline.name
             }
 
-            let bundleName = output?.replacingOccurrences(of: ".fcpxmld", with: "") ?? definition.timeline.name
+            let bundleURL = outputDir.appendingPathComponent("\(bundleName).fcpbundle")
 
-            var bundleExporter = FCPXMLBundleExporter(
-                version: .from(string: formatVersion),
-                includeMedia: true
+            let bundleExporter = SwiftSecuenciaBundleExporter(
+                version: .from(string: formatVersion)
             )
 
-            return try await bundleExporter.exportBundle(
+            try await bundleExporter.exportBundle(
                 timeline: timeline,
-                assetProvider: assetProvider,
-                to: outputDir,
-                bundleName: bundleName,
-                libraryName: "SwiftSecuencia Export",
-                eventName: definition.timeline.name
+                projectName: definition.timeline.name,
+                eventName: definition.timeline.name,
+                bundleURL: bundleURL,
+                assetProvider: assetProvider
             )
+
+            return bundleURL
         } else {
             // Standalone FCPXML export
             let outputPath: String
@@ -141,7 +144,7 @@ public struct Build: AsyncParsableCommand {
                 outputPath = inputURL.deletingPathExtension().appendingPathExtension("fcpxml").path
             }
 
-            var exporter = FCPXMLExporter(version: .from(string: formatVersion))
+            let exporter = SwiftSecuenciaExporter(version: .from(string: formatVersion))
             let xmlString = try exporter.export(
                 timeline: timeline,
                 assetProvider: assetProvider,

@@ -4,7 +4,7 @@ import Foundation
 
 #if os(macOS)
 import SwiftSecuencia
-import Pipeline
+// PipelineNeo types are accessed via SwiftSecuencia re-exports (e.g., FCPXMLVersion)
 
 /// Tests for the BuildCommand end-to-end pipeline.
 ///

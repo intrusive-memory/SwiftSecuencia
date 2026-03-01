@@ -4,7 +4,7 @@ import Testing
 
 #if os(macOS)
 import SwiftSecuencia
-import Pipeline
+// PipelineNeo types are accessed via SwiftSecuencia re-exports
 
 /// End-to-end tests for the complete CLI pipeline.
 ///

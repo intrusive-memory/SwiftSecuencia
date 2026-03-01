@@ -4,7 +4,7 @@ import Testing
 
 #if os(macOS)
 import SwiftSecuencia
-import Pipeline
+// PipelineNeo types are accessed via SwiftSecuencia re-exports (e.g., FCPXMLVersion)
 import SwiftData
 
 /// Tests for DTD validation of generated FCPXML.

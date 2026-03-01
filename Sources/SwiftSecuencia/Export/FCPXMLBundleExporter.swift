@@ -10,8 +10,8 @@
 import Foundation
 import SwiftData
 import SwiftCompartido
-import Pipeline
 import AVFoundation
+import PipelineNeo
 
 /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
 ///
@@ -784,7 +784,7 @@ public struct FCPXMLBundleExporter {
         // Collect all unique asset IDs
         let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
-        var resourceMap = ResourceMap()
+        var resourceMap = LegacyResourceMap()
         resourceMap.audioTiming = audioTiming
         var resourceElements: [XMLElement] = []
 
@@ -890,7 +890,7 @@ public struct FCPXMLBundleExporter {
         exporter: inout FCPXMLExporter
     ) throws -> String {
         // Collect all assets and formats
-        var resourceMap = ResourceMap()
+        var resourceMap = LegacyResourceMap()
         resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
         let assets = timeline.allAssets(in: modelContext)
 
@@ -955,7 +955,7 @@ public struct FCPXMLBundleExporter {
 
     private mutating func generateFormatElement(
         format: VideoFormat,
-        resourceMap: inout ResourceMap
+        resourceMap: inout LegacyResourceMap
     ) throws -> XMLElement {
         let formatID = nextResourceID()
         resourceMap.formatID = formatID
@@ -981,7 +981,7 @@ public struct FCPXMLBundleExporter {
         metadata: AssetMetadata,
         relativePath: String?,
         measuredDuration: Double?,
-        resourceMap: inout ResourceMap,
+        resourceMap: inout LegacyResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
         let resourceID = nextResourceID()
@@ -1025,7 +1025,7 @@ public struct FCPXMLBundleExporter {
         asset: TypedDataStorage,
         relativePath: String?,
         measuredDuration: Double?,
-        resourceMap: inout ResourceMap,
+        resourceMap: inout LegacyResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
         let assetID = nextResourceID()
@@ -1071,7 +1071,7 @@ public struct FCPXMLBundleExporter {
     private func generateSequenceElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext?,
-        resourceMap: ResourceMap,
+        resourceMap: LegacyResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
         let element = XMLElement(name: "sequence")
@@ -1116,7 +1116,7 @@ public struct FCPXMLBundleExporter {
     private func generateSpineElement(
         timeline: Timeline,
         modelContext: SwiftData.ModelContext?,
-        resourceMap: ResourceMap,
+        resourceMap: LegacyResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
         let element = XMLElement(name: "spine")
@@ -1133,7 +1133,7 @@ public struct FCPXMLBundleExporter {
 
     private func generateAssetClipElement(
         clip: TimelineClip,
-        resourceMap: ResourceMap,
+        resourceMap: LegacyResourceMap,
         frameRate: FrameRate
     ) throws -> XMLElement {
         guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {

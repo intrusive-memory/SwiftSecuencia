@@ -9,7 +9,7 @@
 
 import Foundation
 import SwiftFijos
-import Pipeline
+import PipelineNeo
 
 /// Validates FCPXML documents against DTD specifications using xmllint.
 ///
