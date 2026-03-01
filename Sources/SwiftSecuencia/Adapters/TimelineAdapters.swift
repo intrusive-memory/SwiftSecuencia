@@ -56,13 +56,13 @@
 //  non-compliance, and then re-enable the conversion here.
 
 #if os(macOS)
-  import Foundation
-  import CoreMedia
-  import PipelineNeo
+import Foundation
+import CoreMedia
+import PipelineNeo
 
-  // MARK: - Timecode → CMTime
+// MARK: - Timecode → CMTime
 
-  extension Timecode {
+extension Timecode {
 
     /// Converts this `Timecode` to a `CMTime` for use with PipelineNeo.
     ///
@@ -75,13 +75,13 @@
     ///
     /// - Returns: A `CMTime` with the same rational value as this `Timecode`.
     func toCMTime() -> CMTime {
-      CMTime(value: self.value, timescale: self.timescale)
+        CMTime(value: self.value, timescale: self.timescale)
     }
-  }
+}
 
-  // MARK: - Metadata Adapters
+// MARK: - Metadata Adapters
 
-  extension Marker {
+extension Marker {
 
     /// Converts this `SwiftSecuencia.Marker` to a `PipelineNeo.Marker`.
     ///
@@ -95,17 +95,17 @@
     ///
     /// - Returns: A `PipelineNeo.Marker` with equivalent values.
     func toPipelineNeoMarker() -> PipelineNeo.Marker {
-      PipelineNeo.Marker(
-        start: start.toCMTime(),
-        duration: duration.toCMTime(),
-        value: value,
-        note: note,
-        completed: completed
-      )
+        PipelineNeo.Marker(
+            start: start.toCMTime(),
+            duration: duration.toCMTime(),
+            value: value,
+            note: note,
+            completed: completed
+        )
     }
-  }
+}
 
-  extension ChapterMarker {
+extension ChapterMarker {
 
     /// Converts this `SwiftSecuencia.ChapterMarker` to a `PipelineNeo.ChapterMarker`.
     ///
@@ -116,16 +116,16 @@
     ///
     /// - Returns: A `PipelineNeo.ChapterMarker` with equivalent values.
     func toPipelineNeoChapterMarker() -> PipelineNeo.ChapterMarker {
-      PipelineNeo.ChapterMarker(
-        start: start.toCMTime(),
-        value: value,
-        posterOffset: posterOffset?.toCMTime(),
-        note: note
-      )
+        PipelineNeo.ChapterMarker(
+            start: start.toCMTime(),
+            value: value,
+            posterOffset: posterOffset?.toCMTime(),
+            note: note
+        )
     }
-  }
+}
 
-  extension Keyword {
+extension Keyword {
 
     /// Converts this `SwiftSecuencia.Keyword` to a `PipelineNeo.Keyword`.
     ///
@@ -135,16 +135,16 @@
     ///
     /// - Returns: A `PipelineNeo.Keyword` with equivalent values.
     func toPipelineNeoKeyword() -> PipelineNeo.Keyword {
-      PipelineNeo.Keyword(
-        start: start.toCMTime(),
-        duration: duration.toCMTime(),
-        value: value,
-        note: note
-      )
+        PipelineNeo.Keyword(
+            start: start.toCMTime(),
+            duration: duration.toCMTime(),
+            value: value,
+            note: note
+        )
     }
-  }
+}
 
-  extension Rating {
+extension Rating {
 
     /// Converts this `SwiftSecuencia.Rating` to a `PipelineNeo.Rating`.
     ///
@@ -159,24 +159,24 @@
     ///
     /// - Returns: A `PipelineNeo.Rating` with equivalent values.
     func toPipelineNeoRating() -> PipelineNeo.Rating {
-      let pipelineNeoRatingValue: PipelineNeo.Rating.RatingValue
-      switch value {
-      case .favorite:
-        pipelineNeoRatingValue = .favorite
-      case .rejected:
-        pipelineNeoRatingValue = .rejected
-      }
+        let pipelineNeoRatingValue: PipelineNeo.Rating.RatingValue
+        switch value {
+        case .favorite:
+            pipelineNeoRatingValue = .favorite
+        case .rejected:
+            pipelineNeoRatingValue = .rejected
+        }
 
-      return PipelineNeo.Rating(
-        start: start.toCMTime(),
-        duration: duration.toCMTime(),
-        value: pipelineNeoRatingValue,
-        note: note
-      )
+        return PipelineNeo.Rating(
+            start: start.toCMTime(),
+            duration: duration.toCMTime(),
+            value: pipelineNeoRatingValue,
+            note: note
+        )
     }
-  }
+}
 
-  extension Metadata {
+extension Metadata {
 
     /// Converts this `SwiftSecuencia.Metadata` to a `PipelineNeo.Metadata`.
     ///
@@ -188,28 +188,27 @@
     ///
     /// - Returns: A `PipelineNeo.Metadata` with the same key-value entries.
     func toPipelineNeoMetadata() -> PipelineNeo.Metadata {
-      PipelineNeo.Metadata(entries: entries)
+        PipelineNeo.Metadata(entries: entries)
     }
-  }
+}
 
-  // MARK: - VideoFormat Adapter
+// MARK: - VideoFormat Adapter
 
-  /// Conversion errors for `VideoFormat → PipelineNeo.TimelineFormat`.
-  enum VideoFormatConversionError: Error, LocalizedError {
+/// Conversion errors for `VideoFormat → PipelineNeo.TimelineFormat`.
+enum VideoFormatConversionError: Error, LocalizedError {
 
     /// The frame dimensions are invalid (width or height ≤ 0).
     case invalidDimensions(width: Int, height: Int)
 
     public var errorDescription: String? {
-      switch self {
-      case .invalidDimensions(let width, let height):
-        return
-          "Invalid video format dimensions: \(width)×\(height). Both width and height must be greater than zero."
-      }
+        switch self {
+        case .invalidDimensions(let width, let height):
+            return "Invalid video format dimensions: \(width)×\(height). Both width and height must be greater than zero."
+        }
     }
-  }
+}
 
-  extension VideoFormat {
+extension VideoFormat {
 
     /// Converts this `VideoFormat` to a `PipelineNeo.TimelineFormat`.
     ///
@@ -241,37 +240,37 @@
     /// - Returns: A `PipelineNeo.TimelineFormat` with equivalent properties.
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if dimensions are ≤ 0.
     func toPipelineNeoTimelineFormat() throws -> PipelineNeo.TimelineFormat {
-      guard width > 0, height > 0 else {
-        throw VideoFormatConversionError.invalidDimensions(width: width, height: height)
-      }
+        guard width > 0, height > 0 else {
+            throw VideoFormatConversionError.invalidDimensions(width: width, height: height)
+        }
 
-      // Explicit switch enforces exhaustiveness at compile time. If SwiftSecuencia.ColorSpace
-      // gains new cases, the compiler will require this switch to be updated.
-      let pipelineNeoColorSpace: PipelineNeo.ColorSpace
-      switch colorSpace {
-      case .rec709:
-        pipelineNeoColorSpace = .rec709
-      case .rec2020:
-        pipelineNeoColorSpace = .rec2020
-      case .rec2020HLG:
-        pipelineNeoColorSpace = .rec2020HLG
-      case .rec2020PQ:
-        pipelineNeoColorSpace = .rec2020PQ
-      case .sRGB:
-        pipelineNeoColorSpace = .sRGB
-      }
+        // Explicit switch enforces exhaustiveness at compile time. If SwiftSecuencia.ColorSpace
+        // gains new cases, the compiler will require this switch to be updated.
+        let pipelineNeoColorSpace: PipelineNeo.ColorSpace
+        switch colorSpace {
+        case .rec709:
+            pipelineNeoColorSpace = .rec709
+        case .rec2020:
+            pipelineNeoColorSpace = .rec2020
+        case .rec2020HLG:
+            pipelineNeoColorSpace = .rec2020HLG
+        case .rec2020PQ:
+            pipelineNeoColorSpace = .rec2020PQ
+        case .sRGB:
+            pipelineNeoColorSpace = .sRGB
+        }
 
-      return PipelineNeo.TimelineFormat(
-        width: width,
-        height: height,
-        frameDuration: frameDuration.toCMTime(),
-        colorSpace: pipelineNeoColorSpace,
-        interlaced: interlaced
-      )
+        return PipelineNeo.TimelineFormat(
+            width: width,
+            height: height,
+            frameDuration: frameDuration.toCMTime(),
+            colorSpace: pipelineNeoColorSpace,
+            interlaced: interlaced
+        )
     }
-  }
+}
 
-  extension Optional where Wrapped == VideoFormat {
+extension Optional where Wrapped == VideoFormat {
 
     /// Converts an optional `VideoFormat` to a `PipelineNeo.TimelineFormat`.
     ///
@@ -295,27 +294,27 @@
     /// - Returns: A `PipelineNeo.TimelineFormat`.
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if format has invalid dimensions.
     func toPipelineNeoTimelineFormat() throws -> PipelineNeo.TimelineFormat {
-      switch self {
-      case .some(let format):
-        return try format.toPipelineNeoTimelineFormat()
-      case .none:
-        // Default: HD 1080p @ 23.976fps, Rec. 709 — Final Cut Pro's default timeline format.
-        // Use exact rational 1001/24000s (not seconds-based) to preserve frame accuracy.
-        let defaultFrameDuration = CMTime(value: 1001, timescale: 24000)
-        return PipelineNeo.TimelineFormat(
-          width: 1920,
-          height: 1080,
-          frameDuration: defaultFrameDuration,
-          colorSpace: .rec709,
-          interlaced: false
-        )
-      }
+        switch self {
+        case .some(let format):
+            return try format.toPipelineNeoTimelineFormat()
+        case .none:
+            // Default: HD 1080p @ 23.976fps, Rec. 709 — Final Cut Pro's default timeline format.
+            // Use exact rational 1001/24000s (not seconds-based) to preserve frame accuracy.
+            let defaultFrameDuration = CMTime(value: 1001, timescale: 24000)
+            return PipelineNeo.TimelineFormat(
+                width: 1920,
+                height: 1080,
+                frameDuration: defaultFrameDuration,
+                colorSpace: .rec709,
+                interlaced: false
+            )
+        }
     }
-  }
+}
 
-  // MARK: - TimelineClip Adapter
+// MARK: - TimelineClip Adapter
 
-  extension TimelineClip {
+extension TimelineClip {
 
     /// Converts this `SwiftSecuencia.TimelineClip` to a `PipelineNeo.TimelineClip`,
     /// using a `ResourceMap` to translate the `assetStorageId` UUID into a
@@ -355,39 +354,39 @@
     /// - Parameter resourceMap: A `ResourceMap` with asset UUIDs pre-registered.
     /// - Returns: A `PipelineNeo.TimelineClip` with DTD-compliant asset reference.
     func toPipelineNeoTimelineClip(resourceMap: ResourceMap) -> PipelineNeo.TimelineClip {
-      // Look up the r-prefixed resource ID. If not found, fall back to UUID string
-      // with a runtime assertion to catch misconfigured export pipelines in development.
-      let assetRef: String
-      if let mappedID = resourceMap.assetResourceID(for: assetStorageId) {
-        assetRef = mappedID
-      } else {
-        assertionFailure(
-          "TimelineClip.toPipelineNeoTimelineClip: asset UUID \(assetStorageId) was not registered in ResourceMap. "
-            + "Register all asset UUIDs before calling adapters. Falling back to UUID string."
+        // Look up the r-prefixed resource ID. If not found, fall back to UUID string
+        // with a runtime assertion to catch misconfigured export pipelines in development.
+        let assetRef: String
+        if let mappedID = resourceMap.assetResourceID(for: assetStorageId) {
+            assetRef = mappedID
+        } else {
+            assertionFailure(
+                "TimelineClip.toPipelineNeoTimelineClip: asset UUID \(assetStorageId) was not registered in ResourceMap. " +
+                "Register all asset UUIDs before calling adapters. Falling back to UUID string."
+            )
+            assetRef = assetStorageId.uuidString
+        }
+
+        return PipelineNeo.TimelineClip(
+            name: name,
+            assetRef: assetRef,
+            offset: offset.toCMTime(),
+            duration: duration.toCMTime(),
+            start: sourceStart.toCMTime(),
+            lane: lane,
+            isVideoDisabled: isVideoDisabled,
+            markers: markers.map { $0.toPipelineNeoMarker() },
+            chapterMarkers: chapterMarkers.map { $0.toPipelineNeoChapterMarker() },
+            keywords: keywords.map { $0.toPipelineNeoKeyword() },
+            ratings: ratings.map { $0.toPipelineNeoRating() },
+            metadata: metadata?.toPipelineNeoMetadata()
         )
-        assetRef = assetStorageId.uuidString
-      }
-
-      return PipelineNeo.TimelineClip(
-        name: name,
-        assetRef: assetRef,
-        offset: offset.toCMTime(),
-        duration: duration.toCMTime(),
-        start: sourceStart.toCMTime(),
-        lane: lane,
-        isVideoDisabled: isVideoDisabled,
-        markers: markers.map { $0.toPipelineNeoMarker() },
-        chapterMarkers: chapterMarkers.map { $0.toPipelineNeoChapterMarker() },
-        keywords: keywords.map { $0.toPipelineNeoKeyword() },
-        ratings: ratings.map { $0.toPipelineNeoRating() },
-        metadata: metadata?.toPipelineNeoMetadata()
-      )
     }
-  }
+}
 
-  // MARK: - Timeline Adapter
+// MARK: - Timeline Adapter
 
-  extension Timeline {
+extension Timeline {
 
     /// Converts this `SwiftSecuencia.Timeline` to a `PipelineNeo.Timeline`,
     /// using a `ResourceMap` to translate asset UUID references in clips to
@@ -442,23 +441,23 @@
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if the video format has
     ///   invalid dimensions.
     func toPipelineNeoTimeline(resourceMap: ResourceMap) throws -> PipelineNeo.Timeline {
-      PipelineNeo.Timeline(
-        name: name,
-        format: try videoFormat.toPipelineNeoTimelineFormat(),
-        clips: clips.map { $0.toPipelineNeoTimelineClip(resourceMap: resourceMap) },
-        // Timeline-level markers, chapterMarkers, keywords, and ratings are intentionally
-        // omitted. See the detailed explanation in the method documentation and the
-        // file-level comment (Sequence-Level Metadata, Bug B).
-        markers: [],
-        chapterMarkers: [],
-        keywords: [],
-        ratings: [],
-        // <metadata> IS valid as a sequence child per DTD — preserve it.
-        metadata: metadata?.toPipelineNeoMetadata(),
-        createdAt: createdAt,
-        modifiedAt: modifiedAt
-      )
+        PipelineNeo.Timeline(
+            name: name,
+            format: try videoFormat.toPipelineNeoTimelineFormat(),
+            clips: clips.map { $0.toPipelineNeoTimelineClip(resourceMap: resourceMap) },
+            // Timeline-level markers, chapterMarkers, keywords, and ratings are intentionally
+            // omitted. See the detailed explanation in the method documentation and the
+            // file-level comment (Sequence-Level Metadata, Bug B).
+            markers: [],
+            chapterMarkers: [],
+            keywords: [],
+            ratings: [],
+            // <metadata> IS valid as a sequence child per DTD — preserve it.
+            metadata: metadata?.toPipelineNeoMetadata(),
+            createdAt: createdAt,
+            modifiedAt: modifiedAt
+        )
     }
-  }
+}
 
-#endif  // os(macOS)
+#endif // os(macOS)

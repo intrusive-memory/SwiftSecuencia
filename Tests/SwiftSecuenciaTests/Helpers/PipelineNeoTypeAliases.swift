@@ -11,53 +11,53 @@
 //
 
 #if os(macOS)
-  import PipelineNeo
+import PipelineNeo
 
-  // MARK: - Timeline & Clip Types
+// MARK: - Timeline & Clip Types
 
-  typealias PNTimeline = PipelineNeo.Timeline
-  typealias PNTimelineClip = PipelineNeo.TimelineClip
-  typealias PNTimelineFormat = PipelineNeo.TimelineFormat
+typealias PNTimeline = PipelineNeo.Timeline
+typealias PNTimelineClip = PipelineNeo.TimelineClip
+typealias PNTimelineFormat = PipelineNeo.TimelineFormat
 
-  // MARK: - Annotation Types
+// MARK: - Annotation Types
 
-  typealias PNMarker = PipelineNeo.Marker
-  typealias PNChapterMarker = PipelineNeo.ChapterMarker
-  typealias PNKeyword = PipelineNeo.Keyword
-  typealias PNRating = PipelineNeo.Rating
-  typealias PNMetadata = PipelineNeo.Metadata
+typealias PNMarker = PipelineNeo.Marker
+typealias PNChapterMarker = PipelineNeo.ChapterMarker
+typealias PNKeyword = PipelineNeo.Keyword
+typealias PNRating = PipelineNeo.Rating
+typealias PNMetadata = PipelineNeo.Metadata
 
-  // MARK: - Format Types
+// MARK: - Format Types
 
-  typealias PNColorSpace = PipelineNeo.ColorSpace
+typealias PNColorSpace = PipelineNeo.ColorSpace
 
-  // MARK: - Export Types
+// MARK: - Export Types
 
-  typealias PNFCPXMLExportAsset = PipelineNeo.FCPXMLExportAsset
-  typealias PNFCPXMLExporter = PipelineNeo.FCPXMLExporter
-  typealias PNFCPXMLExportError = PipelineNeo.FCPXMLExportError
-  typealias PNFCPXMLBundleExporter = PipelineNeo.FCPXMLBundleExporter
+typealias PNFCPXMLExportAsset = PipelineNeo.FCPXMLExportAsset
+typealias PNFCPXMLExporter = PipelineNeo.FCPXMLExporter
+typealias PNFCPXMLExportError = PipelineNeo.FCPXMLExportError
+typealias PNFCPXMLBundleExporter = PipelineNeo.FCPXMLBundleExporter
 
-  // MARK: - Timeline Operation Types
+// MARK: - Timeline Operation Types
 
-  typealias PNClipPlacement = PipelineNeo.ClipPlacement
-  typealias PNRippleInsertResult = PipelineNeo.RippleInsertResult
-  typealias PNClipShift = PipelineNeo.ClipShift
-  typealias PNRippleLaneOption = PipelineNeo.RippleLaneOption
+typealias PNClipPlacement = PipelineNeo.ClipPlacement
+typealias PNRippleInsertResult = PipelineNeo.RippleInsertResult
+typealias PNClipShift = PipelineNeo.ClipShift
+typealias PNRippleLaneOption = PipelineNeo.RippleLaneOption
 
-  // MARK: - Validation Types
+// MARK: - Validation Types
 
-  typealias PNValidationError = PipelineNeo.ValidationError
-  typealias PNValidationWarning = PipelineNeo.ValidationWarning
-  typealias PNValidationResult = PipelineNeo.ValidationResult
-  typealias PNTimelineError = PipelineNeo.TimelineError
+typealias PNValidationError = PipelineNeo.ValidationError
+typealias PNValidationWarning = PipelineNeo.ValidationWarning
+typealias PNValidationResult = PipelineNeo.ValidationResult
+typealias PNTimelineError = PipelineNeo.TimelineError
 
-  // MARK: - DTD & Utility Types
+// MARK: - DTD & Utility Types
 
-  typealias PNFCPXMLDTDValidator = PipelineNeo.FCPXMLDTDValidator
-  typealias PNFCPXMLValidator = PipelineNeo.FCPXMLValidator
-  typealias PNFCPXMLVersion = PipelineNeo.FCPXMLVersion
-  typealias PNFCPXMLElementType = PipelineNeo.FCPXMLElementType
-  typealias PNFCPXMLUtility = PipelineNeo.FCPXMLUtility
+typealias PNFCPXMLDTDValidator = PipelineNeo.FCPXMLDTDValidator
+typealias PNFCPXMLValidator = PipelineNeo.FCPXMLValidator
+typealias PNFCPXMLVersion = PipelineNeo.FCPXMLVersion
+typealias PNFCPXMLElementType = PipelineNeo.FCPXMLElementType
+typealias PNFCPXMLUtility = PipelineNeo.FCPXMLUtility
 
-#endif  // os(macOS)
+#endif // os(macOS)

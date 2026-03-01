@@ -7,11 +7,11 @@
 
 #if os(macOS)
 
-  import Foundation
-  import SwiftData
-  import SwiftCompartido
-  import AVFoundation
-  import PipelineNeo
+import Foundation
+import SwiftData
+import SwiftCompartido
+import AVFoundation
+import PipelineNeo
 
   /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
   ///
@@ -803,9 +803,9 @@
       // Collect all unique asset IDs
       let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
-      var resourceMap = LegacyResourceMap()
-      resourceMap.audioTiming = audioTiming
-      var resourceElements: [XMLElement] = []
+        var resourceMap = LegacyResourceMap()
+        resourceMap.audioTiming = audioTiming
+        var resourceElements: [XMLElement] = []
 
       // Add format resource
       let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
@@ -942,10 +942,10 @@
       projectName: String?,
       exporter: inout FCPXMLExporter
     ) throws -> String {
-      // Collect all assets and formats
-      var resourceMap = LegacyResourceMap()
-      resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
-      let assets = timeline.allAssets(in: modelContext)
+        // Collect all assets and formats
+        var resourceMap = LegacyResourceMap()
+        resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
+        let assets = timeline.allAssets(in: modelContext)
 
       // Generate resources
       var resourceElements: [XMLElement] = []
@@ -1041,8 +1041,8 @@
     }
 
     private mutating func generateFormatElement(
-      format: VideoFormat,
-      resourceMap: inout LegacyResourceMap
+        format: VideoFormat,
+        resourceMap: inout LegacyResourceMap
     ) throws -> XMLElement {
       let formatID = nextResourceID()
       resourceMap.formatID = formatID
@@ -1070,12 +1070,12 @@
 
     /// Generates an asset XML element using AssetProvider metadata.
     private mutating func generateAssetElementWithProvider(
-      assetID: UUID,
-      metadata: AssetMetadata,
-      relativePath: String?,
-      measuredDuration: Double?,
-      resourceMap: inout LegacyResourceMap,
-      frameRate: FrameRate
+        assetID: UUID,
+        metadata: AssetMetadata,
+        relativePath: String?,
+        measuredDuration: Double?,
+        resourceMap: inout LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let resourceID = nextResourceID()
       resourceMap.assetIDs[assetID] = resourceID
@@ -1118,11 +1118,11 @@
 
     /// Generates an asset XML element from TypedDataStorage (legacy method).
     private mutating func generateAssetElement(
-      asset: TypedDataStorage,
-      relativePath: String?,
-      measuredDuration: Double?,
-      resourceMap: inout LegacyResourceMap,
-      frameRate: FrameRate
+        asset: TypedDataStorage,
+        relativePath: String?,
+        measuredDuration: Double?,
+        resourceMap: inout LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let assetID = nextResourceID()
       resourceMap.assetIDs[asset.id] = assetID
@@ -1167,10 +1167,10 @@
     }
 
     private func generateSequenceElement(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext?,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        modelContext: SwiftData.ModelContext?,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "sequence")
 
@@ -1216,10 +1216,10 @@
     }
 
     private func generateSpineElement(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext?,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        modelContext: SwiftData.ModelContext?,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "spine")
 
@@ -1235,9 +1235,9 @@
     }
 
     private func generateAssetClipElement(
-      clip: TimelineClip,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        clip: TimelineClip,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {
         throw FCPXMLExportError.missingAsset(assetId: clip.assetStorageId)

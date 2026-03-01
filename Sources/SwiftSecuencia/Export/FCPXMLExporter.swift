@@ -7,10 +7,10 @@
 
 #if os(macOS)
 
-  import Foundation
-  import SwiftData
-  import SwiftCompartido
-  import PipelineNeo
+import Foundation
+import SwiftData
+import SwiftCompartido
+import PipelineNeo
 
   /// Exports Timeline objects to FCPXML XML documents.
   ///
@@ -88,9 +88,9 @@
       // Task 5.2: Collect unique asset IDs from timeline clips
       let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
-      // Task 5.3: Fetch metadata for each asset and generate format
-      var resourceMap = LegacyResourceMap()
-      var resourceElements: [XMLElement] = []
+        // Task 5.3: Fetch metadata for each asset and generate format
+        var resourceMap = LegacyResourceMap()
+        var resourceElements: [XMLElement] = []
 
       // Add format resource
       let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
@@ -211,8 +211,8 @@
 
     /// Generates a format XML element.
     private mutating func generateFormatElement(
-      format: VideoFormat,
-      resourceMap: inout LegacyResourceMap
+        format: VideoFormat,
+        resourceMap: inout LegacyResourceMap
     ) throws -> XMLElement {
       let formatID = nextResourceID()
       resourceMap.formatID = formatID
@@ -241,10 +241,10 @@
 
     /// Generates an asset XML element using AssetProvider.
     private mutating func generateAssetElement(
-      assetID: UUID,
-      assetProvider: AssetProvider,
-      resourceMap: inout LegacyResourceMap,
-      frameRate: FrameRate
+        assetID: UUID,
+        assetProvider: AssetProvider,
+        resourceMap: inout LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       // Fetch metadata from provider
       let metadata = try assetProvider.assetMetadata(for: assetID)
@@ -294,9 +294,9 @@
     /// Generates an asset XML element from TypedDataStorage (legacy method).
     /// This is kept for backward compatibility with FCPXMLBundleExporter.
     private mutating func generateAssetElement(
-      asset: TypedDataStorage,
-      resourceMap: inout LegacyResourceMap,
-      frameRate: FrameRate
+        asset: TypedDataStorage,
+        resourceMap: inout LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let assetID = nextResourceID()
       resourceMap.assetIDs[asset.id] = assetID
@@ -346,9 +346,9 @@
 
     /// Generates a sequence XML element with spine and clips (AssetProvider version).
     private func generateSequenceElementWithProvider(
-      timeline: Timeline,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "sequence")
 
@@ -377,9 +377,9 @@
 
     /// Generates a spine XML element with all storyline clips (AssetProvider version).
     private func generateSpineElementWithProvider(
-      timeline: Timeline,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "spine")
 
@@ -397,10 +397,10 @@
 
     /// Generates a sequence XML element with spine and clips (legacy with ModelContext).
     private func generateSequenceElement(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        modelContext: SwiftData.ModelContext,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "sequence")
 
@@ -430,10 +430,10 @@
 
     /// Generates a spine XML element with all storyline clips.
     private func generateSpineElement(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        timeline: Timeline,
+        modelContext: SwiftData.ModelContext,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "spine")
 
@@ -451,9 +451,9 @@
 
     /// Generates an asset-clip XML element.
     private func generateAssetClipElement(
-      clip: TimelineClip,
-      resourceMap: LegacyResourceMap,
-      frameRate: FrameRate
+        clip: TimelineClip,
+        resourceMap: LegacyResourceMap,
+        frameRate: FrameRate
     ) throws -> XMLElement {
       // Get asset ID
       guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {
@@ -511,9 +511,9 @@
 
   // MARK: - Supporting Types
 
-  /// Maps Timeline objects to FCPXML resource IDs (legacy embedded Pipeline implementation).
-  /// Note: The Adapters/ResourceMap.swift public struct is the replacement for pipeline-neo migration.
-  struct LegacyResourceMap {
+/// Maps Timeline objects to FCPXML resource IDs (legacy embedded Pipeline implementation).
+/// Note: The Adapters/ResourceMap.swift public struct is the replacement for pipeline-neo migration.
+struct LegacyResourceMap {
     var formatID: String?
     var assetIDs: [UUID: String] = [:]
     var audioTiming: [UUID: FCPXMLBundleExporter.AudioTiming] = [:]
@@ -533,20 +533,20 @@
     case missingAssetRef(assetRef: String)
 
     public var errorDescription: String? {
-      switch self {
-      case .xmlGenerationFailed:
-        return "Failed to generate XML string"
-      case .missingFormat:
-        return "Missing format resource"
-      case .missingAsset(let assetId):
-        return "Missing asset resource: \(assetId)"
-      case .invalidTimeline(let reason):
-        return "Invalid timeline: \(reason)"
-      case .cancelled:
-        return "Export operation was cancelled"
-      case .missingAssetRef(let assetRef):
-        return "Missing asset resource for reference: \(assetRef)"
-      }
+        switch self {
+        case .xmlGenerationFailed:
+            return "Failed to generate XML string"
+        case .missingFormat:
+            return "Missing format resource"
+        case .missingAsset(let assetId):
+            return "Missing asset resource: \(assetId)"
+        case .invalidTimeline(let reason):
+            return "Invalid timeline: \(reason)"
+        case .cancelled:
+            return "Export operation was cancelled"
+        case .missingAssetRef(let assetRef):
+            return "Missing asset resource for reference: \(assetRef)"
+        }
     }
   }
 

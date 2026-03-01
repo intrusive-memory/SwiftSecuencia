@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SwiftData
 import SwiftFijos
-import SwiftSecuencia
+
 
 // MARK: - FCPXMLVersion Extension
 
@@ -109,14 +109,145 @@ public struct Build: AsyncParsableCommand {
         let bundleName: String
         let outputDir: URL
 
-        if let outputPath = output {
-          let outputURL = URL(fileURLWithPath: outputPath)
-          outputDir = outputURL.deletingLastPathComponent()
-          // Remove bundle extension if present
-          bundleName = outputURL.deletingPathExtension().lastPathComponent
+    @Option(name: .long, help: "FCPXML version to generate (default: 1.11)")
+    public var formatVersion: String = "1.11"
+
+    @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
+    public var strict: Bool = false
+
+    public init() {}
+
+    @MainActor
+    public mutating func run() async throws {
+        // Step 1: Parse JSON
+        let inputURL = URL(fileURLWithPath: inputFile)
+        let parser = JSONTimelineParser()
+        var definition = try parser.parse(fileAt: inputURL)
+
+        // Step 2: Resolve file paths
+        let baseURL = inputURL.deletingLastPathComponent()
+        let resolver = FileResolver()
+        definition = try resolver.resolve(definition: definition, relativeTo: baseURL)
+
+        // Step 3: Deduplicate assets
+        let assetMap = resolver.deduplicateAssets(in: definition)
+
+        // Step 4: Probe missing durations
+        let probe = MediaProbe()
+        definition = try await probe.probeMissingDurations(in: definition)
+
+        // Step 5: Bootstrap SwiftData and build timeline
+        let container = try SwiftDataBootstrap.createInMemoryContainer()
+        let context = SwiftDataBootstrap.createContext(from: container)
+
+        let builder = TimelineBuilder()
+        let (timeline, assetProvider) = try await builder.build(
+            from: definition,
+            assetMap: assetMap,
+            in: context
+        )
+
+        // Step 6: Export based on mode
+        let outputURL = try await exportTimeline(
+            timeline: timeline,
+            assetProvider: assetProvider,
+            definition: definition,
+            assetMap: assetMap
+        )
+
+        // Print success summary
+        printExportSummary(
+            outputURL: outputURL,
+            definition: definition,
+            assetMap: assetMap
+        )
+    }
+
+    /// Exports the timeline based on the selected mode.
+    @MainActor
+    private mutating func exportTimeline(
+        timeline: Timeline,
+        assetProvider: FileAssetProvider,
+        definition: TimelineDefinition,
+        assetMap: [String: UUID]
+    ) async throws -> URL {
+        #if os(macOS)
+        if bundle {
+            // Bundle export mode
+            let bundleName: String
+            let outputDir: URL
+
+            if let outputPath = output {
+                let outputURL = URL(fileURLWithPath: outputPath)
+                outputDir = outputURL.deletingLastPathComponent()
+                // Remove bundle extension if present
+                bundleName = outputURL.deletingPathExtension().lastPathComponent
+            } else {
+                outputDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                bundleName = definition.timeline.name
+            }
+
+            let bundleURL = outputDir.appendingPathComponent("\(bundleName).fcpbundle")
+
+            let bundleExporter = SwiftSecuenciaBundleExporter(
+                version: .from(string: formatVersion)
+            )
+
+            try await bundleExporter.exportBundle(
+                timeline: timeline,
+                projectName: definition.timeline.name,
+                eventName: definition.timeline.name,
+                bundleURL: bundleURL,
+                assetProvider: assetProvider
+            )
+
+            return bundleURL
         } else {
-          outputDir = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-          bundleName = definition.timeline.name
+            // Standalone FCPXML export
+            let outputPath: String
+            if let output = output {
+                outputPath = output
+            } else {
+                let inputURL = URL(fileURLWithPath: inputFile)
+                outputPath = inputURL.deletingPathExtension().appendingPathExtension("fcpxml").path
+            }
+
+            let exporter = SwiftSecuenciaExporter(version: .from(string: formatVersion))
+            let xmlString = try exporter.export(
+                timeline: timeline,
+                assetProvider: assetProvider,
+                libraryName: "SwiftSecuencia Export",
+                eventName: definition.timeline.name
+            )
+
+            // Validate XML against DTD
+            let validationPassed = try validateFCPXML(
+                xmlString: xmlString,
+                version: .from(string: formatVersion)
+            )
+
+            // If strict mode and validation failed, don't write output
+            if strict && !validationPassed {
+                throw ValidationError("DTD validation failed in strict mode. Output not written.")
+            }
+
+            let outputURL = URL(fileURLWithPath: outputPath)
+            try xmlString.write(to: outputURL, atomically: true, encoding: .utf8)
+
+            return outputURL
+        }
+        #else
+        throw ValidationError("FCPXML export is only available on macOS")
+        #endif
+    }
+
+    /// Validates FCPXML against the DTD for the specified version.
+    /// Returns true if validation passes or is skipped, false if it fails.
+    private func validateFCPXML(xmlString: String, version: FCPXMLVersion) throws -> Bool {
+        // Check if DTD is available for this version
+        guard dtdAvailableFor(version: version) else {
+            fputs("⚠️  DTD validation skipped: no DTD available for FCPXML version \(version.stringValue)\n", stderr)
+            return true // Skip validation, treat as pass
         }
 
         let bundleURL = outputDir.appendingPathComponent("\(bundleName).fcpbundle")
