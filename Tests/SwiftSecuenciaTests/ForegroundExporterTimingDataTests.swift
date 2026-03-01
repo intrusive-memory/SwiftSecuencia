@@ -1,8 +1,9 @@
-import Testing
 import Foundation
-import SwiftData
-@testable import SwiftSecuencia
 import SwiftCompartido
+import SwiftData
+import Testing
+
+@testable import SwiftSecuencia
 
 /// Integration tests for timing data export in ForegroundAudioExporter
 ///
@@ -16,397 +17,397 @@ import SwiftCompartido
 @MainActor
 struct ForegroundExporterTimingDataTests {
 
-    // MARK: - Test Helpers
+  // MARK: - Test Helpers
 
-    /// Creates real audio data using macOS `say` command
-    private func createTestAudioData(
-        duration: Double = 1.0
-    ) throws -> Data {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString + ".m4a")
+  /// Creates real audio data using macOS `say` command
+  private func createTestAudioData(
+    duration: Double = 1.0
+  ) throws -> Data {
+    let tempURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString + ".m4a")
 
-        // Use `say` command to generate real audio
-        // Generate enough words to fill the duration (approx 2 words per second)
-        let wordCount = max(Int(duration * 2), 1)
-        let text = Array(repeating: "test", count: wordCount).joined(separator: " ")
+    // Use `say` command to generate real audio
+    // Generate enough words to fill the duration (approx 2 words per second)
+    let wordCount = max(Int(duration * 2), 1)
+    let text = Array(repeating: "test", count: wordCount).joined(separator: " ")
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
-        process.arguments = ["-o", tempURL.path, "--data-format=alac", text]
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
+    process.arguments = ["-o", tempURL.path, "--data-format=alac", text]
 
-        try process.run()
-        process.waitUntilExit()
+    try process.run()
+    process.waitUntilExit()
 
-        guard process.terminationStatus == 0 else {
-            throw NSError(domain: "TestAudioGeneration", code: Int(process.terminationStatus))
-        }
-
-        let data = try Data(contentsOf: tempURL)
-        try? FileManager.default.removeItem(at: tempURL)
-
-        return data
+    guard process.terminationStatus == 0 else {
+      throw NSError(domain: "TestAudioGeneration", code: Int(process.terminationStatus))
     }
 
-    // MARK: - Tests
+    let data = try Data(contentsOf: tempURL)
+    try? FileManager.default.removeItem(at: tempURL)
 
-    @Test("Direct export generates WebVTT file")
-    func directExportGeneratesWebVTT() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    return data
+  }
 
-        // Create test audio elements with real audio data
-        let audioData1 = try createTestAudioData(duration: 2.0)
-        let audioData2 = try createTestAudioData(duration: 3.0)
+  // MARK: - Tests
 
-        let elements = [
-            TypedDataStorage(
-                providerId: "test",
-                requestorID: "line1",
-                mimeType: "audio/mp4",
-                binaryValue: audioData1,
-                prompt: "First line",
-                durationSeconds: 2.0,
-                voiceName: "ALICE"
-            ),
-            TypedDataStorage(
-                providerId: "test",
-                requestorID: "line2",
-                mimeType: "audio/mp4",
-                binaryValue: audioData2,
-                prompt: "Second line",
-                durationSeconds: 3.0,
-                voiceName: "BOB"
-            )
-        ]
+  @Test("Direct export generates WebVTT file")
+  func directExportGeneratesWebVTT() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        for element in elements {
-            modelContext.insert(element)
-        }
-        try modelContext.save()
+    // Create test audio elements with real audio data
+    let audioData1 = try createTestAudioData(duration: 2.0)
+    let audioData2 = try createTestAudioData(duration: 3.0)
 
-        // Export with WebVTT
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    let elements = [
+      TypedDataStorage(
+        providerId: "test",
+        requestorID: "line1",
+        mimeType: "audio/mp4",
+        binaryValue: audioData1,
+        prompt: "First line",
+        durationSeconds: 2.0,
+        voiceName: "ALICE"
+      ),
+      TypedDataStorage(
+        providerId: "test",
+        requestorID: "line2",
+        mimeType: "audio/mp4",
+        binaryValue: audioData2,
+        prompt: "Second line",
+        durationSeconds: 3.0,
+        voiceName: "BOB"
+      ),
+    ]
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+    for element in elements {
+      modelContext.insert(element)
+    }
+    try modelContext.save()
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    // Export with WebVTT
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudioDirect(
-            audioElements: elements,
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .webvtt
-        )
-
-        // Verify WebVTT file exists
-        let vttURL = tempDir.appendingPathComponent("test.vtt")
-        #expect(FileManager.default.fileExists(atPath: vttURL.path))
-
-        // Verify WebVTT content
-        let webvtt = try String(contentsOf: vttURL, encoding: .utf8)
-        #expect(webvtt.contains("WEBVTT"))
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
 
-    @Test("Direct export generates JSON file")
-    func directExportGeneratesJSON() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
 
-        // Create test audio element with real audio data
-        let audioData = try createTestAudioData(duration: 2.0)
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudioDirect(
+      audioElements: elements,
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .webvtt
+    )
 
-        let element = TypedDataStorage(
-            providerId: "test",
-            requestorID: "line1",
-            mimeType: "audio/mp4",
-            binaryValue: audioData,
-            prompt: "Test line",
-            durationSeconds: 2.0,
-            voiceName: "ALICE"
-        )
+    // Verify WebVTT file exists
+    let vttURL = tempDir.appendingPathComponent("test.vtt")
+    #expect(FileManager.default.fileExists(atPath: vttURL.path))
 
-        modelContext.insert(element)
-        try modelContext.save()
+    // Verify WebVTT content
+    let webvtt = try String(contentsOf: vttURL, encoding: .utf8)
+    #expect(webvtt.contains("WEBVTT"))
+  }
 
-        // Export with JSON
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+  @Test("Direct export generates JSON file")
+  func directExportGeneratesJSON() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+    // Create test audio element with real audio data
+    let audioData = try createTestAudioData(duration: 2.0)
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    let element = TypedDataStorage(
+      providerId: "test",
+      requestorID: "line1",
+      mimeType: "audio/mp4",
+      binaryValue: audioData,
+      prompt: "Test line",
+      durationSeconds: 2.0,
+      voiceName: "ALICE"
+    )
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudioDirect(
-            audioElements: [element],
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .json
-        )
+    modelContext.insert(element)
+    try modelContext.save()
 
-        // Verify JSON file exists
-        let jsonURL = TimingData.fileURL(for: outputURL)
-        #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+    // Export with JSON
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        // Verify JSON content can be parsed
-        let jsonData = try Data(contentsOf: jsonURL)
-        let timingData = try JSONDecoder().decode(TimingData.self, from: jsonData)
-        #expect(timingData.audioFile == "test.m4a")
-        #expect(timingData.segments.count == 1)
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
 
-    @Test("Direct export generates both WebVTT and JSON files")
-    func directExportGeneratesBothFormats() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
 
-        // Create test audio element with real audio data
-        let audioData = try createTestAudioData(duration: 2.0)
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudioDirect(
+      audioElements: [element],
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .json
+    )
 
-        let element = TypedDataStorage(
-            providerId: "test",
-            requestorID: "line1",
-            mimeType: "audio/mp4",
-            binaryValue: audioData,
-            prompt: "Test line",
-            durationSeconds: 2.0,
-            voiceName: "ALICE"
-        )
-        modelContext.insert(element)
-        try modelContext.save()
+    // Verify JSON file exists
+    let jsonURL = TimingData.fileURL(for: outputURL)
+    #expect(FileManager.default.fileExists(atPath: jsonURL.path))
 
-        // Export with both formats
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    // Verify JSON content can be parsed
+    let jsonData = try Data(contentsOf: jsonURL)
+    let timingData = try JSONDecoder().decode(TimingData.self, from: jsonData)
+    #expect(timingData.audioFile == "test.m4a")
+    #expect(timingData.segments.count == 1)
+  }
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+  @Test("Direct export generates both WebVTT and JSON files")
+  func directExportGeneratesBothFormats() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    // Create test audio element with real audio data
+    let audioData = try createTestAudioData(duration: 2.0)
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudioDirect(
-            audioElements: [element],
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .both
-        )
+    let element = TypedDataStorage(
+      providerId: "test",
+      requestorID: "line1",
+      mimeType: "audio/mp4",
+      binaryValue: audioData,
+      prompt: "Test line",
+      durationSeconds: 2.0,
+      voiceName: "ALICE"
+    )
+    modelContext.insert(element)
+    try modelContext.save()
 
-        // Verify both files exist
-        let vttURL = tempDir.appendingPathComponent("test.vtt")
-        let jsonURL = TimingData.fileURL(for: outputURL)
+    // Export with both formats
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        #expect(FileManager.default.fileExists(atPath: vttURL.path))
-        #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
 
-    @Test("Direct export generates no timing data when format is none")
-    func directExportGeneratesNoTimingData() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
 
-        // Create test audio element with real audio data
-        let audioData = try createTestAudioData(duration: 2.0)
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudioDirect(
+      audioElements: [element],
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .both
+    )
 
-        let element = TypedDataStorage(
-            providerId: "test",
-            requestorID: "line1",
-            mimeType: "audio/mp4",
-            binaryValue: audioData,
-            prompt: "Test line",
-            durationSeconds: 2.0
-        )
-        modelContext.insert(element)
-        try modelContext.save()
+    // Verify both files exist
+    let vttURL = tempDir.appendingPathComponent("test.vtt")
+    let jsonURL = TimingData.fileURL(for: outputURL)
 
-        // Export with no timing data
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    #expect(FileManager.default.fileExists(atPath: vttURL.path))
+    #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+  }
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+  @Test("Direct export generates no timing data when format is none")
+  func directExportGeneratesNoTimingData() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    // Create test audio element with real audio data
+    let audioData = try createTestAudioData(duration: 2.0)
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudioDirect(
-            audioElements: [element],
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .none
-        )
+    let element = TypedDataStorage(
+      providerId: "test",
+      requestorID: "line1",
+      mimeType: "audio/mp4",
+      binaryValue: audioData,
+      prompt: "Test line",
+      durationSeconds: 2.0
+    )
+    modelContext.insert(element)
+    try modelContext.save()
 
-        // Verify no timing data files exist
-        let vttURL = tempDir.appendingPathComponent("test.vtt")
-        let jsonURL = TimingData.fileURL(for: outputURL)
+    // Export with no timing data
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        #expect(!FileManager.default.fileExists(atPath: vttURL.path))
-        #expect(!FileManager.default.fileExists(atPath: jsonURL.path))
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
 
-    @Test("Timeline-based export generates WebVTT file")
-    func timelineExportGeneratesWebVTT() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
 
-        // Create test asset with real audio data
-        let audioData = try createTestAudioData(duration: 2.0)
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudioDirect(
+      audioElements: [element],
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .none
+    )
 
-        let asset = TypedDataStorage(
-            providerId: "test",
-            requestorID: "line1",
-            mimeType: "audio/mp4",
-            binaryValue: audioData,
-            prompt: "Test line",
-            durationSeconds: 2.0,
-            voiceName: "ALICE"
-        )
-        modelContext.insert(asset)
+    // Verify no timing data files exist
+    let vttURL = tempDir.appendingPathComponent("test.vtt")
+    let jsonURL = TimingData.fileURL(for: outputURL)
 
-        // Create timeline with clip
-        let timeline = Timeline(
-            name: "Test Timeline",
-            videoFormat: .hd1080p(frameRate: .fps24),
-            audioLayout: .stereo
-        )
-        modelContext.insert(timeline)
+    #expect(!FileManager.default.fileExists(atPath: vttURL.path))
+    #expect(!FileManager.default.fileExists(atPath: jsonURL.path))
+  }
 
-        let clip = TimelineClip(
-            assetStorageId: asset.id,
-            offset: Timecode(seconds: 0.0),
-            duration: Timecode(seconds: 2.0),
-            lane: 0
-        )
-        clip.timeline = timeline
-        modelContext.insert(clip)
+  @Test("Timeline-based export generates WebVTT file")
+  func timelineExportGeneratesWebVTT() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        try modelContext.save()
+    // Create test asset with real audio data
+    let audioData = try createTestAudioData(duration: 2.0)
 
-        // Export with WebVTT
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    let asset = TypedDataStorage(
+      providerId: "test",
+      requestorID: "line1",
+      mimeType: "audio/mp4",
+      binaryValue: audioData,
+      prompt: "Test line",
+      durationSeconds: 2.0,
+      voiceName: "ALICE"
+    )
+    modelContext.insert(asset)
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+    // Create timeline with clip
+    let timeline = Timeline(
+      name: "Test Timeline",
+      videoFormat: .hd1080p(frameRate: .fps24),
+      audioLayout: .stereo
+    )
+    modelContext.insert(timeline)
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    let clip = TimelineClip(
+      assetStorageId: asset.id,
+      offset: Timecode(seconds: 0.0),
+      duration: Timecode(seconds: 2.0),
+      lane: 0
+    )
+    clip.timeline = timeline
+    modelContext.insert(clip)
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudio(
-            timeline: timeline,
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .webvtt
-        )
+    try modelContext.save()
 
-        // Verify WebVTT file exists
-        let vttURL = tempDir.appendingPathComponent("test.vtt")
-        #expect(FileManager.default.fileExists(atPath: vttURL.path))
+    // Export with WebVTT
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        // Verify WebVTT content
-        let webvtt = try String(contentsOf: vttURL, encoding: .utf8)
-        #expect(webvtt.contains("WEBVTT"))
-        #expect(webvtt.contains("Test line"))
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
 
-    @Test("Timeline-based export generates JSON file")
-    func timelineExportGeneratesJSON() async throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
-            configurations: config
-        )
-        let modelContext = ModelContext(container)
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
 
-        // Create test asset with real audio data
-        let audioData = try createTestAudioData(duration: 2.0)
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudio(
+      timeline: timeline,
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .webvtt
+    )
 
-        let asset = TypedDataStorage(
-            providerId: "test",
-            requestorID: "line1",
-            mimeType: "audio/mp4",
-            binaryValue: audioData,
-            prompt: "Test line",
-            durationSeconds: 2.0,
-            voiceName: "ALICE"
-        )
-        modelContext.insert(asset)
+    // Verify WebVTT file exists
+    let vttURL = tempDir.appendingPathComponent("test.vtt")
+    #expect(FileManager.default.fileExists(atPath: vttURL.path))
 
-        // Create timeline with clip
-        let timeline = Timeline(
-            name: "Test Timeline",
-            videoFormat: .hd1080p(frameRate: .fps24),
-            audioLayout: .stereo
-        )
-        modelContext.insert(timeline)
+    // Verify WebVTT content
+    let webvtt = try String(contentsOf: vttURL, encoding: .utf8)
+    #expect(webvtt.contains("WEBVTT"))
+    #expect(webvtt.contains("Test line"))
+  }
 
-        let clip = TimelineClip(
-            assetStorageId: asset.id,
-            offset: Timecode(seconds: 0.0),
-            duration: Timecode(seconds: 2.0),
-            lane: 0
-        )
-        clip.timeline = timeline
-        modelContext.insert(clip)
+  @Test("Timeline-based export generates JSON file")
+  func timelineExportGeneratesJSON() async throws {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try ModelContainer(
+      for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+      configurations: config
+    )
+    let modelContext = ModelContext(container)
 
-        try modelContext.save()
+    // Create test asset with real audio data
+    let audioData = try createTestAudioData(duration: 2.0)
 
-        // Export with JSON
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    let asset = TypedDataStorage(
+      providerId: "test",
+      requestorID: "line1",
+      mimeType: "audio/mp4",
+      binaryValue: audioData,
+      prompt: "Test line",
+      durationSeconds: 2.0,
+      voiceName: "ALICE"
+    )
+    modelContext.insert(asset)
 
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
+    // Create timeline with clip
+    let timeline = Timeline(
+      name: "Test Timeline",
+      videoFormat: .hd1080p(frameRate: .fps24),
+      audioLayout: .stereo
+    )
+    modelContext.insert(timeline)
 
-        let outputURL = tempDir.appendingPathComponent("test.m4a")
+    let clip = TimelineClip(
+      assetStorageId: asset.id,
+      offset: Timecode(seconds: 0.0),
+      duration: Timecode(seconds: 2.0),
+      lane: 0
+    )
+    clip.timeline = timeline
+    modelContext.insert(clip)
 
-        let exporter = ForegroundAudioExporter()
-        _ = try await exporter.exportAudio(
-            timeline: timeline,
-            modelContext: modelContext,
-            to: outputURL,
-            timingDataFormat: .json
-        )
+    try modelContext.save()
 
-        // Verify JSON file exists
-        let jsonURL = TimingData.fileURL(for: outputURL)
-        #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+    // Export with JSON
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        // Verify JSON content
-        let jsonData = try Data(contentsOf: jsonURL)
-        let timingData = try JSONDecoder().decode(TimingData.self, from: jsonData)
-        #expect(timingData.audioFile == "test.m4a")
-        #expect(timingData.segments.count == 1)
-        #expect(timingData.segments[0].text == "Test line")
+    defer {
+      try? FileManager.default.removeItem(at: tempDir)
     }
+
+    let outputURL = tempDir.appendingPathComponent("test.m4a")
+
+    let exporter = ForegroundAudioExporter()
+    _ = try await exporter.exportAudio(
+      timeline: timeline,
+      modelContext: modelContext,
+      to: outputURL,
+      timingDataFormat: .json
+    )
+
+    // Verify JSON file exists
+    let jsonURL = TimingData.fileURL(for: outputURL)
+    #expect(FileManager.default.fileExists(atPath: jsonURL.path))
+
+    // Verify JSON content
+    let jsonData = try Data(contentsOf: jsonURL)
+    let timingData = try JSONDecoder().decode(TimingData.self, from: jsonData)
+    #expect(timingData.audioFile == "test.m4a")
+    #expect(timingData.segments.count == 1)
+    #expect(timingData.segments[0].text == "Test line")
+  }
 }

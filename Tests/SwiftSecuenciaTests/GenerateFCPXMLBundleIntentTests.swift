@@ -1,7 +1,8 @@
-import Testing
 import Foundation
-import SwiftData
 import SwiftCompartido
+import SwiftData
+import Testing
+
 @testable import SwiftSecuencia
 
 // MARK: - AppIntent Structure Tests
@@ -20,19 +21,19 @@ import SwiftCompartido
 // These tests verify the AppIntent structure and metadata only.
 
 @Test func appIntentHasCorrectMetadata() async throws {
-    // Verify intent title
-    #expect(GenerateFCPXMLBundleIntent.title.key.hasPrefix("Generate FCPXML Bundle"))
+  // Verify intent title
+  #expect(GenerateFCPXMLBundleIntent.title.key.hasPrefix("Generate FCPXML Bundle"))
 
-    // Verify intent doesn't open app
-    #expect(GenerateFCPXMLBundleIntent.openAppWhenRun == false)
+  // Verify intent doesn't open app
+  #expect(GenerateFCPXMLBundleIntent.openAppWhenRun == false)
 }
 
 @Test func appIntentCanBeInitialized() async throws {
-    // Verify the intent can be initialized
-    // We can create an empty intent instance
-    _ = GenerateFCPXMLBundleIntent()
+  // Verify the intent can be initialized
+  // We can create an empty intent instance
+  _ = GenerateFCPXMLBundleIntent()
 
-    // If we get here without crashing, the test passes
+  // If we get here without crashing, the test passes
 }
 
 // NOTE ON TESTING STRATEGY:

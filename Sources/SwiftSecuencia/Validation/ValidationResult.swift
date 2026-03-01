@@ -10,83 +10,83 @@ import Foundation
 /// Result of validating an FCPXML document or timeline.
 public struct ValidationResult: Sendable, Equatable {
 
-    /// Whether the document/timeline is valid.
-    public let isValid: Bool
+  /// Whether the document/timeline is valid.
+  public let isValid: Bool
 
-    /// Validation errors (empty if valid).
-    public let errors: [ValidationError]
+  /// Validation errors (empty if valid).
+  public let errors: [ValidationError]
 
-    /// Validation warnings (may be present even if valid).
-    public let warnings: [ValidationWarning]
+  /// Validation warnings (may be present even if valid).
+  public let warnings: [ValidationWarning]
 
-    /// Creates a validation result.
-    ///
-    /// - Parameters:
-    ///   - errors: Validation errors found.
-    ///   - warnings: Validation warnings found.
-    public init(errors: [ValidationError] = [], warnings: [ValidationWarning] = []) {
-        self.errors = errors
-        self.warnings = warnings
-        self.isValid = errors.isEmpty
+  /// Creates a validation result.
+  ///
+  /// - Parameters:
+  ///   - errors: Validation errors found.
+  ///   - warnings: Validation warnings found.
+  public init(errors: [ValidationError] = [], warnings: [ValidationWarning] = []) {
+    self.errors = errors
+    self.warnings = warnings
+    self.isValid = errors.isEmpty
+  }
+
+  /// A successful validation result with no errors or warnings.
+  public static let success = ValidationResult()
+
+  /// Creates a validation result with a single error.
+  public static func error(_ error: ValidationError) -> ValidationResult {
+    ValidationResult(errors: [error])
+  }
+
+  /// Creates a validation result with a single warning.
+  public static func warning(_ warning: ValidationWarning) -> ValidationResult {
+    ValidationResult(warnings: [warning])
+  }
+
+  /// Summary of the validation result.
+  public var summary: String {
+    if isValid {
+      if warnings.isEmpty {
+        return "Validation passed with no warnings"
+      } else {
+        return "Validation passed with \(warnings.count) warning(s)"
+      }
+    } else {
+      return "Validation failed with \(errors.count) error(s) and \(warnings.count) warning(s)"
     }
+  }
 
-    /// A successful validation result with no errors or warnings.
-    public static let success = ValidationResult()
+  /// Detailed description of all errors and warnings.
+  public var detailedDescription: String {
+    var lines: [String] = []
 
-    /// Creates a validation result with a single error.
-    public static func error(_ error: ValidationError) -> ValidationResult {
-        ValidationResult(errors: [error])
-    }
-
-    /// Creates a validation result with a single warning.
-    public static func warning(_ warning: ValidationWarning) -> ValidationResult {
-        ValidationResult(warnings: [warning])
-    }
-
-    /// Summary of the validation result.
-    public var summary: String {
-        if isValid {
-            if warnings.isEmpty {
-                return "Validation passed with no warnings"
-            } else {
-                return "Validation passed with \(warnings.count) warning(s)"
-            }
-        } else {
-            return "Validation failed with \(errors.count) error(s) and \(warnings.count) warning(s)"
+    if !errors.isEmpty {
+      lines.append("Errors:")
+      for (index, error) in errors.enumerated() {
+        lines.append("  \(index + 1). [\(error.type.rawValue)] \(error.message)")
+        if !error.context.isEmpty {
+          for (key, value) in error.context.sorted(by: { $0.key < $1.key }) {
+            lines.append("     - \(key): \(value)")
+          }
         }
+      }
     }
 
-    /// Detailed description of all errors and warnings.
-    public var detailedDescription: String {
-        var lines: [String] = []
-
-        if !errors.isEmpty {
-            lines.append("Errors:")
-            for (index, error) in errors.enumerated() {
-                lines.append("  \(index + 1). [\(error.type.rawValue)] \(error.message)")
-                if !error.context.isEmpty {
-                    for (key, value) in error.context.sorted(by: { $0.key < $1.key }) {
-                        lines.append("     - \(key): \(value)")
-                    }
-                }
-            }
+    if !warnings.isEmpty {
+      if !errors.isEmpty {
+        lines.append("")
+      }
+      lines.append("Warnings:")
+      for (index, warning) in warnings.enumerated() {
+        lines.append("  \(index + 1). [\(warning.type.rawValue)] \(warning.message)")
+        if !warning.context.isEmpty {
+          for (key, value) in warning.context.sorted(by: { $0.key < $1.key }) {
+            lines.append("     - \(key): \(value)")
+          }
         }
-
-        if !warnings.isEmpty {
-            if !errors.isEmpty {
-                lines.append("")
-            }
-            lines.append("Warnings:")
-            for (index, warning) in warnings.enumerated() {
-                lines.append("  \(index + 1). [\(warning.type.rawValue)] \(warning.message)")
-                if !warning.context.isEmpty {
-                    for (key, value) in warning.context.sorted(by: { $0.key < $1.key }) {
-                        lines.append("     - \(key): \(value)")
-                    }
-                }
-            }
-        }
-
-        return lines.joined(separator: "\n")
+      }
     }
+
+    return lines.joined(separator: "\n")
+  }
 }

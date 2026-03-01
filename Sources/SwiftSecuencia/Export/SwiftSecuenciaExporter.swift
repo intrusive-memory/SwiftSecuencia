@@ -44,56 +44,56 @@
 
 #if os(macOS)
 
-import Foundation
-import SwiftData
-import PipelineNeo
+  import Foundation
+  import SwiftData
+  import PipelineNeo
 
-// MARK: - FCPXMLVersion Public Re-export
+  // MARK: - FCPXMLVersion Public Re-export
 
-/// Re-exports `PipelineNeo.FCPXMLVersion` under the unqualified name so that
-/// SwiftSecuencia consumers do not need to import PipelineNeo directly.
-///
-/// This typealias replaces the FCPXMLVersion that was previously provided by the
-/// embedded Pipeline module. All existing code that references `FCPXMLVersion`
-/// continues to work without changes.
-public typealias FCPXMLVersion = PipelineNeo.FCPXMLVersion
+  /// Re-exports `PipelineNeo.FCPXMLVersion` under the unqualified name so that
+  /// SwiftSecuencia consumers do not need to import PipelineNeo directly.
+  ///
+  /// This typealias replaces the FCPXMLVersion that was previously provided by the
+  /// embedded Pipeline module. All existing code that references `FCPXMLVersion`
+  /// continues to work without changes.
+  public typealias FCPXMLVersion = PipelineNeo.FCPXMLVersion
 
-// MARK: - SwiftSecuenciaExporter
+  // MARK: - SwiftSecuenciaExporter
 
-/// Exports a `SwiftSecuencia.Timeline` to an FCPXML document string using
-/// PipelineNeo's `FCPXMLExporter`.
-///
-/// This struct is the primary bridge between SwiftSecuencia's SwiftData models
-/// and PipelineNeo's value-type export pipeline. It handles:
-///
-/// 1. **ResourceMap construction** -- Assigns DTD-compliant r-prefixed IDs to assets.
-/// 2. **Timeline conversion** -- Uses adapters from `TimelineAdapters.swift`.
-/// 3. **Asset conversion** -- Uses `PipelineNeoAssetProvider` for asset metadata.
-/// 4. **FCPXML generation** -- Delegates to `PipelineNeo.FCPXMLExporter`.
-/// 5. **Post-processing** -- Removes invalid `<library name="...">` attribute via XMLDocument.
-///
-/// ## Usage with AssetProvider
-///
-/// ```swift
-/// let provider = FileAssetProvider(...)
-/// let exporter = SwiftSecuenciaExporter(version: .v1_11)
-/// let fcpxml = try exporter.export(
-///     timeline: myTimeline,
-///     assetProvider: provider,
-///     eventName: "My Event"
-/// )
-/// ```
-///
-/// ## Usage with ModelContext
-///
-/// ```swift
-/// let exporter = SwiftSecuenciaExporter()
-/// let fcpxml = try exporter.export(
-///     timeline: myTimeline,
-///     modelContext: context
-/// )
-/// ```
-public struct SwiftSecuenciaExporter {
+  /// Exports a `SwiftSecuencia.Timeline` to an FCPXML document string using
+  /// PipelineNeo's `FCPXMLExporter`.
+  ///
+  /// This struct is the primary bridge between SwiftSecuencia's SwiftData models
+  /// and PipelineNeo's value-type export pipeline. It handles:
+  ///
+  /// 1. **ResourceMap construction** -- Assigns DTD-compliant r-prefixed IDs to assets.
+  /// 2. **Timeline conversion** -- Uses adapters from `TimelineAdapters.swift`.
+  /// 3. **Asset conversion** -- Uses `PipelineNeoAssetProvider` for asset metadata.
+  /// 4. **FCPXML generation** -- Delegates to `PipelineNeo.FCPXMLExporter`.
+  /// 5. **Post-processing** -- Removes invalid `<library name="...">` attribute via XMLDocument.
+  ///
+  /// ## Usage with AssetProvider
+  ///
+  /// ```swift
+  /// let provider = FileAssetProvider(...)
+  /// let exporter = SwiftSecuenciaExporter(version: .v1_11)
+  /// let fcpxml = try exporter.export(
+  ///     timeline: myTimeline,
+  ///     assetProvider: provider,
+  ///     eventName: "My Event"
+  /// )
+  /// ```
+  ///
+  /// ## Usage with ModelContext
+  ///
+  /// ```swift
+  /// let exporter = SwiftSecuenciaExporter()
+  /// let fcpxml = try exporter.export(
+  ///     timeline: myTimeline,
+  ///     modelContext: context
+  /// )
+  /// ```
+  public struct SwiftSecuenciaExporter {
 
     // MARK: - Properties
 
@@ -107,7 +107,7 @@ public struct SwiftSecuenciaExporter {
     /// - Parameter version: The FCPXML version for the exported document.
     ///   Defaults to `.default`, which is the latest supported version (1.14).
     public init(version: FCPXMLVersion = .default) {
-        self.version = version
+      self.version = version
     }
 
     /// Creates a `SwiftSecuenciaExporter` from a version string.
@@ -117,7 +117,7 @@ public struct SwiftSecuenciaExporter {
     ///
     /// - Parameter versionString: A version string such as `"1.11"` or `"1_11"`.
     public init(versionString: String) {
-        self.version = FCPXMLVersion(string: versionString) ?? .default
+      self.version = FCPXMLVersion(string: versionString) ?? .default
     }
 
     // MARK: - Export with AssetProvider
@@ -138,54 +138,54 @@ public struct SwiftSecuenciaExporter {
     /// - Throws: `FCPXMLExportError`, `VideoFormatConversionError`, `AssetConversionError`,
     ///           or `AssetProviderError`.
     public func export(
-        timeline: Timeline,
-        assetProvider: any AssetProvider,
-        libraryName: String = "Exported Library",
-        eventName: String = "Exported Event",
-        projectName: String? = nil
+      timeline: Timeline,
+      assetProvider: any AssetProvider,
+      libraryName: String = "Exported Library",
+      eventName: String = "Exported Event",
+      projectName: String? = nil
     ) throws -> String {
-        // Empty timeline guard: PipelineNeo throws on empty timelines, so we
-        // bypass it entirely and return a hand-crafted minimal FCPXML.
-        if timeline.clips.isEmpty {
-            return generateMinimalFCPXML(
-                timeline: timeline,
-                eventName: eventName,
-                projectName: projectName
-            )
-        }
-
-        // Step 1: Build ResourceMap from timeline asset UUIDs.
-        // Format is always "r1"; assets get "r2", "r3", ... in sorted UUID order.
-        var resourceMap = buildResourceMap(for: timeline)
-
-        // Step 2: Convert SwiftSecuencia.Timeline to PipelineNeo.Timeline.
-        // ResourceMap is passed to all adapter calls so asset UUIDs become
-        // r-prefixed resource IDs.
-        let pipelineNeoTimeline = try timeline.toPipelineNeoTimeline(resourceMap: resourceMap)
-
-        // Step 3: Convert assets using PipelineNeoAssetProvider.
-        let assetAdapter = PipelineNeoAssetProvider(
-            assetProvider: assetProvider,
-            resourceMap: resourceMap
+      // Empty timeline guard: PipelineNeo throws on empty timelines, so we
+      // bypass it entirely and return a hand-crafted minimal FCPXML.
+      if timeline.clips.isEmpty {
+        return generateMinimalFCPXML(
+          timeline: timeline,
+          eventName: eventName,
+          projectName: projectName
         )
-        let pipelineNeoAssets = try assetAdapter.exportAssets(for: timeline)
+      }
 
-        // Step 4: Export via PipelineNeo's FCPXMLExporter, remapping errors.
-        let pipelineNeoExporter = PipelineNeo.FCPXMLExporter(version: version)
-        let rawXML = try remappingExportErrors {
-            try pipelineNeoExporter.export(
-                timeline: pipelineNeoTimeline,
-                assets: pipelineNeoAssets,
-                libraryName: libraryName,
-                eventName: eventName,
-                projectName: projectName
-            )
-        }
+      // Step 1: Build ResourceMap from timeline asset UUIDs.
+      // Format is always "r1"; assets get "r2", "r3", ... in sorted UUID order.
+      var resourceMap = buildResourceMap(for: timeline)
 
-        // Step 5: Post-process to remove invalid library name attribute.
-        let cleanedXML = try removeLibraryNameAttribute(from: rawXML)
+      // Step 2: Convert SwiftSecuencia.Timeline to PipelineNeo.Timeline.
+      // ResourceMap is passed to all adapter calls so asset UUIDs become
+      // r-prefixed resource IDs.
+      let pipelineNeoTimeline = try timeline.toPipelineNeoTimeline(resourceMap: resourceMap)
 
-        return cleanedXML
+      // Step 3: Convert assets using PipelineNeoAssetProvider.
+      let assetAdapter = PipelineNeoAssetProvider(
+        assetProvider: assetProvider,
+        resourceMap: resourceMap
+      )
+      let pipelineNeoAssets = try assetAdapter.exportAssets(for: timeline)
+
+      // Step 4: Export via PipelineNeo's FCPXMLExporter, remapping errors.
+      let pipelineNeoExporter = PipelineNeo.FCPXMLExporter(version: version)
+      let rawXML = try remappingExportErrors {
+        try pipelineNeoExporter.export(
+          timeline: pipelineNeoTimeline,
+          assets: pipelineNeoAssets,
+          libraryName: libraryName,
+          eventName: eventName,
+          projectName: projectName
+        )
+      }
+
+      // Step 5: Post-process to remove invalid library name attribute.
+      let cleanedXML = try removeLibraryNameAttribute(from: rawXML)
+
+      return cleanedXML
     }
 
     // MARK: - Export with ModelContext
@@ -206,20 +206,20 @@ public struct SwiftSecuenciaExporter {
     ///           or `AssetProviderError`.
     @MainActor
     public func export(
-        timeline: Timeline,
-        modelContext: SwiftData.ModelContext,
-        libraryName: String = "Exported Library",
-        eventName: String = "Exported Event",
-        projectName: String? = nil
+      timeline: Timeline,
+      modelContext: SwiftData.ModelContext,
+      libraryName: String = "Exported Library",
+      eventName: String = "Exported Event",
+      projectName: String? = nil
     ) throws -> String {
-        let provider = SwiftDataAssetProvider(modelContext: modelContext)
-        return try export(
-            timeline: timeline,
-            assetProvider: provider,
-            libraryName: libraryName,
-            eventName: eventName,
-            projectName: projectName
-        )
+      let provider = SwiftDataAssetProvider(modelContext: modelContext)
+      return try export(
+        timeline: timeline,
+        assetProvider: provider,
+        libraryName: libraryName,
+        eventName: eventName,
+        projectName: projectName
+      )
     }
 
     // MARK: - ResourceMap Construction
@@ -233,16 +233,16 @@ public struct SwiftSecuenciaExporter {
     /// - Parameter timeline: The timeline whose clips reference assets.
     /// - Returns: A fully-populated `ResourceMap`.
     private func buildResourceMap(for timeline: Timeline) -> ResourceMap {
-        var resourceMap = ResourceMap()
+      var resourceMap = ResourceMap()
 
-        // Collect unique asset UUIDs from timeline clips
-        let uniqueAssetUUIDs = Array(Set(timeline.clips.map { $0.assetStorageId }))
+      // Collect unique asset UUIDs from timeline clips
+      let uniqueAssetUUIDs = Array(Set(timeline.clips.map { $0.assetStorageId }))
 
-        // Register all assets in sorted order for deterministic ID assignment.
-        // ResourceMap.registerAssets() handles sorting internally.
-        resourceMap.registerAssets(uniqueAssetUUIDs)
+      // Register all assets in sorted order for deterministic ID assignment.
+      // ResourceMap.registerAssets() handles sorting internally.
+      resourceMap.registerAssets(uniqueAssetUUIDs)
 
-        return resourceMap
+      return resourceMap
     }
 
     // MARK: - Library Name Fix (XMLDocument)
@@ -261,23 +261,23 @@ public struct SwiftSecuenciaExporter {
     /// - Returns: The FCPXML string with the library name attribute removed.
     /// - Throws: `FCPXMLExportError.xmlGenerationFailed` if the XML cannot be parsed.
     private func removeLibraryNameAttribute(from xmlString: String) throws -> String {
-        let doc: XMLDocument
-        do {
-            doc = try XMLDocument(xmlString: xmlString, options: [.nodePreserveAll])
-        } catch {
-            throw FCPXMLExportError.xmlGenerationFailed
-        }
+      let doc: XMLDocument
+      do {
+        doc = try XMLDocument(xmlString: xmlString, options: [.nodePreserveAll])
+      } catch {
+        throw FCPXMLExportError.xmlGenerationFailed
+      }
 
-        // Navigate: <fcpxml> -> <library>
-        // The library element is a direct child of the root <fcpxml> element.
-        if let root = doc.rootElement() {
-            for library in root.elements(forName: "library") {
-                library.removeAttribute(forName: "name")
-            }
+      // Navigate: <fcpxml> -> <library>
+      // The library element is a direct child of the root <fcpxml> element.
+      if let root = doc.rootElement() {
+        for library in root.elements(forName: "library") {
+          library.removeAttribute(forName: "name")
         }
+      }
 
-        // Re-serialize. Use .nodePrettyPrint for readable output.
-        return doc.xmlString(options: [.nodePrettyPrint])
+      // Re-serialize. Use .nodePrettyPrint for readable output.
+      return doc.xmlString(options: [.nodePrettyPrint])
     }
 
     // MARK: - Minimal FCPXML Generation
@@ -297,14 +297,14 @@ public struct SwiftSecuenciaExporter {
     ///   - projectName: Name for the `<project>` element (defaults to timeline name).
     /// - Returns: A valid minimal FCPXML document string.
     private func generateMinimalFCPXML(
-        timeline: Timeline,
-        eventName: String,
-        projectName: String?
+      timeline: Timeline,
+      eventName: String,
+      projectName: String?
     ) -> String {
-        let pName = projectName ?? timeline.name
-        let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
+      let pName = projectName ?? timeline.name
+      let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
 
-        return """
+      return """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE fcpxml>
         <fcpxml version="\(version.rawValue)">
@@ -323,11 +323,11 @@ public struct SwiftSecuenciaExporter {
         </fcpxml>
         """
     }
-}
+  }
 
-// MARK: - FCPXMLVersion + SwiftSecuencia Extensions
+  // MARK: - FCPXMLVersion + SwiftSecuencia Extensions
 
-extension FCPXMLVersion {
+  extension FCPXMLVersion {
 
     /// The DTD filename including the `.dtd` extension.
     ///
@@ -336,9 +336,9 @@ extension FCPXMLVersion {
     ///
     /// Example: version `1.13` -> `"FCPXMLv1_13.dtd"`.
     public var dtdFilenameWithExtension: String {
-        let versionSlug = rawValue.replacingOccurrences(of: ".", with: "_")
-        return "FCPXMLv\(versionSlug).dtd"
+      let versionSlug = rawValue.replacingOccurrences(of: ".", with: "_")
+      return "FCPXMLv\(versionSlug).dtd"
     }
-}
+  }
 
-#endif // os(macOS)
+#endif  // os(macOS)

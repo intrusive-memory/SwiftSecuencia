@@ -60,12 +60,12 @@ import Foundation
 /// let xmlString = try document.fcpxmlString()
 /// ```
 public struct SwiftSecuencia {
-    /// The current version of the SwiftSecuencia library.
-    public static let version = "2.0.0"
+  /// The current version of the SwiftSecuencia library.
+  public static let version = "2.0.0"
 
-    /// The default FCPXML version produced by this library.
-    public static let defaultFCPXMLVersion = "1.11"
+  /// The default FCPXML version produced by this library.
+  public static let defaultFCPXMLVersion = "1.11"
 
-    /// Supported FCPXML versions for export.
-    public static let supportedVersions = ["1.8", "1.9", "1.10", "1.11"]
+  /// Supported FCPXML versions for export.
+  public static let supportedVersions = ["1.8", "1.9", "1.10", "1.11"]
 }
