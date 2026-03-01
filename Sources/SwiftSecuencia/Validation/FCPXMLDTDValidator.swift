@@ -7,9 +7,9 @@
 
 #if os(macOS)
 
-import Foundation
-import SwiftFijos
-import PipelineNeo
+  import Foundation
+  import SwiftFijos
+  import PipelineNeo
 
   /// Validates FCPXML documents against DTD specifications using xmllint.
   ///

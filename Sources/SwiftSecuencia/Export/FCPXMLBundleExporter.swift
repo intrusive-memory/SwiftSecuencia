@@ -7,11 +7,11 @@
 
 #if os(macOS)
 
-import Foundation
-import SwiftData
-import SwiftCompartido
-import AVFoundation
-import PipelineNeo
+  import Foundation
+  import SwiftData
+  import SwiftCompartido
+  import AVFoundation
+  import PipelineNeo
 
   /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
   ///
@@ -803,9 +803,9 @@ import PipelineNeo
       // Collect all unique asset IDs
       let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
 
-        var resourceMap = LegacyResourceMap()
-        resourceMap.audioTiming = audioTiming
-        var resourceElements: [XMLElement] = []
+      var resourceMap = LegacyResourceMap()
+      resourceMap.audioTiming = audioTiming
+      var resourceElements: [XMLElement] = []
 
       // Add format resource
       let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
@@ -845,49 +845,15 @@ import PipelineNeo
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
-      let doc = XMLDocument()
-      doc.documentContentKind = XMLDocument.ContentKind.xml
-      doc.characterEncoding = "UTF-8"
-      doc.version = "1.0"
+      // Create FCPXML document using Pipeline's initializer
+      let doc = XMLDocument(
+        resources: resourceElements,
+        events: [event],
+        fcpxmlVersion: version
+      )
 
-      doc.dtd = XMLDTD()
-      doc.dtd!.name = "fcpxml"
-      doc.isStandalone = false
-
-      // Create root <fcpxml> element
-      let fcpxmlRoot = XMLElement(name: "fcpxml")
-      fcpxmlRoot.addAttribute(XMLNode.attribute(withName: "version", stringValue: version.stringValue) as! XMLNode)
-
-      // Create <resources> element and add resource children
-      let resourcesElement = XMLElement(name: "resources")
-      for resource in resourceElements {
-        resourcesElement.addChild(resource)
-      }
-      fcpxmlRoot.addChild(resourcesElement)
-
-      // Create <library> element and add events
-      let libraryElement = XMLElement(name: "library")
-      libraryElement.addChild(event)
-      fcpxmlRoot.addChild(libraryElement)
-
-      doc.setRootElement(fcpxmlRoot)
-
-      // Return formatted XML string (manually process to match fcpxmlString behavior)
-      let formattedData = doc.xmlData(options: [.nodePreserveWhitespace, .nodePrettyPrint, .nodeCompactEmptyElement])
-      guard var formattedString = String(data: formattedData, encoding: .utf8) else {
-        throw FCPXMLExportError.xmlGenerationFailed
-      }
-
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
-      if formattedString.hasPrefix("<?xml") {
-        formattedString = formattedString.replacingOccurrences(
-          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
-          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
-        )
-      }
-
-      return formattedString
+      // Return formatted XML string
+      return doc.fcpxmlString
     }
 
     /// Generates FCPXML string with asset references (legacy with ModelContext).
@@ -942,10 +908,10 @@ import PipelineNeo
       projectName: String?,
       exporter: inout FCPXMLExporter
     ) throws -> String {
-        // Collect all assets and formats
-        var resourceMap = LegacyResourceMap()
-        resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
-        let assets = timeline.allAssets(in: modelContext)
+      // Collect all assets and formats
+      var resourceMap = LegacyResourceMap()
+      resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
+      let assets = timeline.allAssets(in: modelContext)
 
       // Generate resources
       var resourceElements: [XMLElement] = []
@@ -986,49 +952,15 @@ import PipelineNeo
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
-      let doc = XMLDocument()
-      doc.documentContentKind = XMLDocument.ContentKind.xml
-      doc.characterEncoding = "UTF-8"
-      doc.version = "1.0"
+      // Create FCPXML document using Pipeline's initializer
+      let doc = XMLDocument(
+        resources: resourceElements,
+        events: [event],
+        fcpxmlVersion: version
+      )
 
-      doc.dtd = XMLDTD()
-      doc.dtd!.name = "fcpxml"
-      doc.isStandalone = false
-
-      // Create root <fcpxml> element
-      let fcpxmlRoot = XMLElement(name: "fcpxml")
-      fcpxmlRoot.addAttribute(XMLNode.attribute(withName: "version", stringValue: version.stringValue) as! XMLNode)
-
-      // Create <resources> element and add resource children
-      let resourcesElement = XMLElement(name: "resources")
-      for resource in resourceElements {
-        resourcesElement.addChild(resource)
-      }
-      fcpxmlRoot.addChild(resourcesElement)
-
-      // Create <library> element and add events
-      let libraryElement = XMLElement(name: "library")
-      libraryElement.addChild(event)
-      fcpxmlRoot.addChild(libraryElement)
-
-      doc.setRootElement(fcpxmlRoot)
-
-      // Return formatted XML string (manually process to match fcpxmlString behavior)
-      let formattedData = doc.xmlData(options: [.nodePreserveWhitespace, .nodePrettyPrint, .nodeCompactEmptyElement])
-      guard var formattedString = String(data: formattedData, encoding: .utf8) else {
-        throw FCPXMLExportError.xmlGenerationFailed
-      }
-
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
-      if formattedString.hasPrefix("<?xml") {
-        formattedString = formattedString.replacingOccurrences(
-          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
-          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
-        )
-      }
-
-      return formattedString
+      // Return formatted XML string
+      return doc.fcpxmlString
     }
 
     // MARK: - XML Element Generation
@@ -1041,8 +973,8 @@ import PipelineNeo
     }
 
     private mutating func generateFormatElement(
-        format: VideoFormat,
-        resourceMap: inout LegacyResourceMap
+      format: VideoFormat,
+      resourceMap: inout LegacyResourceMap
     ) throws -> XMLElement {
       let formatID = nextResourceID()
       resourceMap.formatID = formatID
@@ -1070,12 +1002,12 @@ import PipelineNeo
 
     /// Generates an asset XML element using AssetProvider metadata.
     private mutating func generateAssetElementWithProvider(
-        assetID: UUID,
-        metadata: AssetMetadata,
-        relativePath: String?,
-        measuredDuration: Double?,
-        resourceMap: inout LegacyResourceMap,
-        frameRate: FrameRate
+      assetID: UUID,
+      metadata: AssetMetadata,
+      relativePath: String?,
+      measuredDuration: Double?,
+      resourceMap: inout LegacyResourceMap,
+      frameRate: FrameRate
     ) throws -> XMLElement {
       let resourceID = nextResourceID()
       resourceMap.assetIDs[assetID] = resourceID
@@ -1118,11 +1050,11 @@ import PipelineNeo
 
     /// Generates an asset XML element from TypedDataStorage (legacy method).
     private mutating func generateAssetElement(
-        asset: TypedDataStorage,
-        relativePath: String?,
-        measuredDuration: Double?,
-        resourceMap: inout LegacyResourceMap,
-        frameRate: FrameRate
+      asset: TypedDataStorage,
+      relativePath: String?,
+      measuredDuration: Double?,
+      resourceMap: inout LegacyResourceMap,
+      frameRate: FrameRate
     ) throws -> XMLElement {
       let assetID = nextResourceID()
       resourceMap.assetIDs[asset.id] = assetID
@@ -1167,10 +1099,10 @@ import PipelineNeo
     }
 
     private func generateSequenceElement(
-        timeline: Timeline,
-        modelContext: SwiftData.ModelContext?,
-        resourceMap: LegacyResourceMap,
-        frameRate: FrameRate
+      timeline: Timeline,
+      modelContext: SwiftData.ModelContext?,
+      resourceMap: LegacyResourceMap,
+      frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "sequence")
 
@@ -1216,10 +1148,10 @@ import PipelineNeo
     }
 
     private func generateSpineElement(
-        timeline: Timeline,
-        modelContext: SwiftData.ModelContext?,
-        resourceMap: LegacyResourceMap,
-        frameRate: FrameRate
+      timeline: Timeline,
+      modelContext: SwiftData.ModelContext?,
+      resourceMap: LegacyResourceMap,
+      frameRate: FrameRate
     ) throws -> XMLElement {
       let element = XMLElement(name: "spine")
 
@@ -1235,9 +1167,9 @@ import PipelineNeo
     }
 
     private func generateAssetClipElement(
-        clip: TimelineClip,
-        resourceMap: LegacyResourceMap,
-        frameRate: FrameRate
+      clip: TimelineClip,
+      resourceMap: LegacyResourceMap,
+      frameRate: FrameRate
     ) throws -> XMLElement {
       guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {
         throw FCPXMLExportError.missingAsset(assetId: clip.assetStorageId)

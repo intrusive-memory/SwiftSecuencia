@@ -247,7 +247,8 @@ public final class Timeline {
   ///   - lane: The lane for the clip (default: 0 for primary storyline).
   /// - Returns: The placement information for the inserted clip.
   @discardableResult
-  public func insertClip(_ clip: TimelineClip, at offset: Timecode, lane: Int = 0) -> ClipPlacement {
+  public func insertClip(_ clip: TimelineClip, at offset: Timecode, lane: Int = 0) -> ClipPlacement
+  {
     clip.offset = offset
     clip.lane = lane
     clip.timeline = self
@@ -315,7 +316,8 @@ public final class Timeline {
   ///   - startingFrom: The lane to start searching from.
   /// - Returns: An available lane number.
   public func findAvailableLane(at offset: Timecode, duration: Timecode, startingFrom: Int = 0)
-    -> Int {
+    -> Int
+  {
     let clipEnd = offset + duration
 
     // Check if a lane is available

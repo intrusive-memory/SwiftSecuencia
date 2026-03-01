@@ -48,7 +48,8 @@ public struct FileResolver: Sendable {
   /// - Returns: A new timeline definition with all file paths resolved to absolute paths.
   /// - Throws: `FileResolverError.fileNotFound` if any file doesn't exist.
   public func resolve(definition: TimelineDefinition, relativeTo baseURL: URL) throws
-    -> TimelineDefinition {
+    -> TimelineDefinition
+  {
     var resolvedClips: [ClipDefinition] = []
 
     for clip in definition.clips {

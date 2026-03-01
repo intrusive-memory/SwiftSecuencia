@@ -1,5 +1,8 @@
 import Foundation
 import SwiftCompartido
+import SwiftData
+import Testing
+
 @testable import SwiftSecuencia
 
 // MARK: - DTD Validation Tests

@@ -75,7 +75,8 @@ public struct MediaProbe: Sendable {
   /// - Returns: A new timeline definition with all durations filled in.
   /// - Throws: If any file cannot be probed.
   public func probeMissingDurations(in definition: TimelineDefinition) async throws
-    -> TimelineDefinition {
+    -> TimelineDefinition
+  {
     var updatedClips: [ClipDefinition] = []
 
     for clip in definition.clips {
