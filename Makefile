@@ -1,73 +1,80 @@
-# Makefile for SwiftSecuencia
-#
-# Common targets for building, testing, and managing the Swift package.
-# Uses xcodebuild for all operations per CLAUDE.md guidelines.
+# SwiftSecuencia Makefile
+# Requires Apple Silicon (arm64) architecture
 
-.PHONY: help build test clean resolve install release lint
+.PHONY: help check-arch build test clean resolve install
 
 # Default target
 help:
-	@echo "SwiftSecuencia Makefile"
+	@echo "SwiftSecuencia Build System"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  make build      - Build all targets"
-	@echo "  make test       - Run all tests"
-	@echo "  make clean      - Clean build artifacts"
-	@echo "  make resolve    - Resolve package dependencies"
-	@echo "  make lint       - Format Swift source files"
-	@echo "  make help       - Show this help message"
+	@echo "  make build     - Build the package (Apple Silicon only)"
+	@echo "  make test      - Run all tests (Apple Silicon only)"
+	@echo "  make clean     - Clean build artifacts"
+	@echo "  make resolve   - Resolve package dependencies"
+	@echo "  make install   - Install secuencia CLI to /usr/local/bin"
 	@echo ""
-	@echo "macOS-specific targets:"
-	@echo "  make test-macos - Run tests on macOS"
-	@echo "  make build-macos - Build for macOS"
-	@echo ""
-	@echo "Note: SwiftSecuencia is a Swift package with macOS and iOS support."
-	@echo "      FCPXML export requires macOS; iOS only supports audio export."
+	@echo "Requirements:"
+	@echo "  - Apple Silicon (arm64) architecture"
+	@echo "  - Xcode 16.2 or later"
+	@echo "  - Swift 6.2 or later"
 
-# Build all targets
-build:
-	swift build
+# Check architecture - fail if not Apple Silicon
+check-arch:
+	@ARCH=$$(uname -m); \
+	if [ "$$ARCH" != "arm64" ]; then \
+		echo "❌ Error: This project requires Apple Silicon (arm64)"; \
+		echo "   Current architecture: $$ARCH"; \
+		exit 1; \
+	fi
 
-# Build for macOS specifically
-build-macos:
+# Resolve dependencies
+resolve: check-arch
+	@echo "🔄 Resolving package dependencies..."
+	xcodebuild -resolvePackageDependencies -scheme SwiftSecuencia-Package
+
+# Build the package
+build: check-arch
+	@echo "🔨 Building SwiftSecuencia..."
 	xcodebuild build \
-		-scheme SwiftSecuencia \
-		-destination 'platform=macOS'
+		-scheme SwiftSecuencia-Package \
+		-destination 'platform=macOS,arch=arm64'
 
 # Run all tests
-test:
-	swift test
-
-# Run tests on macOS
-test-macos:
+test: check-arch
+	@echo "🧪 Running SwiftSecuencia tests..."
+	@echo ""
 	xcodebuild test \
-		-scheme SwiftSecuencia \
-		-destination 'platform=macOS'
+		-scheme SwiftSecuencia-Package \
+		-destination 'platform=macOS,arch=arm64' \
+		-enableCodeCoverage YES
 
 # Clean build artifacts
 clean:
-	swift package clean
+	@echo "🧹 Cleaning build artifacts..."
+	xcodebuild clean -scheme SwiftSecuencia-Package
 	rm -rf .build
 
-# Resolve package dependencies
-resolve:
-	swift package resolve
-
-# Update dependencies
-update:
-	swift package update
-
-# Format Swift source files
-lint:
-	swift format -i -r .
-
-# Build release configuration
-release:
-	swift build -c release
-
-# Install CLI tool (secuencia) to /usr/local/bin
-install: release
-	@echo "Installing secuencia CLI to /usr/local/bin..."
-	install -d /usr/local/bin
-	install .build/release/secuencia /usr/local/bin/secuencia
-	@echo "✓ Installed secuencia to /usr/local/bin/secuencia"
+# Install CLI to /usr/local/bin
+install: check-arch
+	@echo "📦 Building secuencia CLI for release..."
+	xcodebuild build \
+		-scheme secuencia \
+		-destination 'platform=macOS,arch=arm64' \
+		-configuration Release
+	@echo "📦 Installing secuencia to /usr/local/bin..."
+	@PRODUCT_PATH=$$(xcodebuild build \
+		-scheme secuencia \
+		-destination 'platform=macOS,arch=arm64' \
+		-configuration Release \
+		-showBuildSettings 2>/dev/null | \
+		grep -m 1 "BUILT_PRODUCTS_DIR" | \
+		sed 's/.*= //'); \
+	if [ -f "$$PRODUCT_PATH/secuencia" ]; then \
+		cp "$$PRODUCT_PATH/secuencia" /usr/local/bin/secuencia; \
+		chmod +x /usr/local/bin/secuencia; \
+		echo "✅ Installed secuencia to /usr/local/bin/secuencia"; \
+	else \
+		echo "❌ Error: Could not find built secuencia executable"; \
+		exit 1; \
+	fi
