@@ -1,10 +1,3 @@
----
-feature_name: OPERATION PIPELINE EXODUS
-starting_point_commit: 1cbed22dafd46bfee26be7e6c14b579dc8d299c6
-mission_branch: mission/pipeline-exodus/01
-iteration: 02
----
-
 # EXECUTION PLAN — Operation Pipeline Exodus (Iteration 02)
 
 **Mission:** Replace the embedded Pipeline module in SwiftSecuencia with the pipeline-neo dependency for FCPXML generation.
