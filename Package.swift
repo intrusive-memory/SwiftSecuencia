@@ -30,8 +30,8 @@ let package = Package(
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
-    // Using pipeline-neo pinned to v2.4.1 release (includes PR #14 metadata export & DTD validation fixes)
-    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", revision: "a36534b14b6706e588368dccf47722b5ff59113b"),
+    // Using pipeline-neo v2.4.1+ (includes metadata export & DTD validation fixes)
+    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.4.1"),
   ],
   targets: [
     .target(
