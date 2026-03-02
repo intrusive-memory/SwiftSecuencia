@@ -1,7 +1,7 @@
 # SwiftSecuencia Makefile
 # Requires Apple Silicon (arm64) architecture
 
-.PHONY: help check-arch build test clean resolve install
+.PHONY: help check-arch build test clean resolve install lint
 
 # Default target
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  make clean     - Clean build artifacts"
 	@echo "  make resolve   - Resolve package dependencies"
 	@echo "  make install   - Install secuencia CLI to /usr/local/bin"
+	@echo "  make lint      - Format Swift source files"
 	@echo ""
 	@echo "Requirements:"
 	@echo "  - Apple Silicon (arm64) architecture"
@@ -78,3 +79,7 @@ install: check-arch
 		echo "❌ Error: Could not find built secuencia executable"; \
 		exit 1; \
 	fi
+
+# Format Swift source files
+lint:
+	swift format -i -r .
