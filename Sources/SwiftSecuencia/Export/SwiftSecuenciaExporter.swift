@@ -156,7 +156,7 @@
 
       // Step 1: Build ResourceMap from timeline asset UUIDs.
       // Format is always "r1"; assets get "r2", "r3", ... in sorted UUID order.
-      var resourceMap = buildResourceMap(for: timeline)
+      let resourceMap = buildResourceMap(for: timeline)
 
       // Step 2: Convert SwiftSecuencia.Timeline to PipelineNeo.Timeline.
       // ResourceMap is passed to all adapter calls so asset UUIDs become
@@ -182,8 +182,16 @@
         )
       }
 
-      // Step 5: Post-process to remove invalid library name attribute.
-      let cleanedXML = try removeLibraryNameAttribute(from: rawXML)
+      // Step 5: Post-process to remove invalid library name attribute and standalone declaration.
+      var cleanedXML = try removeLibraryNameAttribute(from: rawXML)
+
+      // Remove standalone="yes" from XML declaration for DTD validation compliance
+      if cleanedXML.hasPrefix("<?xml") {
+        cleanedXML = cleanedXML.replacingOccurrences(
+          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
+          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
+        )
+      }
 
       return cleanedXML
     }
