@@ -845,15 +845,49 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document using Pipeline's initializer
-      let doc = XMLDocument(
-        resources: resourceElements,
-        events: [event],
-        fcpxmlVersion: version
-      )
+      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      let doc = XMLDocument()
+      doc.documentContentKind = XMLDocument.ContentKind.xml
+      doc.characterEncoding = "UTF-8"
+      doc.version = "1.0"
 
-      // Return formatted XML string
-      return doc.fcpxmlString
+      doc.dtd = XMLDTD()
+      doc.dtd!.name = "fcpxml"
+      doc.isStandalone = false
+
+      // Create root <fcpxml> element
+      let fcpxmlRoot = XMLElement(name: "fcpxml")
+      fcpxmlRoot.addAttribute(XMLNode.attribute(withName: "version", stringValue: version.stringValue) as! XMLNode)
+
+      // Create <resources> element and add resource children
+      let resourcesElement = XMLElement(name: "resources")
+      for resource in resourceElements {
+        resourcesElement.addChild(resource)
+      }
+      fcpxmlRoot.addChild(resourcesElement)
+
+      // Create <library> element and add events
+      let libraryElement = XMLElement(name: "library")
+      libraryElement.addChild(event)
+      fcpxmlRoot.addChild(libraryElement)
+
+      doc.setRootElement(fcpxmlRoot)
+
+      // Return formatted XML string (manually process to match fcpxmlString behavior)
+      let formattedData = doc.xmlData(options: [.nodePreserveWhitespace, .nodePrettyPrint, .nodeCompactEmptyElement])
+      guard var formattedString = String(data: formattedData, encoding: .utf8) else {
+        throw FCPXMLExportError.xmlGenerationFailed
+      }
+
+      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      if formattedString.hasPrefix("<?xml") {
+        formattedString = formattedString.replacingOccurrences(
+          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
+          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
+        )
+      }
+
+      return formattedString
     }
 
     /// Generates FCPXML string with asset references (legacy with ModelContext).
@@ -952,15 +986,49 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document using Pipeline's initializer
-      let doc = XMLDocument(
-        resources: resourceElements,
-        events: [event],
-        fcpxmlVersion: version
-      )
+      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      let doc = XMLDocument()
+      doc.documentContentKind = XMLDocument.ContentKind.xml
+      doc.characterEncoding = "UTF-8"
+      doc.version = "1.0"
 
-      // Return formatted XML string
-      return doc.fcpxmlString
+      doc.dtd = XMLDTD()
+      doc.dtd!.name = "fcpxml"
+      doc.isStandalone = false
+
+      // Create root <fcpxml> element
+      let fcpxmlRoot = XMLElement(name: "fcpxml")
+      fcpxmlRoot.addAttribute(XMLNode.attribute(withName: "version", stringValue: version.stringValue) as! XMLNode)
+
+      // Create <resources> element and add resource children
+      let resourcesElement = XMLElement(name: "resources")
+      for resource in resourceElements {
+        resourcesElement.addChild(resource)
+      }
+      fcpxmlRoot.addChild(resourcesElement)
+
+      // Create <library> element and add events
+      let libraryElement = XMLElement(name: "library")
+      libraryElement.addChild(event)
+      fcpxmlRoot.addChild(libraryElement)
+
+      doc.setRootElement(fcpxmlRoot)
+
+      // Return formatted XML string (manually process to match fcpxmlString behavior)
+      let formattedData = doc.xmlData(options: [.nodePreserveWhitespace, .nodePrettyPrint, .nodeCompactEmptyElement])
+      guard var formattedString = String(data: formattedData, encoding: .utf8) else {
+        throw FCPXMLExportError.xmlGenerationFailed
+      }
+
+      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      if formattedString.hasPrefix("<?xml") {
+        formattedString = formattedString.replacingOccurrences(
+          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
+          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
+        )
+      }
+
+      return formattedString
     }
 
     // MARK: - XML Element Generation
