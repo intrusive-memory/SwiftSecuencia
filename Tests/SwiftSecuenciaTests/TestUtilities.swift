@@ -19,8 +19,7 @@ enum TestUtilities {
   ///   - text: Text to synthesize (default: "Test audio").
   ///   - format: Audio format - "aiff", "wav", or "m4a" (default: "aiff").
   /// - Returns: Audio file data.
-  static func generateAudioData(text: String = "Test audio", format: String = "aiff") throws -> Data
-  {
+  static func generateAudioData(text: String = "Test audio", format: String = "aiff") throws -> Data {
     let tempFile = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString)
       .appendingPathExtension(format)

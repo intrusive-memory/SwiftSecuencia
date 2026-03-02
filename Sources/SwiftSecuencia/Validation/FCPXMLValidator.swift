@@ -147,8 +147,7 @@
       // Check 5: Clip durations should not exceed asset durations (warning only)
       for clip in timeline.clips {
         if let asset = allAssets.first(where: { $0.id == clip.assetStorageId }),
-          let assetDuration = asset.durationSeconds
-        {
+          let assetDuration = asset.durationSeconds {
           let clipDurationSeconds = clip.duration.seconds
           let sourceStartSeconds = clip.sourceStart.seconds
 

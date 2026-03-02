@@ -70,8 +70,7 @@
     /// - Parameter pipelineNeoError: The PipelineNeo error to map.
     /// - Returns: The mapped `FCPXMLExportError`.
     public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLExportError)
-      -> FCPXMLExportError
-    {
+      -> FCPXMLExportError {
       FCPXMLExportError(mappingFrom: pipelineNeoError)
     }
   }
@@ -135,8 +134,7 @@
 
     /// Maps a `PipelineNeo.FCPXMLBundleExportError` to a `FCPXMLBundleExportError`.
     public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLBundleExportError)
-      -> FCPXMLBundleExportError
-    {
+      -> FCPXMLBundleExportError {
       FCPXMLBundleExportError(mappingFrom: pipelineNeoError)
     }
   }
@@ -214,8 +212,7 @@
 
     /// Maps a `PipelineNeo.FCPXMLError` to a `FCPXMLValidationError`.
     public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLError)
-      -> FCPXMLValidationError
-    {
+      -> FCPXMLValidationError {
       FCPXMLValidationError(mappingFrom: pipelineNeoError)
     }
 
