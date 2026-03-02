@@ -1,7 +1,7 @@
 import Foundation
+import SwiftCompartido
 import SwiftData
 import SwiftSecuencia
-import SwiftCompartido
 
 /// Bootstraps SwiftData with an in-memory container for CLI operations.
 ///
@@ -16,32 +16,32 @@ import SwiftCompartido
 /// ```
 public enum SwiftDataBootstrap {
 
-    /// Creates an in-memory SwiftData container with all required models.
-    ///
-    /// The container includes:
-    /// - `Timeline` - Timeline structure
-    /// - `TimelineClip` - Individual clips
-    /// - `TypedDataStorage` - Media asset storage (from SwiftCompartido)
-    ///
-    /// - Returns: A configured `ModelContainer` with in-memory storage.
-    /// - Throws: If container creation fails.
-    public static func createInMemoryContainer() throws -> ModelContainer {
-        let configuration = ModelConfiguration(
-            isStoredInMemoryOnly: true
-        )
+  /// Creates an in-memory SwiftData container with all required models.
+  ///
+  /// The container includes:
+  /// - `Timeline` - Timeline structure
+  /// - `TimelineClip` - Individual clips
+  /// - `TypedDataStorage` - Media asset storage (from SwiftCompartido)
+  ///
+  /// - Returns: A configured `ModelContainer` with in-memory storage.
+  /// - Throws: If container creation fails.
+  public static func createInMemoryContainer() throws -> ModelContainer {
+    let configuration = ModelConfiguration(
+      isStoredInMemoryOnly: true
+    )
 
-        return try ModelContainer(
-            for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
-            configurations: configuration
-        )
-    }
+    return try ModelContainer(
+      for: Timeline.self, TimelineClip.self, TypedDataStorage.self,
+      configurations: configuration
+    )
+  }
 
-    /// Creates a model context from a container.
-    ///
-    /// - Parameter container: The model container to create a context from.
-    /// - Returns: A new `ModelContext` for database operations.
-    @MainActor
-    public static func createContext(from container: ModelContainer) -> ModelContext {
-        container.mainContext
-    }
+  /// Creates a model context from a container.
+  ///
+  /// - Parameter container: The model container to create a context from.
+  /// - Returns: A new `ModelContext` for database operations.
+  @MainActor
+  public static func createContext(from container: ModelContainer) -> ModelContext {
+    container.mainContext
+  }
 }

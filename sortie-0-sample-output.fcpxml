@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.11">
+    <resources>
+        <format id="r1" name="FFVideoFormat1080p2398" frameDuration="1001/24000s" width="1920" height="1080"/>
+        <asset id="r2" name="clip-001" duration="48048/24000s" hasVideo="1" hasAudio="1">
+            <media-rep kind="original-media" src="file:///tmp/sortie-0-clip-001.m4a"/>
+        </asset>
+        <asset id="r3" name="clip-002" duration="48048/24000s" hasVideo="1" hasAudio="1">
+            <media-rep kind="original-media" src="file:///tmp/sortie-0-clip-002.m4a"/>
+        </asset>
+    </resources>
+    <library>
+        <event name="Sortie 0 Event">
+            <project name="Sortie 0 Project">
+                <sequence format="r1" duration="96096/24000s" tcStart="0s">
+                    <spine>
+                        <asset-clip ref="r2" name="clip-001" offset="0s" duration="48048/24000s"/>
+                        <asset-clip ref="r3" name="clip-002" offset="48048/24000s" duration="48048/24000s">
+                            <marker start="6006/24000s" duration="1001/24000s" value="Clip 2 Mark"/>
+                            <keyword start="0s" duration="48048/24000s" value="dialogue"/>
+                        </asset-clip>
+                    </spine>
+                    <metadata>
+                        <md key="com.apple.proapps.studio.scene" value="1"/>
+                        <md key="com.apple.proapps.studio.take" value="2"/>
+                    </metadata>
+                </sequence>
+            </project>
+        </event>
+    </library>
+</fcpxml>

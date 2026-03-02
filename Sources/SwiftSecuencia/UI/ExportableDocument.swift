@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import SwiftData
 import SwiftCompartido
+import SwiftData
 
 /// Protocol for documents that can be exported to FCP and M4A.
 ///
@@ -26,9 +26,9 @@ import SwiftCompartido
 /// ```
 @MainActor
 public protocol ExportableDocument {
-    /// Name to use for exported files (without extension).
-    var exportName: String { get }
+  /// Name to use for exported files (without extension).
+  var exportName: String { get }
 
-    /// Returns audio elements for export, sorted in the desired playback order.
-    func audioElements() -> [TypedDataStorage]
+  /// Returns audio elements for export, sorted in the desired playback order.
+  func audioElements() -> [TypedDataStorage]
 }

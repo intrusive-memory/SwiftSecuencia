@@ -67,7 +67,7 @@ jobs:
       - name: Swift build check
         run: |
           echo "🔨 Verifying Swift package builds..."
-          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
+          make build
           echo "✅ Swift package builds successfully" >> $GITHUB_STEP_SUMMARY
 
   # Step 2: iOS Unit Tests (DISABLED - TODO: Fix iOS testing setup)
@@ -155,7 +155,7 @@ jobs:
       - name: Build for macOS
         run: |
           echo "🔨 Building for macOS"
-          xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
+          make build
 
       - name: Run FCPXML DTD validation tests
         run: |
@@ -163,7 +163,7 @@ jobs:
           set +e
           xcodebuild test \
             -scheme SwiftSecuencia-Package \
-            -destination 'platform=macOS' \
+            -destination 'platform=macOS,arch=arm64' \
             -only-testing:SwiftSecuenciaTests/FCPXMLDTDValidationTests 2>&1 | tee dtd_validation_output.txt
           set -e
 
@@ -185,10 +185,7 @@ jobs:
         run: |
           echo "🧪 Running all unit tests on macOS"
           set +e
-          xcodebuild test \
-            -scheme SwiftSecuencia-Package \
-            -destination 'platform=macOS' \
-            -parallel-testing-enabled NO 2>&1 | tee test_output_macos.txt
+          make test 2>&1 | tee test_output_macos.txt
           set -e
 
           if grep -q "TEST SUCCEEDED" test_output_macos.txt; then

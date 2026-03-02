@@ -40,173 +40,171 @@ import Foundation
 /// ```
 public struct VideoFormat: Sendable, Equatable, Hashable, Codable {
 
-    // MARK: - Properties
+  // MARK: - Properties
 
-    /// Frame width in pixels.
-    public let width: Int
+  /// Frame width in pixels.
+  public let width: Int
 
-    /// Frame height in pixels.
-    public let height: Int
+  /// Frame height in pixels.
+  public let height: Int
 
-    /// Frame rate.
-    public let frameRate: FrameRate
+  /// Frame rate.
+  public let frameRate: FrameRate
 
-    /// Color space.
-    public let colorSpace: ColorSpace
+  /// Color space.
+  public let colorSpace: ColorSpace
 
-    /// Progressive (false) or interlaced (true) scanning.
-    public let interlaced: Bool
+  /// Progressive (false) or interlaced (true) scanning.
+  public let interlaced: Bool
 
-    // MARK: - Computed Properties
+  // MARK: - Computed Properties
 
-    /// The aspect ratio as width/height.
-    public var aspectRatio: Double {
-        guard height > 0 else { return 0 }
-        return Double(width) / Double(height)
+  /// The aspect ratio as width/height.
+  public var aspectRatio: Double {
+    guard height > 0 else { return 0 }
+    return Double(width) / Double(height)
+  }
+
+  /// The frame duration from the frame rate.
+  public var frameDuration: Timecode {
+    frameRate.frameDuration
+  }
+
+  /// Whether this is a standard HD resolution (1920×1080 or 1280×720).
+  public var isHD: Bool {
+    (width == 1920 && height == 1080) || (width == 1280 && height == 720)
+  }
+
+  /// Whether this is a 4K/UHD resolution (3840×2160 or 4096×2160).
+  public var isUHD: Bool {
+    (width == 3840 && height == 2160) || (width == 4096 && height == 2160)
+  }
+
+  /// The FCPXML format name (e.g., "FFVideoFormat1080p2398").
+  public var fcpxmlFormatName: String {
+    let heightStr: String
+    if height == 2160 {
+      heightStr = width == 4096 ? "4096x2160" : "2160"
+    } else if height == 1080 {
+      heightStr = "1080"
+    } else if height == 720 {
+      heightStr = "720"
+    } else {
+      heightStr = "\(width)x\(height)"
     }
 
-    /// The frame duration from the frame rate.
-    public var frameDuration: Timecode {
-        frameRate.frameDuration
-    }
+    let scanType = interlaced ? "i" : "p"
+    return "FFVideoFormat\(heightStr)\(scanType)\(frameRate.fcpxmlSuffix)"
+  }
 
-    /// Whether this is a standard HD resolution (1920×1080 or 1280×720).
-    public var isHD: Bool {
-        (width == 1920 && height == 1080) ||
-        (width == 1280 && height == 720)
-    }
+  // MARK: - Initialization
 
-    /// Whether this is a 4K/UHD resolution (3840×2160 or 4096×2160).
-    public var isUHD: Bool {
-        (width == 3840 && height == 2160) ||
-        (width == 4096 && height == 2160)
-    }
-
-    /// The FCPXML format name (e.g., "FFVideoFormat1080p2398").
-    public var fcpxmlFormatName: String {
-        let heightStr: String
-        if height == 2160 {
-            heightStr = width == 4096 ? "4096x2160" : "2160"
-        } else if height == 1080 {
-            heightStr = "1080"
-        } else if height == 720 {
-            heightStr = "720"
-        } else {
-            heightStr = "\(width)x\(height)"
-        }
-
-        let scanType = interlaced ? "i" : "p"
-        return "FFVideoFormat\(heightStr)\(scanType)\(frameRate.fcpxmlSuffix)"
-    }
-
-    // MARK: - Initialization
-
-    /// Creates a video format with the specified parameters.
-    ///
-    /// - Parameters:
-    ///   - width: Frame width in pixels.
-    ///   - height: Frame height in pixels.
-    ///   - frameRate: The frame rate.
-    ///   - colorSpace: The color space (default: rec709).
-    ///   - interlaced: Whether the format is interlaced (default: false).
-    public init(
-        width: Int,
-        height: Int,
-        frameRate: FrameRate,
-        colorSpace: ColorSpace = .rec709,
-        interlaced: Bool = false
-    ) {
-        precondition(width > 0, "Width must be positive")
-        precondition(height > 0, "Height must be positive")
-        self.width = width
-        self.height = height
-        self.frameRate = frameRate
-        self.colorSpace = colorSpace
-        self.interlaced = interlaced
-    }
+  /// Creates a video format with the specified parameters.
+  ///
+  /// - Parameters:
+  ///   - width: Frame width in pixels.
+  ///   - height: Frame height in pixels.
+  ///   - frameRate: The frame rate.
+  ///   - colorSpace: The color space (default: rec709).
+  ///   - interlaced: Whether the format is interlaced (default: false).
+  public init(
+    width: Int,
+    height: Int,
+    frameRate: FrameRate,
+    colorSpace: ColorSpace = .rec709,
+    interlaced: Bool = false
+  ) {
+    precondition(width > 0, "Width must be positive")
+    precondition(height > 0, "Height must be positive")
+    self.width = width
+    self.height = height
+    self.frameRate = frameRate
+    self.colorSpace = colorSpace
+    self.interlaced = interlaced
+  }
 }
 
 // MARK: - Standard Formats
 
 extension VideoFormat {
-    /// Creates a 1080p HD format.
-    ///
-    /// - Parameters:
-    ///   - frameRate: The frame rate.
-    ///   - colorSpace: The color space (default: rec709).
-    /// - Returns: A 1920×1080 progressive format.
-    public static func hd1080p(
-        frameRate: FrameRate,
-        colorSpace: ColorSpace = .rec709
-    ) -> VideoFormat {
-        VideoFormat(
-            width: 1920,
-            height: 1080,
-            frameRate: frameRate,
-            colorSpace: colorSpace
-        )
-    }
+  /// Creates a 1080p HD format.
+  ///
+  /// - Parameters:
+  ///   - frameRate: The frame rate.
+  ///   - colorSpace: The color space (default: rec709).
+  /// - Returns: A 1920×1080 progressive format.
+  public static func hd1080p(
+    frameRate: FrameRate,
+    colorSpace: ColorSpace = .rec709
+  ) -> VideoFormat {
+    VideoFormat(
+      width: 1920,
+      height: 1080,
+      frameRate: frameRate,
+      colorSpace: colorSpace
+    )
+  }
 
-    /// Creates a 720p HD format.
-    ///
-    /// - Parameters:
-    ///   - frameRate: The frame rate.
-    ///   - colorSpace: The color space (default: rec709).
-    /// - Returns: A 1280×720 progressive format.
-    public static func hd720p(
-        frameRate: FrameRate,
-        colorSpace: ColorSpace = .rec709
-    ) -> VideoFormat {
-        VideoFormat(
-            width: 1280,
-            height: 720,
-            frameRate: frameRate,
-            colorSpace: colorSpace
-        )
-    }
+  /// Creates a 720p HD format.
+  ///
+  /// - Parameters:
+  ///   - frameRate: The frame rate.
+  ///   - colorSpace: The color space (default: rec709).
+  /// - Returns: A 1280×720 progressive format.
+  public static func hd720p(
+    frameRate: FrameRate,
+    colorSpace: ColorSpace = .rec709
+  ) -> VideoFormat {
+    VideoFormat(
+      width: 1280,
+      height: 720,
+      frameRate: frameRate,
+      colorSpace: colorSpace
+    )
+  }
 
-    /// Creates a 4K UHD format (3840×2160).
-    ///
-    /// - Parameters:
-    ///   - frameRate: The frame rate.
-    ///   - colorSpace: The color space (default: rec2020).
-    /// - Returns: A 3840×2160 progressive format.
-    public static func uhd4K(
-        frameRate: FrameRate,
-        colorSpace: ColorSpace = .rec2020
-    ) -> VideoFormat {
-        VideoFormat(
-            width: 3840,
-            height: 2160,
-            frameRate: frameRate,
-            colorSpace: colorSpace
-        )
-    }
+  /// Creates a 4K UHD format (3840×2160).
+  ///
+  /// - Parameters:
+  ///   - frameRate: The frame rate.
+  ///   - colorSpace: The color space (default: rec2020).
+  /// - Returns: A 3840×2160 progressive format.
+  public static func uhd4K(
+    frameRate: FrameRate,
+    colorSpace: ColorSpace = .rec2020
+  ) -> VideoFormat {
+    VideoFormat(
+      width: 3840,
+      height: 2160,
+      frameRate: frameRate,
+      colorSpace: colorSpace
+    )
+  }
 
-    /// Creates a DCI 4K format (4096×2160).
-    ///
-    /// - Parameters:
-    ///   - frameRate: The frame rate.
-    ///   - colorSpace: The color space (default: rec2020).
-    /// - Returns: A 4096×2160 progressive format.
-    public static func dci4K(
-        frameRate: FrameRate,
-        colorSpace: ColorSpace = .rec2020
-    ) -> VideoFormat {
-        VideoFormat(
-            width: 4096,
-            height: 2160,
-            frameRate: frameRate,
-            colorSpace: colorSpace
-        )
-    }
+  /// Creates a DCI 4K format (4096×2160).
+  ///
+  /// - Parameters:
+  ///   - frameRate: The frame rate.
+  ///   - colorSpace: The color space (default: rec2020).
+  /// - Returns: A 4096×2160 progressive format.
+  public static func dci4K(
+    frameRate: FrameRate,
+    colorSpace: ColorSpace = .rec2020
+  ) -> VideoFormat {
+    VideoFormat(
+      width: 4096,
+      height: 2160,
+      frameRate: frameRate,
+      colorSpace: colorSpace
+    )
+  }
 }
 
 // MARK: - CustomStringConvertible
 
 extension VideoFormat: CustomStringConvertible {
-    public var description: String {
-        let scanType = interlaced ? "i" : "p"
-        return "\(width)×\(height)\(scanType) @ \(frameRate)"
-    }
+  public var description: String {
+    let scanType = interlaced ? "i" : "p"
+    return "\(width)×\(height)\(scanType) @ \(frameRate)"
+  }
 }

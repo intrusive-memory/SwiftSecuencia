@@ -38,114 +38,114 @@ import Foundation
 /// ```
 public struct Metadata: Sendable, Equatable, Hashable, Codable {
 
-    /// The metadata key-value pairs.
-    public var entries: [String: String]
+  /// The metadata key-value pairs.
+  public var entries: [String: String]
 
-    /// Creates an empty metadata container.
-    public init() {
-        self.entries = [:]
-    }
+  /// Creates an empty metadata container.
+  public init() {
+    self.entries = [:]
+  }
 
-    /// Creates a metadata container with the given entries.
-    ///
-    /// - Parameter entries: Dictionary of metadata key-value pairs.
-    public init(entries: [String: String]) {
-        self.entries = entries
-    }
+  /// Creates a metadata container with the given entries.
+  ///
+  /// - Parameter entries: Dictionary of metadata key-value pairs.
+  public init(entries: [String: String]) {
+    self.entries = entries
+  }
 
-    /// Accesses metadata values by key.
-    public subscript(key: String) -> String? {
-        get { entries[key] }
-        set { entries[key] = newValue }
-    }
+  /// Accesses metadata values by key.
+  public subscript(key: String) -> String? {
+    get { entries[key] }
+    set { entries[key] = newValue }
+  }
 
-    /// Whether the metadata container is empty.
-    public var isEmpty: Bool {
-        entries.isEmpty
-    }
+  /// Whether the metadata container is empty.
+  public var isEmpty: Bool {
+    entries.isEmpty
+  }
 
-    #if os(macOS)
+  #if os(macOS)
     /// Generates the FCPXML element for this metadata container.
     public func xmlElement() -> XMLElement {
-        let element = XMLElement(name: "metadata")
+      let element = XMLElement(name: "metadata")
 
-        // Sort keys for deterministic output
-        let sortedKeys = entries.keys.sorted()
+      // Sort keys for deterministic output
+      let sortedKeys = entries.keys.sorted()
 
-        for key in sortedKeys {
-            guard let value = entries[key] else { continue }
+      for key in sortedKeys {
+        guard let value = entries[key] else { continue }
 
-            let mdElement = XMLElement(name: "md")
-            mdElement.addAttribute(XMLNode.attribute(withName: "key", stringValue: key) as! XMLNode)
-            mdElement.addAttribute(XMLNode.attribute(withName: "value", stringValue: value) as! XMLNode)
-            element.addChild(mdElement)
-        }
+        let mdElement = XMLElement(name: "md")
+        mdElement.addAttribute(XMLNode.attribute(withName: "key", stringValue: key) as! XMLNode)
+        mdElement.addAttribute(XMLNode.attribute(withName: "value", stringValue: value) as! XMLNode)
+        element.addChild(mdElement)
+      }
 
-        return element
+      return element
     }
-    #endif
+  #endif
 }
 
 // MARK: - Common Metadata Keys
 
 extension Metadata {
 
-    /// Common metadata key constants.
-    public enum Key {
-        /// Reel number (e.g., "A001").
-        public static let reel = "com.apple.proapps.studio.reel"
+  /// Common metadata key constants.
+  public enum Key {
+    /// Reel number (e.g., "A001").
+    public static let reel = "com.apple.proapps.studio.reel"
 
-        /// Scene number (e.g., "1").
-        public static let scene = "com.apple.proapps.studio.scene"
+    /// Scene number (e.g., "1").
+    public static let scene = "com.apple.proapps.studio.scene"
 
-        /// Take number (e.g., "3").
-        public static let take = "com.apple.proapps.studio.take"
+    /// Take number (e.g., "3").
+    public static let take = "com.apple.proapps.studio.take"
 
-        /// Description.
-        public static let description = "com.apple.proapps.spotlight.kMDItemDescription"
+    /// Description.
+    public static let description = "com.apple.proapps.spotlight.kMDItemDescription"
 
-        /// Camera name.
-        public static let cameraName = "com.apple.proapps.studio.cameraName"
+    /// Camera name.
+    public static let cameraName = "com.apple.proapps.studio.cameraName"
 
-        /// Camera angle.
-        public static let cameraAngle = "com.apple.proapps.studio.cameraAngle"
+    /// Camera angle.
+    public static let cameraAngle = "com.apple.proapps.studio.cameraAngle"
 
-        /// Shot type.
-        public static let shotType = "com.apple.proapps.studio.shotType"
-    }
+    /// Shot type.
+    public static let shotType = "com.apple.proapps.studio.shotType"
+  }
 
-    /// Sets the reel number.
-    public mutating func setReel(_ value: String) {
-        self[Key.reel] = value
-    }
+  /// Sets the reel number.
+  public mutating func setReel(_ value: String) {
+    self[Key.reel] = value
+  }
 
-    /// Sets the scene number.
-    public mutating func setScene(_ value: String) {
-        self[Key.scene] = value
-    }
+  /// Sets the scene number.
+  public mutating func setScene(_ value: String) {
+    self[Key.scene] = value
+  }
 
-    /// Sets the take number.
-    public mutating func setTake(_ value: String) {
-        self[Key.take] = value
-    }
+  /// Sets the take number.
+  public mutating func setTake(_ value: String) {
+    self[Key.take] = value
+  }
 
-    /// Sets the description.
-    public mutating func setDescription(_ value: String) {
-        self[Key.description] = value
-    }
+  /// Sets the description.
+  public mutating func setDescription(_ value: String) {
+    self[Key.description] = value
+  }
 
-    /// Sets the camera name.
-    public mutating func setCameraName(_ value: String) {
-        self[Key.cameraName] = value
-    }
+  /// Sets the camera name.
+  public mutating func setCameraName(_ value: String) {
+    self[Key.cameraName] = value
+  }
 
-    /// Sets the camera angle.
-    public mutating func setCameraAngle(_ value: String) {
-        self[Key.cameraAngle] = value
-    }
+  /// Sets the camera angle.
+  public mutating func setCameraAngle(_ value: String) {
+    self[Key.cameraAngle] = value
+  }
 
-    /// Sets the shot type.
-    public mutating func setShotType(_ value: String) {
-        self[Key.shotType] = value
-    }
+  /// Sets the shot type.
+  public mutating func setShotType(_ value: String) {
+    self[Key.shotType] = value
+  }
 }
