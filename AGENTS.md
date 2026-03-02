@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines
 
-**Last Updated**: 2026-02-13
-**Version**: 2.0.0
+**Last Updated**: 2026-03-02
+**Version**: 3.0.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -204,6 +204,7 @@ let outputURL = try await Task.detached(priority: .high) {
 
 | Package | Version | Purpose |
 |---------|---------|---------|
+| pipeline-neo | 2.4.1+ | FCPXML generation and DTD validation |
 | SwiftCompartido | development | TypedDataStorage (asset storage) |
 | SwiftFijos | development | Test fixture management |
 | swift-argument-parser | 1.7.0 | CLI argument parsing |
@@ -278,8 +279,8 @@ let outputURL = try await Task.detached(priority: .high) {
 
 ## Version & Release Info
 
-**Current**: 2.0.0 (CLI implementation with SecuenciaCLICore library, CI fixes)
-**Previous**: 1.0.8 (Dual Dialogue Support)
+**Current**: 3.0.0 (Migrate FCPXML export to pipeline-neo v2.4.1+ dependency)
+**Previous**: 2.0.0 (CLI implementation with SecuenciaCLICore library, CI fixes)
 
 ### Versioning
 - **Major**: Architectural changes, new major features
@@ -297,6 +298,28 @@ See **CHANGELOG.md** for full release history.
 - **FCPXML Reference**: Docs/FCPXML-Reference.md
 - **FCPXML Elements**: Docs/FCPXML-Elements.md
 - **Pipeline License**: PIPELINE-LICENSE.md (MIT License, Reuel Kim)
+
+---
+
+## Agent-Specific Instructions
+
+This file contains **universal** project documentation that applies to all AI agents.
+
+For **agent-specific** tooling and workflows, see:
+
+- **[CLAUDE.md](CLAUDE.md)** - Claude Code agents
+  - XcodeBuildMCP tools (build, test, Swift packages)
+  - App Store Connect MCP (TestFlight, Xcode Cloud CI/CD)
+  - Makefile-first workflow
+  - Global `~/.claude/CLAUDE.md` patterns
+
+- **[GEMINI.md](GEMINI.md)** - Google Gemini agents
+  - Standard CLI tools (xcodebuild, git, gh)
+  - Makefile-first workflow
+  - Direct xcodebuild commands (no MCP access)
+  - GitHub Actions best practices
+
+**Rule**: Follow agent-specific instructions in addition to universal rules in this file.
 
 ---
 
