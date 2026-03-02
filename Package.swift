@@ -30,12 +30,8 @@ let package = Package(
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
-    // Temporarily using intrusive-memory fork with metadata export fix
-    // PR: https://github.com/TheAcharya/pipeline-neo/pull/14
-    // TODO: Switch back to TheAcharya/pipeline-neo once PR is merged
-    .package(
-      url: "https://github.com/intrusive-memory/pipeline-neo.git",
-      branch: "fix/clip-metadata-export"),
+    // Using official pipeline-neo with metadata export fix (merged PR #14)
+    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.4.1"),
   ],
   targets: [
     .target(

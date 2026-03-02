@@ -1,7 +1,7 @@
 # SwiftSecuencia Makefile
 # Requires Apple Silicon (arm64) architecture
 
-.PHONY: help check-arch build test clean resolve install lint
+.PHONY: help check-arch build test clean resolve install lint lint-fix format
 
 # Default target
 help:
@@ -13,7 +13,9 @@ help:
 	@echo "  make clean     - Clean build artifacts"
 	@echo "  make resolve   - Resolve package dependencies"
 	@echo "  make install   - Install secuencia CLI to /usr/local/bin"
-	@echo "  make lint      - Format Swift source files"
+	@echo "  make lint      - Run SwiftLint with strict mode (matches CI)"
+	@echo "  make lint-fix  - Auto-fix SwiftLint violations where possible"
+	@echo "  make format    - Format Swift source files with swift-format"
 	@echo ""
 	@echo "Requirements:"
 	@echo "  - Apple Silicon (arm64) architecture"
@@ -80,6 +82,17 @@ install: check-arch
 		exit 1; \
 	fi
 
-# Format Swift source files
+# Run SwiftLint with strict mode (matches CI)
 lint:
+	@echo "🔍 Running SwiftLint with strict mode..."
+	swiftlint lint --strict
+
+# Auto-fix SwiftLint violations where possible
+lint-fix:
+	@echo "🔧 Auto-fixing SwiftLint violations..."
+	swiftlint --fix
+
+# Format Swift source files with swift-format
+format:
+	@echo "✨ Formatting Swift source files..."
 	swift format -i -r .

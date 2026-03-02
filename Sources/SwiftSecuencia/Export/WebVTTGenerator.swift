@@ -32,8 +32,7 @@ public struct WebVTTGenerator: Sendable {
   /// - Throws: `FCPXMLExportError` if asset fetching fails
   @MainActor
   public func generateWebVTT(from timeline: Timeline, modelContext: ModelContext) async throws
-    -> String
-  {
+    -> String {
     var webVTT = WebVTT()
 
     // Iterate through timeline clips in order
@@ -77,8 +76,7 @@ public struct WebVTTGenerator: Sendable {
   /// - Throws: Audio processing errors
   @MainActor
   public func generateWebVTT(from audioElements: [TypedDataStorage], modelContext: ModelContext)
-    async throws -> String
-  {
+    async throws -> String {
     var webVTT = WebVTT()
     var currentTime = 0.0
 

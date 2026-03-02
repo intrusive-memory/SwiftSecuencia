@@ -7,6 +7,7 @@ excluded:
   - .swiftpm
   - Tests/SwiftSecuenciaTests/Resources
   - Sources/Pipeline  # Third-party code from Pipeline library
+  - Scripts  # Build and generation scripts
 
 # Disabled rules (to focus on platform enforcement, not code style)
 disabled_rules:
