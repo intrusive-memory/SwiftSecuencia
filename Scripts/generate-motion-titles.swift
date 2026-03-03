@@ -10,11 +10,15 @@ let titlesBase = motionTemplatesBase + "/Titles.localized/casting-software-spell
 let generatorsBase = motionTemplatesBase + "/Generators.localized/casting-software-spells"
 
 // MARK: - Layout Constants
+//
+// Design spec (SUP-INFOGRAPHICS-PLAN.md): Left Panel = x=150 to x=1400 on the 4096×2160 canvas.
+// infoPanelX/Width describe the zone on the full 4K canvas (used for coordinate reference).
+// Infographic elements within this zone are positioned relative to the panel's local coordinate space.
 
-let infoPanelX: Double = 150
-let infoPanelY: Double = 40
-let infoPanelWidth: Double = 1250
-let infoPanelHeight: Double = 2000
+let infoPanelX: Double = 150          // Left edge of infographic panel (canvas coords)
+let infoPanelY: Double = 40           // Top margin for infographic panel
+let infoPanelWidth: Double = 1250     // Width of infographic panel (150 → 1400)
+let infoPanelHeight: Double = 2000    // Height of infographic panel (canvas coords)
 
 // MARK: - Color Palette
 
@@ -131,8 +135,45 @@ struct InfographicElement {
   let x: Double
   let y: Double
   let color: RGBColor
-  let alignment: Int   // 0=left, 1=center, 2=right
-  let isIcon: Bool     // If true, use Font Awesome font
+  let alignment: Int      // 0=left, 1=center, 2=right
+  let isIcon: Bool        // If true, use Font Awesome font
+  let isProgressBar: Bool // If true, render as progress bar (text = percentage string like "0.65")
+  let barWidth: Double    // Width of progress bar in canvas pixels (used when isProgressBar=true)
+
+  /// Convenience initializer for standard text or icon elements (backward compatible)
+  init(
+    text: String, font: String, size: Int,
+    x: Double, y: Double, color: RGBColor,
+    alignment: Int, isIcon: Bool
+  ) {
+    self.text = text
+    self.font = font
+    self.size = size
+    self.x = x
+    self.y = y
+    self.color = color
+    self.alignment = alignment
+    self.isIcon = isIcon
+    self.isProgressBar = false
+    self.barWidth = 0
+  }
+
+  /// Initializer for progress bar elements
+  init(
+    percentage: Double, barWidth: Double,
+    x: Double, y: Double, color: RGBColor
+  ) {
+    self.text = String(percentage)
+    self.font = ""
+    self.size = 24
+    self.x = x
+    self.y = y
+    self.color = color
+    self.alignment = 1
+    self.isIcon = false
+    self.isProgressBar = true
+    self.barWidth = barWidth
+  }
 }
 
 // MARK: - Chapter Definitions
@@ -174,18 +215,22 @@ func allChapters() -> [Chapter] {
       infographicLines: [
         InfographicElement(text: "ITERATION ZERO: THE MESS", font: "HelveticaNeue-CondensedBold", size: 52,
                            x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
-        InfographicElement(text: FAIcon.exclamationTriangle, font: "FontAwesome5ProSolid", size: 48,
-                           x: 200, y: 520, color: cautionYellow, alignment: 0, isIcon: true),
-        InfographicElement(text: "30+ COMMITS", font: "HelveticaNeue-Bold", size: 40,
-                           x: 300, y: 520, color: missionRed, alignment: 0, isIcon: false),
-        InfographicElement(text: FAIcon.fighterJet, font: "FontAwesome5ProSolid", size: 48,
-                           x: 200, y: 430, color: cautionYellow, alignment: 0, isIcon: true),
-        InfographicElement(text: "24/37 SORTIES (65%)", font: "HelveticaNeue-Bold", size: 40,
-                           x: 300, y: 430, color: cautionYellow, alignment: 0, isIcon: false),
-        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5ProSolid", size: 48,
-                           x: 200, y: 340, color: missionRed, alignment: 0, isIcon: true),
-        InfographicElement(text: "OVER-ENGINEERED", font: "HelveticaNeue-Bold", size: 40,
-                           x: 300, y: 340, color: missionRed, alignment: 0, isIcon: false),
+        // Progress bar: 24/37 sorties = 64.8% complete (Caution Yellow = incomplete mission)
+        InfographicElement(percentage: 0.648, barWidth: 700, x: 550, y: 610, color: cautionYellow),
+        InfographicElement(text: "24 / 37 SORTIES", font: "HelveticaNeue-Bold", size: 32,
+                           x: 550, y: 570, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.exclamationTriangle, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 480, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "30+ COMMITS", font: "HelveticaNeue-Bold", size: 38,
+                           x: 280, y: 480, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.fighterJet, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 390, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "24/37 SORTIES EXECUTED", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 390, color: cautionYellow, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 300, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "OVER-ENGINEERED", font: "HelveticaNeue-Bold", size: 38,
+                           x: 280, y: 300, color: missionRed, alignment: 0, isIcon: false),
       ]),
     Chapter(
       number: 4, tag: "CH04", slug: "resource-ids", title: "Discovery: Resource IDs",
@@ -772,6 +817,162 @@ func textNode(
     """
 }
 
+// MARK: - Infographic Layout Helper Functions (Sortie 2)
+
+/// Returns an OZML text node that renders a single Font Awesome 5 Pro icon.
+/// - Parameters:
+///   - icon: Unicode character string (e.g. FAIcon.checkCircle)
+///   - fontSize: Icon size in points
+///   - x: X position in canvas coordinates (centered at 0,0 for 4K canvas)
+///   - y: Y position in canvas coordinates
+///   - color: RGB color tuple with values in 0.0–1.0 range
+///   - id: Base node ID (style/substance IDs derived from this)
+/// - Returns: OZML scenenode XML string for a Font Awesome icon text node
+func iconTextNode(
+  icon: String,
+  fontSize: Int,
+  x: Double,
+  y: Double,
+  color: (r: Double, g: Double, b: Double),
+  id: Int
+) -> String {
+  return textNode(
+    name: "Icon-\(id)",
+    id: id,
+    styleID: id + 3,
+    substanceID: id + 50,
+    paragraphID: id + 10,
+    text: icon,
+    font: "FontAwesome5Pro-Solid",
+    size: fontSize,
+    tracking: 0,
+    x: x,
+    y: y,
+    alignment: 1,
+    colorR: color.r, colorG: color.g, colorB: color.b
+  )
+}
+
+/// Returns OZML text nodes for a vertical stack of text lines.
+/// - Parameters:
+///   - lines: Array of strings to render as separate text nodes
+///   - startY: Y position of the first (topmost) line in canvas coordinates
+///   - fontSize: Font size in points for all lines
+///   - spacing: Vertical gap between line baselines (positive = downward)
+///   - alignment: Text alignment (0=left, 1=center, 2=right)
+///   - font: Font name (defaults to HelveticaNeue-Light)
+///   - x: X position for all lines in canvas coordinates
+///   - color: RGB color tuple with values in 0.0–1.0 range
+///   - baseID: Starting node ID; each line increments by 100
+/// - Returns: Concatenated OZML scenenode XML strings for all lines
+func stackedTextNodes(
+  lines: [String],
+  startY: Double,
+  fontSize: Int,
+  spacing: Double,
+  alignment: Int,
+  font: String = "HelveticaNeue-Light",
+  x: Double = 0,
+  color: (r: Double, g: Double, b: Double) = (1.0, 1.0, 1.0),
+  baseID: Int
+) -> String {
+  var result = ""
+  for (i, line) in lines.enumerated() {
+    let nodeID = baseID + (i * 100)
+    let yPos = startY - (Double(i) * spacing)  // Subtract because Motion Y increases upward
+    result += textNode(
+      name: escapeXML(String(line.prefix(30))),
+      id: nodeID,
+      styleID: nodeID + 3,
+      substanceID: nodeID + 50,
+      paragraphID: nodeID + 10,
+      text: line,
+      font: font,
+      size: fontSize,
+      tracking: 2,
+      x: x,
+      y: yPos,
+      alignment: alignment,
+      colorR: color.r, colorG: color.g, colorB: color.b
+    )
+    result += "\n"
+  }
+  return result
+}
+
+/// Returns an OZML shape node representing a filled progress bar rectangle.
+/// The bar is split into a filled portion (percentage) and an unfilled track.
+/// - Parameters:
+///   - width: Total bar width in pixels
+///   - percentage: Fill percentage as 0.0–1.0 (e.g. 0.65 for 65%)
+///   - x: X center position in canvas coordinates
+///   - y: Y center position in canvas coordinates
+///   - color: RGB color for the filled portion (unfilled is a dimmed version)
+///   - id: Base node ID (track and fill use id and id+1)
+/// - Returns: Two OZML scenenode XML strings (track + fill) concatenated
+func progressBar(
+  width: Double,
+  percentage: Double,
+  x: Double,
+  y: Double,
+  color: (r: Double, g: Double, b: Double),
+  id: Int
+) -> String {
+  let barHeight: Double = 24
+  let clampedPct = max(0.0, min(1.0, percentage))
+
+  // Use Unicode block characters to approximate a progress bar as text.
+  // Full block (U+2588) for filled, light shade (U+2591) for empty.
+  // This approach works within Motion's text rendering without requiring shape layers.
+  let totalBlocks = 20
+  let filledCount = Int(Double(totalBlocks) * clampedPct)
+  let emptyCount = totalBlocks - filledCount
+  let filledBlocks = String(repeating: "\u{2588}", count: filledCount)
+  let emptyBlocks = String(repeating: "\u{2591}", count: emptyCount)
+  let barText = filledBlocks + emptyBlocks
+  let pctText = String(format: " %.0f%%", clampedPct * 100)
+
+  var result = ""
+
+  // Progress bar fill track (text-based block characters)
+  result += textNode(
+    name: "ProgressBar-\(id)",
+    id: id,
+    styleID: id + 3,
+    substanceID: id + 50,
+    paragraphID: id + 10,
+    text: barText,
+    font: "Courier-Bold",
+    size: Int(barHeight),
+    tracking: 0,
+    x: x,
+    y: y,
+    alignment: 1,
+    colorR: color.r, colorG: color.g, colorB: color.b
+  )
+  result += "\n"
+
+  // Percentage label to the right of the bar
+  result += textNode(
+    name: "ProgressPct-\(id)",
+    id: id + 1,
+    styleID: id + 4,
+    substanceID: id + 51,
+    paragraphID: id + 11,
+    text: pctText,
+    font: "HelveticaNeue-Bold",
+    size: Int(barHeight),
+    tracking: 0,
+    x: x + (width / 2) + 60,
+    y: y,
+    alignment: 0,
+    colorR: color.r, colorG: color.g, colorB: color.b
+  )
+  result += "\n"
+
+  return result
+}
+
 func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
   return """
     \t\t<aspectRatio>1</aspectRatio>
@@ -811,6 +1012,14 @@ func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
 
 /// Generates the OZML text nodes for a chapter's infographic layer (left panel).
 /// Each InfographicElement becomes a text node; icons use Font Awesome font.
+/// Progress bar elements render as block-character bars.
+///
+/// Coordinate system note: Motion's canvas origin is at center (0,0).
+/// The infographic panel occupies x=150 to x=1400 on the 4096×2160 canvas.
+/// Panel center x ≈ 775; canvas center x = 2048, so panel offset = 775 - 2048 = -1273.
+/// Element x values in InfographicElement are panel-local (0–1200 range, center ~600).
+/// Y values are panel-local from bottom: 0=bottom, 800=top.
+/// Canvas Y: element.y - 580 maps panel-local y to canvas-centered y.
 func generateInfographicLayer(chapter: Chapter) -> String {
   var layer = ""
   let layerID = 40000
@@ -819,30 +1028,49 @@ func generateInfographicLayer(chapter: Chapter) -> String {
 
   for (i, element) in chapter.infographicLines.enumerated() {
     let nodeID = layerID + 100 + (i * 100)
-    let styleID = nodeID + 3
-    let substanceID = nodeID + 50
-    let paragraphID = nodeID + 10
 
-    let fontName = element.isIcon ? "FontAwesome5Pro-Solid" : element.font
-    let nodeName = element.isIcon ? "Icon-\(i)" : escapeXML(String(element.text.prefix(30)))
+    // Canvas coordinate offsets:
+    // X: element.x is panel-local (0=panel left). Convert to canvas coords:
+    //    panel left is at canvas x=150, canvas center is x=2048
+    //    so canvas x = (150 + element.x) - 2048 = element.x - 1898
+    // Y: element.y is panel-local (0=bottom ~canvas y=-580). Convert:
+    //    canvas y = element.y - 580
+    let canvasX = element.x - 1898
+    let canvasY = element.y - 580
 
-    layer += "\t\t"
-    layer += textNode(
-      name: nodeName,
-      id: nodeID,
-      styleID: styleID,
-      substanceID: substanceID,
-      paragraphID: paragraphID,
-      text: element.text,
-      font: fontName,
-      size: element.size,
-      tracking: element.isIcon ? 0 : 2,
-      x: element.x - 1448,  // Offset from canvas center (4096/2 = 2048, panel center ~600 -> shift left)
-      y: element.y - 580,   // Offset from canvas center (2160/2 = 1080, panel range ~200-700)
-      alignment: element.alignment,
-      colorR: element.color.r, colorG: element.color.g, colorB: element.color.b
-    )
-    layer += "\n"
+    if element.isProgressBar {
+      let pct = Double(element.text) ?? 0.0
+      layer += "\t\t"
+      layer += progressBar(
+        width: element.barWidth,
+        percentage: pct,
+        x: canvasX,
+        y: canvasY,
+        color: (r: element.color.r, g: element.color.g, b: element.color.b),
+        id: nodeID
+      )
+    } else {
+      let fontName = element.isIcon ? "FontAwesome5Pro-Solid" : element.font
+      let nodeName = element.isIcon ? "Icon-\(i)" : escapeXML(String(element.text.prefix(30)))
+
+      layer += "\t\t"
+      layer += textNode(
+        name: nodeName,
+        id: nodeID,
+        styleID: nodeID + 3,
+        substanceID: nodeID + 50,
+        paragraphID: nodeID + 10,
+        text: element.text,
+        font: fontName,
+        size: element.size,
+        tracking: element.isIcon ? 0 : 2,
+        x: canvasX,
+        y: canvasY,
+        alignment: element.alignment,
+        colorR: element.color.r, colorG: element.color.g, colorB: element.color.b
+      )
+      layer += "\n"
+    }
   }
 
   layer += layerClose(fixedWidth: 4096, fixedHeight: 2160)
