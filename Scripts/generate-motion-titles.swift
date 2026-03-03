@@ -9,6 +9,62 @@ let motionTemplatesBase = NSHomeDirectory() + "/Movies/Motion Templates.localize
 let titlesBase = motionTemplatesBase + "/Titles.localized/casting-software-spells"
 let generatorsBase = motionTemplatesBase + "/Generators.localized/casting-software-spells"
 
+// MARK: - Layout Constants
+
+let infoPanelX: Double = 150
+let infoPanelY: Double = 40
+let infoPanelWidth: Double = 1250
+let infoPanelHeight: Double = 2000
+
+// MARK: - Color Palette
+
+struct RGBColor {
+  let r: Double
+  let g: Double
+  let b: Double
+}
+
+let missionRed = RGBColor(r: 0.902, g: 0.353, b: 0.314)      // RGB(230, 90, 80)
+let operatorGreen = RGBColor(r: 0.298, g: 0.902, b: 0.400)    // RGB(76, 230, 102)
+let intelBlue = RGBColor(r: 0.314, g: 0.706, b: 0.902)        // RGB(80, 180, 230)
+let cautionYellow = RGBColor(r: 1.000, g: 0.800, b: 0.200)    // RGB(255, 204, 51)
+let neutralGray = RGBColor(r: 0.706, g: 0.706, b: 0.706)      // RGB(180, 180, 180)
+let commandWhite = RGBColor(r: 1.0, g: 1.0, b: 1.0)           // RGB(255, 255, 255)
+
+// MARK: - Font Awesome 5 Pro Unicode Constants
+
+struct FAIcon {
+  static let userShield = "\u{f505}"
+  static let exchangeAlt = "\u{f362}"
+  static let fighterJet = "\u{f0fb}"
+  static let codeBranch = "\u{f126}"
+  static let exclamationTriangle = "\u{f071}"
+  static let book = "\u{f02d}"
+  static let checkCircle = "\u{f058}"
+  static let timesCircle = "\u{f057}"
+  static let bug = "\u{f188}"
+  static let fileCode = "\u{f1c9}"
+  static let shieldAlt = "\u{f3ed}"
+  static let clock = "\u{f017}"
+  static let memory = "\u{f538}"
+  static let chartBar = "\u{f080}"
+  static let brain = "\u{f5dc}"
+  static let road = "\u{f018}"
+  static let broom = "\u{f51a}"
+  static let search = "\u{f002}"
+  static let lightbulb = "\u{f0eb}"
+  static let listOl = "\u{f0cb}"
+  static let lock = "\u{f023}"
+  static let bullseye = "\u{f140}"
+  static let powerOff = "\u{f011}"
+  static let fileAlt = "\u{f15c}"
+  static let sitemap = "\u{f0e8}"
+  static let syncAlt = "\u{f2f1}"
+  static let circle = "\u{f111}"
+  static let shieldCheck = "\u{f2f7}"
+  static let arrowDown = "\u{f063}"
+}
+
 // MARK: - Models
 
 struct ExecutionPlan {
@@ -52,6 +108,415 @@ enum SortieStatus: String {
     case .blocked: return (0.9, 0.3, 0.3)
     }
   }
+}
+
+/// Represents one chapter of the EP01 infographic sequence.
+/// Each chapter corresponds to one audio clip and one .motn template.
+struct Chapter {
+  let number: Int          // e.g. 1, 2, 3... (note: 2A=18, 2B=19, 2C=20 for sub-chapters)
+  let tag: String          // e.g. "CH01", "CH02", "CH02A"
+  let slug: String         // e.g. "opening", "mission-briefing"
+  let title: String        // e.g. "Opening", "Mission Briefing"
+  let startSeconds: Double
+  let durationSeconds: Double
+  let heading: String      // Main heading text for the infographic
+  let infographicLines: [InfographicElement]
+}
+
+/// An element within a chapter's infographic layer
+struct InfographicElement {
+  let text: String
+  let font: String
+  let size: Int
+  let x: Double
+  let y: Double
+  let color: RGBColor
+  let alignment: Int   // 0=left, 1=center, 2=right
+  let isIcon: Bool     // If true, use Font Awesome font
+}
+
+// MARK: - Chapter Definitions
+
+func allChapters() -> [Chapter] {
+  return [
+    Chapter(
+      number: 1, tag: "CH01", slug: "opening", title: "Opening",
+      startSeconds: 0.000, durationSeconds: 17.408,
+      heading: "MISSION SUPERVISOR",
+      infographicLines: [
+        InfographicElement(text: FAIcon.userShield, font: "FontAwesome5ProSolid", size: 120,
+                           x: 600, y: 500, color: commandWhite, alignment: 1, isIcon: true),
+        InfographicElement(text: "MISSION SUPERVISOR", font: "HelveticaNeue-CondensedBold", size: 64,
+                           x: 600, y: 350, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: "FIELD REPORT COMMENCING", font: "HelveticaNeue-Light", size: 36,
+                           x: 600, y: 270, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 2, tag: "CH02", slug: "mission-briefing", title: "Mission Briefing",
+      startSeconds: 17.408, durationSeconds: 16.043,
+      heading: "OBJECTIVE: LIBRARY SWAP",
+      infographicLines: [
+        InfographicElement(text: "OBJECTIVE: LIBRARY SWAP", font: "HelveticaNeue-CondensedBold", size: 56,
+                           x: 600, y: 650, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.exchangeAlt, font: "FontAwesome5ProSolid", size: 80,
+                           x: 600, y: 480, color: intelBlue, alignment: 1, isIcon: true),
+        InfographicElement(text: "Pipeline", font: "HelveticaNeue-Bold", size: 44,
+                           x: 350, y: 400, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: "Pipeline Neo", font: "HelveticaNeue-Bold", size: 44,
+                           x: 850, y: 400, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: "\"Should've been a Tuesday\"", font: "HelveticaNeue-LightItalic", size: 32,
+                           x: 600, y: 250, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 3, tag: "CH03", slug: "the-mess", title: "Mission Zero: The Mess",
+      startSeconds: 33.451, durationSeconds: 21.248,
+      heading: "ITERATION ZERO: THE MESS",
+      infographicLines: [
+        InfographicElement(text: "ITERATION ZERO: THE MESS", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.exclamationTriangle, font: "FontAwesome5ProSolid", size: 48,
+                           x: 200, y: 520, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "30+ COMMITS", font: "HelveticaNeue-Bold", size: 40,
+                           x: 300, y: 520, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.fighterJet, font: "FontAwesome5ProSolid", size: 48,
+                           x: 200, y: 430, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "24/37 SORTIES (65%)", font: "HelveticaNeue-Bold", size: 40,
+                           x: 300, y: 430, color: cautionYellow, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5ProSolid", size: 48,
+                           x: 200, y: 340, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "OVER-ENGINEERED", font: "HelveticaNeue-Bold", size: 40,
+                           x: 300, y: 340, color: missionRed, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 4, tag: "CH04", slug: "resource-ids", title: "Discovery: Resource IDs",
+      startSeconds: 54.699, durationSeconds: 25.301,
+      heading: "DISCOVERY: RESOURCE IDs",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: RESOURCE IDs", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 520, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "UUID: \"abc-123-def-456\"", font: "Courier-Bold", size: 32,
+                           x: 280, y: 520, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 430, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "DTD Spec: \"r1\", \"r2\", \"r3\"", font: "Courier-Bold", size: 32,
+                           x: 280, y: 430, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.book, font: "FontAwesome5ProSolid", size: 44,
+                           x: 200, y: 280, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "RTFM: 10 min \u{2192} 4 sorties saved", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 280, color: intelBlue, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 5, tag: "CH05", slug: "library-bug", title: "Discovery: Library Bug",
+      startSeconds: 80.000, durationSeconds: 27.691,
+      heading: "DISCOVERY: LIBRARY NAME BUG",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: LIBRARY NAME BUG", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.bug, font: "FontAwesome5ProSolid", size: 60,
+                           x: 600, y: 560, color: missionRed, alignment: 1, isIcon: true),
+        InfographicElement(text: "<library name=\"invalid\">", font: "Courier", size: 28,
+                           x: 600, y: 460, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 350, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "Regex on XML", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 350, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 270, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "XMLDocument (civilized)", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 270, color: operatorGreen, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 6, tag: "CH06", slug: "empty-timelines", title: "Discovery: Empty Timelines",
+      startSeconds: 107.691, durationSeconds: 18.816,
+      heading: "DISCOVERY: EMPTY TIMELINES",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: EMPTY TIMELINES", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: "Timeline \u{2192} Clip count == 0?", font: "Courier-Bold", size: 28,
+                           x: 600, y: 540, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 32,
+                           x: 300, y: 450, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Yes \u{2192} Hand-craft FCPXML", font: "Courier", size: 26,
+                           x: 370, y: 450, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5ProSolid", size: 32,
+                           x: 300, y: 370, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "No \u{2192} Pipeline Neo export", font: "Courier", size: 26,
+                           x: 370, y: 370, color: intelBlue, alignment: 0, isIcon: false),
+        InfographicElement(text: "\"Not elegant. But correct.\"", font: "HelveticaNeue-LightItalic", size: 32,
+                           x: 600, y: 230, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 7, tag: "CH07", slug: "metadata-correction", title: "Discovery: Metadata Correction",
+      startSeconds: 126.507, durationSeconds: 24.917,
+      heading: "DISCOVERY: METADATA CORRECTION",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: METADATA", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 560, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "ASSUMED: \"No metadata export\"", font: "HelveticaNeue-Bold", size: 32,
+                           x: 280, y: 560, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 470, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "VERIFIED: Lines 143-193", font: "HelveticaNeue-Bold", size: 32,
+                           x: 280, y: 470, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "\u{2022} Markers  \u{2022} Keywords  \u{2022} Ratings", font: "HelveticaNeue-Light", size: 30,
+                           x: 600, y: 330, color: commandWhite, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 8, tag: "CH08", slug: "time-format", title: "Discovery: Time Format",
+      startSeconds: 151.424, durationSeconds: 25.088,
+      heading: "DISCOVERY: TIME FORMAT",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: TIME FORMAT", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.clock, font: "FontAwesome5ProSolid", size: 60,
+                           x: 600, y: 560, color: intelBlue, alignment: 1, isIcon: true),
+        InfographicElement(text: "Old: 24000/24000s = 1.0s", font: "Courier-Bold", size: 30,
+                           x: 600, y: 450, color: neutralGray, alignment: 1, isIcon: false),
+        InfographicElement(text: "New: 600/600s = 1.0s", font: "Courier-Bold", size: 30,
+                           x: 600, y: 380, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: "Same value, different representation", font: "HelveticaNeue-LightItalic", size: 28,
+                           x: 600, y: 300, color: neutralGray, alignment: 1, isIcon: false),
+        InfographicElement(text: "\"Compare seconds, not strings\"", font: "HelveticaNeue-Bold", size: 34,
+                           x: 600, y: 210, color: cautionYellow, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 9, tag: "CH09", slug: "type-collisions", title: "Discovery: Type Collisions",
+      startSeconds: 176.512, durationSeconds: 26.197,
+      heading: "DISCOVERY: TYPE COLLISIONS",
+      infographicLines: [
+        InfographicElement(text: "DISCOVERY: TYPE COLLISIONS", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.exclamationTriangle, font: "FontAwesome5ProSolid", size: 50,
+                           x: 600, y: 580, color: cautionYellow, alignment: 1, isIcon: true),
+        InfographicElement(text: "Timeline", font: "Courier-Bold", size: 32,
+                           x: 200, y: 480, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "Marker", font: "Courier-Bold", size: 32,
+                           x: 200, y: 420, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "ChapterMarker", font: "Courier-Bold", size: 32,
+                           x: 200, y: 360, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "Keyword", font: "Courier-Bold", size: 32,
+                           x: 200, y: 300, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.memory, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 210, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "Context budget killer", font: "HelveticaNeue-Bold", size: 34,
+                           x: 280, y: 210, color: missionRed, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 10, tag: "CH10", slug: "process-failures", title: "Process Failures",
+      startSeconds: 202.709, durationSeconds: 28.117,
+      heading: "PROCESS FAILURES",
+      infographicLines: [
+        InfographicElement(text: "PROCESS FAILURES", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.chartBar, font: "FontAwesome5ProSolid", size: 50,
+                           x: 200, y: 560, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "37 total sorties", font: "HelveticaNeue-Bold", size: 36,
+                           x: 300, y: 560, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "10-12 meaningful (32%)", font: "HelveticaNeue-Light", size: 30,
+                           x: 320, y: 490, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "25-27 overhead (68%)", font: "HelveticaNeue-Light", size: 30,
+                           x: 320, y: 430, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: "Context Overruns: S3, S6, S7, S22", font: "HelveticaNeue-Bold", size: 30,
+                           x: 600, y: 330, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: "S22: 142% OVERRUN", font: "HelveticaNeue-CondensedBold", size: 44,
+                           x: 600, y: 240, color: missionRed, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 11, tag: "CH11", slug: "what-worked", title: "What Worked",
+      startSeconds: 230.826, durationSeconds: 24.192,
+      heading: "WHAT WORKED",
+      infographicLines: [
+        InfographicElement(text: "WHAT WORKED", font: "HelveticaNeue-CondensedBold", size: 56,
+                           x: 600, y: 700, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 540, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Adapter extension pattern", font: "HelveticaNeue-Bold", size: 34,
+                           x: 280, y: 540, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 460, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "FileAssetProvider", font: "HelveticaNeue-Bold", size: 34,
+                           x: 280, y: 460, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 380, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "3-tier error taxonomy", font: "HelveticaNeue-Bold", size: 34,
+                           x: 280, y: 380, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 300, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "iOS compatibility", font: "HelveticaNeue-Bold", size: 34,
+                           x: 280, y: 300, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "Patterns that earned their place", font: "HelveticaNeue-LightItalic", size: 28,
+                           x: 600, y: 210, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 12, tag: "CH12", slug: "roll-it-flat", title: "Verdict: Roll It Flat",
+      startSeconds: 255.018, durationSeconds: 15.232,
+      heading: "RODILLO LISO",
+      infographicLines: [
+        InfographicElement(text: "RODILLO LISO", font: "HelveticaNeue-CondensedBold", size: 56,
+                           x: 600, y: 700, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.road, font: "FontAwesome5ProSolid", size: 100,
+                           x: 600, y: 480, color: intelBlue, alignment: 1, isIcon: true),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 300, y: 350, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "Code (discard)", font: "HelveticaNeue-Bold", size: 36,
+                           x: 380, y: 350, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5ProSolid", size: 36,
+                           x: 300, y: 270, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Knowledge (keep)", font: "HelveticaNeue-Bold", size: 36,
+                           x: 380, y: 270, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "\"The harvest is the product\"", font: "HelveticaNeue-LightItalic", size: 30,
+                           x: 600, y: 190, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 13, tag: "CH13", slug: "clean-slate", title: "Mission One: Clean Slate",
+      startSeconds: 270.250, durationSeconds: 23.381,
+      heading: "ITERATION 1: CLEAN SLATE",
+      infographicLines: [
+        InfographicElement(text: "ITERATION 1: CLEAN SLATE", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.broom, font: "FontAwesome5ProSolid", size: 60,
+                           x: 600, y: 560, color: operatorGreen, alignment: 1, isIcon: true),
+        InfographicElement(text: "Iteration 0: 37 sorties", font: "HelveticaNeue-Bold", size: 36,
+                           x: 600, y: 440, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: "\u{2192}", font: "HelveticaNeue-Bold", size: 48,
+                           x: 600, y: 370, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: "Iteration 1: 9 sorties", font: "HelveticaNeue-Bold", size: 36,
+                           x: 600, y: 300, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: "All lessons baked in from day 1", font: "HelveticaNeue-LightItalic", size: 28,
+                           x: 600, y: 220, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 14, tag: "CH14", slug: "sortie-zero-research", title: "Sortie Zero: Research",
+      startSeconds: 293.631, durationSeconds: 27.691,
+      heading: "SORTIE ZERO: RESEARCH",
+      infographicLines: [
+        InfographicElement(text: "SORTIE ZERO: RESEARCH", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.search, font: "FontAwesome5ProSolid", size: 50,
+                           x: 600, y: 570, color: intelBlue, alignment: 1, isIcon: true),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 20,
+                           x: 200, y: 480, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "Read Pipeline Neo source", font: "HelveticaNeue-Light", size: 30,
+                           x: 260, y: 475, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 20,
+                           x: 200, y: 420, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "Catalog type collisions", font: "HelveticaNeue-Light", size: 30,
+                           x: 260, y: 415, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 20,
+                           x: 200, y: 360, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "Export sample timeline", font: "HelveticaNeue-Light", size: 30,
+                           x: 260, y: 355, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 20,
+                           x: 200, y: 300, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "Validate against DTD", font: "HelveticaNeue-Light", size: 30,
+                           x: 260, y: 295, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.lightbulb, font: "FontAwesome5ProSolid", size: 36,
+                           x: 200, y: 210, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "30 min \u{2192} 34 failures prevented", font: "HelveticaNeue-Bold", size: 32,
+                           x: 280, y: 210, color: operatorGreen, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 15, tag: "CH15", slug: "sorties-1-through-8", title: "Sorties One Through Eight",
+      startSeconds: 321.322, durationSeconds: 31.147,
+      heading: "SORTIES 1-8: EXECUTION PLAN",
+      infographicLines: [
+        InfographicElement(text: "SORTIES 1-8: EXECUTION PLAN", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 610, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S0: API Exploration", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 607, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 560, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S1: Package Setup", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 557, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 510, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S2: ResourceMap Architecture", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 507, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 460, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S3: Timeline & Metadata Adapters", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 457, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 410, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S4: Asset Provider Wrapper", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 407, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 360, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S5: SwiftSecuenciaExporter", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 357, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 310, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S6: BundleExporter", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 307, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 260, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S7: Test Migration & Metadata", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 257, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 16,
+                           x: 180, y: 210, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "S8: CI & CLI Updates", font: "HelveticaNeue-Light", size: 26,
+                           x: 230, y: 207, color: commandWhite, alignment: 0, isIcon: false),
+      ]),
+    Chapter(
+      number: 16, tag: "CH16", slug: "current-status", title: "Current Status",
+      startSeconds: 352.469, durationSeconds: 18.048,
+      heading: "CURRENT MISSION STATUS",
+      infographicLines: [
+        InfographicElement(text: "CURRENT MISSION STATUS", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.circle, font: "FontAwesome5ProSolid", size: 28,
+                           x: 200, y: 540, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "MISSION STATUS: PENDING", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 535, color: cautionYellow, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.lock, font: "FontAwesome5ProSolid", size: 28,
+                           x: 200, y: 450, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "EXECUTION PLAN: LOCKED", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 445, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.bullseye, font: "FontAwesome5ProSolid", size: 28,
+                           x: 200, y: 360, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "EXIT CRITERIA: DEFINED", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 355, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "\"We know what done looks like\"", font: "HelveticaNeue-LightItalic", size: 30,
+                           x: 600, y: 240, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 17, tag: "CH17", slug: "closing", title: "Closing",
+      startSeconds: 370.517, durationSeconds: 21.803,
+      heading: "SUPERVISOR OUT",
+      infographicLines: [
+        InfographicElement(text: "\"Verification is structural,", font: "HelveticaNeue-Bold", size: 40,
+                           x: 600, y: 600, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: "not optional.\"", font: "HelveticaNeue-Bold", size: 40,
+                           x: 600, y: 540, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.shieldCheck, font: "FontAwesome5ProSolid", size: 60,
+                           x: 600, y: 400, color: operatorGreen, alignment: 1, isIcon: true),
+        InfographicElement(text: FAIcon.powerOff, font: "FontAwesome5ProSolid", size: 50,
+                           x: 600, y: 260, color: missionRed, alignment: 1, isIcon: true),
+        InfographicElement(text: "SUPERVISOR OUT", font: "HelveticaNeue-CondensedBold", size: 56,
+                           x: 600, y: 180, color: commandWhite, alignment: 1, isIcon: false),
+      ]),
+  ]
+}
+
+/// Look up a chapter by its tag string (e.g. "CH01", "CH02A", etc.)
+/// Also supports numeric lookup: "1" -> "CH01", "2" -> "CH02", etc.
+func findChapter(identifier: String) -> Chapter? {
+  let chapters = allChapters()
+  // Try exact tag match first
+  if let ch = chapters.first(where: { $0.tag.lowercased() == identifier.lowercased() }) {
+    return ch
+  }
+  // Try numeric match
+  if let num = Int(identifier), let ch = chapters.first(where: { $0.number == num }) {
+    return ch
+  }
+  return nil
 }
 
 // MARK: - Parsing
@@ -162,9 +627,236 @@ func determineSortieStatus(sortieNumber: Int, content: String) -> SortieStatus {
   return .pending
 }
 
-// MARK: - OZML Title Generation
+// MARK: - OZML Generation Helpers
 
-func generateTitleMoti(plan: ExecutionPlan) -> String {
+func escapeXML(_ s: String) -> String {
+  s.replacingOccurrences(of: "&", with: "&amp;")
+    .replacingOccurrences(of: "<", with: "&lt;")
+    .replacingOccurrences(of: ">", with: "&gt;")
+    .replacingOccurrences(of: "\"", with: "&quot;")
+}
+
+func textNode(
+  name: String, id: Int, styleID: Int, substanceID: Int, paragraphID: Int,
+  text: String, font: String, size: Int, tracking: Int,
+  x: Double, y: Double, alignment: Int,
+  colorR: Double, colorG: Double, colorB: Double
+) -> String {
+  let textLength = text.count
+  return """
+    <scenenode name="\(escapeXML(name))" id="\(id)" factoryID="16" version="5">
+    \t\t\t<paragraphMarginsCached cached="0"/>
+    \t\t\t<scrollMarginsCached cached="0"/>
+    \t\t\t<crawlMarginsCached cached="0"/>
+    \t\t\t<host hostID="0"/>
+    \t\t\t<textPathModified textPathModifiedVal="0"/>
+    \t\t\t<paragraphStyle id="\(paragraphID)"/>
+    \t\t\t<style name="Style" id="\(styleID)" factoryID="1">
+    \t\t\t\t<copyFlags>65535</copyFlags>
+    \t\t\t\t<previewWidth>0</previewWidth>
+    \t\t\t\t<previewHeight>0</previewHeight>
+    \t\t\t\t<presetName>Normal</presetName>
+    \t\t\t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
+    \t\t\t\t<baseFlags>8657043504</baseFlags>
+    \t\t\t\t<foldFlags>786432</foldFlags>
+    \t\t\t\t<parameter name="Font" id="83" flags="12884906000">
+    \t\t\t\t\t<font>\(font)</font>
+    \t\t\t\t\t<defaultFont>Helvetica</defaultFont>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Size" id="3" flags="8606711824" default="48" value="\(size)"/>
+    \t\t\t\t<parameter name="Tracking" id="340" flags="8606711824" default="0" value="\(tracking)"/>
+    \t\t\t\t<parameter name="Face" id="14" flags="8589938704">
+    \t\t\t\t\t<foldFlags>131072</foldFlags>
+    \t\t\t\t\t<parameter name="Color" id="1" flags="4295004162">
+    \t\t\t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t\t\t\t<parameter name="Red" id="1" flags="4295000066" default="1" value="\(colorR)"/>
+    \t\t\t\t\t\t<parameter name="Green" id="2" flags="4295000066" default="1" value="\(colorG)"/>
+    \t\t\t\t\t\t<parameter name="Blue" id="3" flags="4295000066" default="1" value="\(colorB)"/>
+    \t\t\t\t\t\t<parameter name="Alpha" id="4" flags="4295000066" default="1" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t\t<parameter name="Texture" id="18" flags="77309415440">
+    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
+    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Drop Shadow" id="21" flags="8589971472">
+    \t\t\t\t\t<foldFlags>131072</foldFlags>
+    \t\t\t\t\t<parameter name="Texture" id="25" flags="77309415440">
+    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
+    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Outline" id="30" flags="8589971472">
+    \t\t\t\t\t<foldFlags>131072</foldFlags>
+    \t\t\t\t\t<parameter name="Texture" id="34" flags="77309415440">
+    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
+    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Glow" id="38" flags="8589973520">
+    \t\t\t\t\t<foldFlags>131072</foldFlags>
+    \t\t\t\t\t<parameter name="Texture" id="42" flags="77309415440">
+    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
+    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="3D Text" id="89" flags="8589971472">
+    \t\t\t\t\t<foldFlags>131072</foldFlags>
+    \t\t\t\t\t<parameter name="Lighting" id="527" flags="8589938704">
+    \t\t\t\t\t\t<foldFlags>8388608</foldFlags>
+    \t\t\t\t\t\t<parameter name="Environment" id="512" flags="12884906000">
+    \t\t\t\t\t\t\t<foldFlags>131076</foldFlags>
+    \t\t\t\t\t\t</parameter>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t</style>
+    \t\t\t<styleRun style="\(styleID)" offset="0" length="\(textLength)"/>
+    \t\t\t<aspectRatio>0</aspectRatio>
+    \t\t\t<flags>0</flags>
+    \t\t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
+    \t\t\t<foldFlags>0</foldFlags>
+    \t\t\t<baseFlags>34078736</baseFlags>
+    \t\t\t<parameter name="Properties" id="1" flags="8589938704">
+    \t\t\t\t<parameter name="Transform" id="100" flags="8589938704">
+    \t\t\t\t\t<parameter name="Position" id="101" flags="8589938704">
+    \t\t\t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t\t\t\t<parameter name="X" id="1" flags="8606711824" default="0" value="\(x)"/>
+    \t\t\t\t\t\t<parameter name="Y" id="2" flags="8606711824" default="0" value="\(y)"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Lighting" id="230" flags="8589938706">
+    \t\t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Shadows" id="234" flags="8589938706">
+    \t\t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Reflection" id="223" flags="8589971474">
+    \t\t\t\t\t<foldFlags>131087</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Color" id="243" flags="8589938688">
+    \t\t\t\t\t<parameter name="Hidden Channel" id="245" flags="8589934610" default="1" value="3"/>
+    \t\t\t\t\t<parameter name="Conversion Type" id="247" flags="8606810128" default="3" value="3"/>
+    \t\t\t\t\t<parameter name="PQ Peak (nits)" id="248" flags="8606744592" default="1000" value="1000"/>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Drop Shadow" id="208" flags="8589971474">
+    \t\t\t\t\t<foldFlags>131087</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Four Corner" id="207" flags="8589971458">
+    \t\t\t\t\t<foldFlags>131087</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Crop" id="216" flags="8589971474">
+    \t\t\t\t\t<foldFlags>131087</foldFlags>
+    \t\t\t\t</parameter>
+    \t\t\t</parameter>
+    \t\t\t<parameter name="Object" id="2" flags="8589938704">
+    \t\t\t\t<parameter name="Text" id="369" flags="8606777344">
+    \t\t\t\t\t<text>\(escapeXML(text))</text>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Alignment" id="354" flags="8589934610" default="0" value="\(alignment)"/>
+    \t\t\t\t<parameter name="Render Text" id="360" flags="8590000146" default="0" value="0"/>
+    \t\t\t\t<parameter name="Face Camera" id="352" flags="8589934610" default="0" value="0"/>
+    \t\t\t\t<parameter name="Path Options" id="329" flags="8589938704">
+    \t\t\t\t\t<parameter name="Shape Source" id="339" flags="77326254096" default="0" value="0"/>
+    \t\t\t\t\t<parameter name="Align to Path" id="333" flags="8589934610" default="1" value="1"/>
+    \t\t\t\t</parameter>
+    \t\t\t\t<parameter name="Basic" id="2000" flags="12884938770" factoryID="0">
+    \t\t\t\t\t<parameter name="Substance" id="\(substanceID)" flags="12884906002" factoryID="0">
+    \t\t\t\t\t\t<parameter name="Color" id="1" flags="4295004162">
+    \t\t\t\t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t\t\t\t</parameter>
+    \t\t\t\t\t\t<parameter name="Opacity" id="2" flags="4295000066" default="1" value="1"/>
+    \t\t\t\t\t</parameter>
+    \t\t\t\t</parameter>
+    \t\t\t</parameter>
+    \t\t</scenenode>
+    """
+}
+
+func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
+  return """
+    \t\t<aspectRatio>1</aspectRatio>
+    \t\t<flags>0</flags>
+    \t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
+    \t\t<foldFlags>0</foldFlags>
+    \t\t<baseFlags>524304</baseFlags>
+    \t\t<parameter name="Properties" id="1" flags="8589938704">
+    \t\t\t<parameter name="Lighting" id="230" flags="8589938706">
+    \t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t</parameter>
+    \t\t\t<parameter name="Shadows" id="234" flags="8589938706">
+    \t\t\t\t<foldFlags>15</foldFlags>
+    \t\t\t</parameter>
+    \t\t\t<parameter name="Reflection" id="223" flags="8589971474">
+    \t\t\t\t<foldFlags>131087</foldFlags>
+    \t\t\t</parameter>
+    \t\t\t<parameter name="Color" id="243" flags="8589938688">
+    \t\t\t\t<parameter name="Hidden Channel" id="245" flags="8589934610" default="1" value="3"/>
+    \t\t\t\t<parameter name="Conversion Type" id="247" flags="8590032912" default="3" value="3"/>
+    \t\t\t\t<parameter name="PQ Peak (nits)" id="248" flags="8589967376" default="1000" value="1000"/>
+    \t\t\t</parameter>
+    \t\t</parameter>
+    \t\t<parameter name="Object" id="2" flags="8589938704">
+    \t\t\t<parameter name="Fixed Width" id="302" flags="12884901908" default="\(fixedWidth)" value="\(fixedWidth)"/>
+    \t\t\t<parameter name="Fixed Height" id="303" flags="12884901908" default="\(fixedHeight)" value="\(fixedHeight)"/>
+    \t\t\t<parameter name="Flatten" id="311" flags="8589934610" default="0" value="0"/>
+    \t\t\t<parameter name="Layer Order" id="305" flags="8589934610" default="0" value="0"/>
+    \t\t\t<parameter name="Aperture Width" id="312" flags="12884901906" default="\(fixedWidth)" value="\(fixedWidth)"/>
+    \t\t\t<parameter name="Aperture Height" id="313" flags="12884901906" default="\(fixedHeight)" value="\(fixedHeight)"/>
+    \t\t</parameter>
+    \t</layer>
+    """
+}
+
+// MARK: - Infographic Layer Generation
+
+/// Generates the OZML text nodes for a chapter's infographic layer (left panel).
+/// Each InfographicElement becomes a text node; icons use Font Awesome font.
+func generateInfographicLayer(chapter: Chapter) -> String {
+  var layer = ""
+  let layerID = 40000
+
+  layer += "\t<layer name=\"Infographic: \(escapeXML(chapter.title))\" id=\"\(layerID)\">\n"
+
+  for (i, element) in chapter.infographicLines.enumerated() {
+    let nodeID = layerID + 100 + (i * 100)
+    let styleID = nodeID + 3
+    let substanceID = nodeID + 50
+    let paragraphID = nodeID + 10
+
+    let fontName = element.isIcon ? "FontAwesome5Pro-Solid" : element.font
+    let nodeName = element.isIcon ? "Icon-\(i)" : escapeXML(String(element.text.prefix(30)))
+
+    layer += "\t\t"
+    layer += textNode(
+      name: nodeName,
+      id: nodeID,
+      styleID: styleID,
+      substanceID: substanceID,
+      paragraphID: paragraphID,
+      text: element.text,
+      font: fontName,
+      size: element.size,
+      tracking: element.isIcon ? 0 : 2,
+      x: element.x - 1448,  // Offset from canvas center (4096/2 = 2048, panel center ~600 -> shift left)
+      y: element.y - 580,   // Offset from canvas center (2160/2 = 1080, panel range ~200-700)
+      alignment: element.alignment,
+      colorR: element.color.r, colorG: element.color.g, colorB: element.color.b
+    )
+    layer += "\n"
+  }
+
+  layer += layerClose(fixedWidth: 4096, fixedHeight: 2160)
+  return layer
+}
+
+// MARK: - Chapter Template Generation
+
+/// Generates a complete `.motn` OZML XML file for a single chapter.
+/// This is the primary function for Sortie 1: one template per chapter.
+func generateChapterTemplate(chapter: Chapter, plan: ExecutionPlan) -> String {
+  let titleLayer = generateTitleCardLayer(plan: plan)
+  let infographicLayer = generateInfographicLayer(chapter: chapter)
+
   return """
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE ozxmlscene>
@@ -434,7 +1126,8 @@ func generateTitleMoti(plan: ExecutionPlan) -> String {
     \t\t<parameter name="Properties" id="1" flags="8589938704"/>
     \t\t<parameter name="Object" id="2" flags="8589938704"/>
     \t</scenenode>
-    \(generateTextLayers(plan: plan))
+    \(titleLayer)
+    \(infographicLayer)
     \t<footage name="Media Layer" id="10006">
     \t\t<flags>0</flags>
     \t\t<timing in="0 1 1 0" out="0 153600 1 0" offset="0 1 1 0"/>
@@ -449,11 +1142,11 @@ func generateTitleMoti(plan: ExecutionPlan) -> String {
     """
 }
 
-func generateTextLayers(plan: ExecutionPlan) -> String {
-  var layers = ""
-
-  // Main title layer with operation name
-  layers += """
+/// Generates just the title card layer (center panel) for a chapter template.
+/// Shows the chapter tag and heading instead of the full operation name.
+func generateTitleCardLayer(plan: ExecutionPlan) -> String {
+  var layer = ""
+  layer += """
     \t<layer name="Title Card" id="20000">
     \t\t\(textNode(
             name: plan.operationWord,
@@ -499,242 +1192,15 @@ func generateTextLayers(plan: ExecutionPlan) -> String {
         ))
     \(layerClose(fixedWidth: 4096, fixedHeight: 2160))
     """
-
-  // Sortie status grid layer (for right panel overlay)
-  if !plan.sorties.isEmpty {
-    layers += "\n"
-    layers += """
-      \t<layer name="Sortie Grid" id="30000">
-      """
-    for (i, sortie) in plan.sorties.enumerated() {
-      let yOffset = 400.0 - (Double(i) * 85.0)  // Stack vertically, top-down
-      let statusText = "S\(sortie.number): \(sortie.task)"
-      let statusLabel = sortie.status.displayLabel
-      let c = sortie.status.color
-
-      // Sortie label
-      layers += """
-
-        \t\t\(textNode(
-                name: "Sortie \(sortie.number)",
-                id: 30100 + (i * 100),
-                styleID: 30103 + (i * 100),
-                substanceID: 30150 + (i * 100),
-                paragraphID: 30110 + (i * 100),
-                text: statusText,
-                font: "HelveticaNeue-CondensedBold",
-                size: 36,
-                tracking: 1,
-                x: 1350, y: yOffset,
-                alignment: 0,
-                colorR: 0.85, colorG: 0.85, colorB: 0.85
-            ))
-        \t\t\(textNode(
-                name: "Status \(sortie.number)",
-                id: 31100 + (i * 100),
-                styleID: 31103 + (i * 100),
-                substanceID: 31150 + (i * 100),
-                paragraphID: 31110 + (i * 100),
-                text: statusLabel,
-                font: "HelveticaNeue-Bold",
-                size: 28,
-                tracking: 3,
-                x: 1350, y: yOffset - 35,
-                alignment: 0,
-                colorR: c.r, colorG: c.g, colorB: c.b
-            ))
-        """
-    }
-    layers += """
-
-      \(layerClose(fixedWidth: 4096, fixedHeight: 2160))
-      """
-  }
-
-  return layers
+  return layer
 }
 
-func textNode(
-  name: String, id: Int, styleID: Int, substanceID: Int, paragraphID: Int,
-  text: String, font: String, size: Int, tracking: Int,
-  x: Double, y: Double, alignment: Int,
-  colorR: Double, colorG: Double, colorB: Double
-) -> String {
-  let textLength = text.count
-  return """
-    <scenenode name="\(escapeXML(name))" id="\(id)" factoryID="16" version="5">
-    \t\t\t<paragraphMarginsCached cached="0"/>
-    \t\t\t<scrollMarginsCached cached="0"/>
-    \t\t\t<crawlMarginsCached cached="0"/>
-    \t\t\t<host hostID="0"/>
-    \t\t\t<textPathModified textPathModifiedVal="0"/>
-    \t\t\t<paragraphStyle id="\(paragraphID)"/>
-    \t\t\t<style name="Style" id="\(styleID)" factoryID="1">
-    \t\t\t\t<copyFlags>65535</copyFlags>
-    \t\t\t\t<previewWidth>0</previewWidth>
-    \t\t\t\t<previewHeight>0</previewHeight>
-    \t\t\t\t<presetName>Normal</presetName>
-    \t\t\t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
-    \t\t\t\t<baseFlags>8657043504</baseFlags>
-    \t\t\t\t<foldFlags>786432</foldFlags>
-    \t\t\t\t<parameter name="Font" id="83" flags="12884906000">
-    \t\t\t\t\t<font>\(font)</font>
-    \t\t\t\t\t<defaultFont>Helvetica</defaultFont>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Size" id="3" flags="8606711824" default="48" value="\(size)"/>
-    \t\t\t\t<parameter name="Tracking" id="340" flags="8606711824" default="0" value="\(tracking)"/>
-    \t\t\t\t<parameter name="Face" id="14" flags="8589938704">
-    \t\t\t\t\t<foldFlags>131072</foldFlags>
-    \t\t\t\t\t<parameter name="Color" id="1" flags="4295004162">
-    \t\t\t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t\t\t\t<parameter name="Red" id="1" flags="4295000066" default="1" value="\(colorR)"/>
-    \t\t\t\t\t\t<parameter name="Green" id="2" flags="4295000066" default="1" value="\(colorG)"/>
-    \t\t\t\t\t\t<parameter name="Blue" id="3" flags="4295000066" default="1" value="\(colorB)"/>
-    \t\t\t\t\t\t<parameter name="Alpha" id="4" flags="4295000066" default="1" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t\t<parameter name="Texture" id="18" flags="77309415440">
-    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
-    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Drop Shadow" id="21" flags="8589971472">
-    \t\t\t\t\t<foldFlags>131072</foldFlags>
-    \t\t\t\t\t<parameter name="Texture" id="25" flags="77309415440">
-    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
-    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Outline" id="30" flags="8589971472">
-    \t\t\t\t\t<foldFlags>131072</foldFlags>
-    \t\t\t\t\t<parameter name="Texture" id="34" flags="77309415440">
-    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
-    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Glow" id="38" flags="8589973520">
-    \t\t\t\t\t<foldFlags>131072</foldFlags>
-    \t\t\t\t\t<parameter name="Texture" id="42" flags="77309415440">
-    \t\t\t\t\t\t<parameter name="Image" id="1" flags="77326254096" default="0" value="0"/>
-    \t\t\t\t\t\t<parameter name="Wrap Mode" id="5" flags="8606777360" default="0" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="3D Text" id="89" flags="8589971472">
-    \t\t\t\t\t<foldFlags>131072</foldFlags>
-    \t\t\t\t\t<parameter name="Lighting" id="527" flags="8589938704">
-    \t\t\t\t\t\t<foldFlags>8388608</foldFlags>
-    \t\t\t\t\t\t<parameter name="Environment" id="512" flags="12884906000">
-    \t\t\t\t\t\t\t<foldFlags>131076</foldFlags>
-    \t\t\t\t\t\t</parameter>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t</style>
-    \t\t\t<styleRun style="\(styleID)" offset="0" length="\(textLength)"/>
-    \t\t\t<aspectRatio>0</aspectRatio>
-    \t\t\t<flags>0</flags>
-    \t\t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
-    \t\t\t<foldFlags>0</foldFlags>
-    \t\t\t<baseFlags>34078736</baseFlags>
-    \t\t\t<parameter name="Properties" id="1" flags="8589938704">
-    \t\t\t\t<parameter name="Transform" id="100" flags="8589938704">
-    \t\t\t\t\t<parameter name="Position" id="101" flags="8589938704">
-    \t\t\t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t\t\t\t<parameter name="X" id="1" flags="8606711824" default="0" value="\(x)"/>
-    \t\t\t\t\t\t<parameter name="Y" id="2" flags="8606711824" default="0" value="\(y)"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Lighting" id="230" flags="8589938706">
-    \t\t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Shadows" id="234" flags="8589938706">
-    \t\t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Reflection" id="223" flags="8589971474">
-    \t\t\t\t\t<foldFlags>131087</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Color" id="243" flags="8589938688">
-    \t\t\t\t\t<parameter name="Hidden Channel" id="245" flags="8589934610" default="1" value="3"/>
-    \t\t\t\t\t<parameter name="Conversion Type" id="247" flags="8606810128" default="3" value="3"/>
-    \t\t\t\t\t<parameter name="PQ Peak (nits)" id="248" flags="8606744592" default="1000" value="1000"/>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Drop Shadow" id="208" flags="8589971474">
-    \t\t\t\t\t<foldFlags>131087</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Four Corner" id="207" flags="8589971458">
-    \t\t\t\t\t<foldFlags>131087</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Crop" id="216" flags="8589971474">
-    \t\t\t\t\t<foldFlags>131087</foldFlags>
-    \t\t\t\t</parameter>
-    \t\t\t</parameter>
-    \t\t\t<parameter name="Object" id="2" flags="8589938704">
-    \t\t\t\t<parameter name="Text" id="369" flags="8606777344">
-    \t\t\t\t\t<text>\(escapeXML(text))</text>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Alignment" id="354" flags="8589934610" default="0" value="\(alignment)"/>
-    \t\t\t\t<parameter name="Render Text" id="360" flags="8590000146" default="0" value="0"/>
-    \t\t\t\t<parameter name="Face Camera" id="352" flags="8589934610" default="0" value="0"/>
-    \t\t\t\t<parameter name="Path Options" id="329" flags="8589938704">
-    \t\t\t\t\t<parameter name="Shape Source" id="339" flags="77326254096" default="0" value="0"/>
-    \t\t\t\t\t<parameter name="Align to Path" id="333" flags="8589934610" default="1" value="1"/>
-    \t\t\t\t</parameter>
-    \t\t\t\t<parameter name="Basic" id="2000" flags="12884938770" factoryID="0">
-    \t\t\t\t\t<parameter name="Substance" id="\(substanceID)" flags="12884906002" factoryID="0">
-    \t\t\t\t\t\t<parameter name="Color" id="1" flags="4295004162">
-    \t\t\t\t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t\t\t\t</parameter>
-    \t\t\t\t\t\t<parameter name="Opacity" id="2" flags="4295000066" default="1" value="1"/>
-    \t\t\t\t\t</parameter>
-    \t\t\t\t</parameter>
-    \t\t\t</parameter>
-    \t\t</scenenode>
-    """
-}
+// MARK: - Thumbnail Generation (Chapter-Specific)
 
-func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
-  return """
-    \t\t<aspectRatio>1</aspectRatio>
-    \t\t<flags>0</flags>
-    \t\t<timing in="0 1 1 0" out="3833600 153600 1 0" offset="0 1 1 0"/>
-    \t\t<foldFlags>0</foldFlags>
-    \t\t<baseFlags>524304</baseFlags>
-    \t\t<parameter name="Properties" id="1" flags="8589938704">
-    \t\t\t<parameter name="Lighting" id="230" flags="8589938706">
-    \t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t</parameter>
-    \t\t\t<parameter name="Shadows" id="234" flags="8589938706">
-    \t\t\t\t<foldFlags>15</foldFlags>
-    \t\t\t</parameter>
-    \t\t\t<parameter name="Reflection" id="223" flags="8589971474">
-    \t\t\t\t<foldFlags>131087</foldFlags>
-    \t\t\t</parameter>
-    \t\t\t<parameter name="Color" id="243" flags="8589938688">
-    \t\t\t\t<parameter name="Hidden Channel" id="245" flags="8589934610" default="1" value="3"/>
-    \t\t\t\t<parameter name="Conversion Type" id="247" flags="8590032912" default="3" value="3"/>
-    \t\t\t\t<parameter name="PQ Peak (nits)" id="248" flags="8589967376" default="1000" value="1000"/>
-    \t\t\t</parameter>
-    \t\t</parameter>
-    \t\t<parameter name="Object" id="2" flags="8589938704">
-    \t\t\t<parameter name="Fixed Width" id="302" flags="12884901908" default="\(fixedWidth)" value="\(fixedWidth)"/>
-    \t\t\t<parameter name="Fixed Height" id="303" flags="12884901908" default="\(fixedHeight)" value="\(fixedHeight)"/>
-    \t\t\t<parameter name="Flatten" id="311" flags="8589934610" default="0" value="0"/>
-    \t\t\t<parameter name="Layer Order" id="305" flags="8589934610" default="0" value="0"/>
-    \t\t\t<parameter name="Aperture Width" id="312" flags="12884901906" default="\(fixedWidth)" value="\(fixedWidth)"/>
-    \t\t\t<parameter name="Aperture Height" id="313" flags="12884901906" default="\(fixedHeight)" value="\(fixedHeight)"/>
-    \t\t</parameter>
-    \t</layer>
-    """
-}
-
-func escapeXML(_ s: String) -> String {
-  s.replacingOccurrences(of: "&", with: "&amp;")
-    .replacingOccurrences(of: "<", with: "&lt;")
-    .replacingOccurrences(of: ">", with: "&gt;")
-    .replacingOccurrences(of: "\"", with: "&quot;")
-}
-
-// MARK: - Thumbnail Generation
-
-func generateThumbnail(width: Int, height: Int, path: String, plan: ExecutionPlan) {
+func generateChapterThumbnail(
+  width: Int, height: Int, path: String,
+  chapter: Chapter, plan: ExecutionPlan
+) {
   let rep = NSBitmapImageRep(
     bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
     bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -743,26 +1209,26 @@ func generateThumbnail(width: Int, height: Int, path: String, plan: ExecutionPla
   NSGraphicsContext.saveGraphicsState()
   NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
 
-  // Background
-  NSColor.black.setFill()
+  // Background - dark with slight green tint (matching infographic panel)
+  NSColor(calibratedRed: 0.02, green: 0.06, blue: 0.02, alpha: 1).setFill()
   NSRect(x: 0, y: 0, width: width, height: height).fill()
 
   let isLarge = width > 200
   let scale: CGFloat = isLarge ? 1.0 : 0.35
 
-  // Operation word
-  let smallFont =
-    NSFont(name: "HelveticaNeue-Light", size: 14 * scale)
-    ?? NSFont.systemFont(ofSize: 14 * scale)
-  let bigFont =
-    NSFont(name: "HelveticaNeue-CondensedBold", size: 28 * scale)
-    ?? NSFont.boldSystemFont(ofSize: 28 * scale)
-  let tinyFont =
-    NSFont(name: "HelveticaNeue-Light", size: 10 * scale)
-    ?? NSFont.systemFont(ofSize: 10 * scale)
+  let tagFont =
+    NSFont(name: "HelveticaNeue-CondensedBold", size: 16 * scale)
+    ?? NSFont.boldSystemFont(ofSize: 16 * scale)
+  let headingFont =
+    NSFont(name: "HelveticaNeue-CondensedBold", size: 12 * scale)
+    ?? NSFont.boldSystemFont(ofSize: 12 * scale)
+  let subtitleFont =
+    NSFont(name: "HelveticaNeue-Light", size: 9 * scale)
+    ?? NSFont.systemFont(ofSize: 9 * scale)
 
-  let gray = NSColor(calibratedRed: 0.7, green: 0.7, blue: 0.7, alpha: 1)
-  let midGray = NSColor(calibratedRed: 0.5, green: 0.5, blue: 0.5, alpha: 1)
+  let tagColor = NSColor(calibratedRed: 0.314, green: 0.706, blue: 0.902, alpha: 1)  // Intel Blue
+  let headColor = NSColor.white
+  let subColor = NSColor(calibratedRed: 0.706, green: 0.706, blue: 0.706, alpha: 1)
 
   func drawCentered(_ text: String, font: NSFont, color: NSColor, y: CGFloat) {
     let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
@@ -772,28 +1238,20 @@ func generateThumbnail(width: Int, height: Int, path: String, plan: ExecutionPla
   }
 
   let centerY = CGFloat(height) / 2
-  drawCentered(plan.operationWord, font: smallFont, color: gray, y: centerY + 10 * scale)
-  drawCentered(plan.operationName, font: bigFont, color: .white, y: centerY - 20 * scale)
-  drawCentered(
-    "ITERATION \(plan.iteration)", font: tinyFont, color: midGray, y: centerY - 45 * scale)
 
-  // Sortie status dots (if large)
-  if isLarge && !plan.sorties.isEmpty {
-    let dotSize: CGFloat = 8
-    let spacing: CGFloat = 14
-    let totalWidth = CGFloat(plan.sorties.count) * spacing
-    let startX = (CGFloat(width) - totalWidth) / 2
+  // Chapter tag (e.g. "CH03")
+  drawCentered(chapter.tag, font: tagFont, color: tagColor, y: centerY + 20 * scale)
 
-    for (i, sortie) in plan.sorties.enumerated() {
-      let c = sortie.status.color
-      NSColor(calibratedRed: c.r, green: c.g, blue: c.b, alpha: 1).setFill()
-      let dotRect = NSRect(
-        x: startX + CGFloat(i) * spacing,
-        y: 20,
-        width: dotSize, height: dotSize
-      )
-      NSBezierPath(ovalIn: dotRect).fill()
-    }
+  // Chapter heading
+  drawCentered(chapter.heading, font: headingFont, color: headColor, y: centerY - 8 * scale)
+
+  // Chapter title subtitle
+  drawCentered(chapter.title, font: subtitleFont, color: subColor, y: centerY - 28 * scale)
+
+  // Duration indicator at bottom
+  if isLarge {
+    let durText = String(format: "%.1fs", chapter.durationSeconds)
+    drawCentered(durText, font: subtitleFont, color: subColor, y: 10)
   }
 
   NSGraphicsContext.restoreGraphicsState()
@@ -807,26 +1265,47 @@ func printUsage() {
   let name = (CommandLine.arguments.first ?? "generate-motion-titles") as NSString
   print(
     """
-    Usage: \(name.lastPathComponent) <execution-plan-path> <podcast-path> <episode-number>
+    Usage: \(name.lastPathComponent) <execution-plan-path> <podcast-path> <episode-number> <chapter>
 
     Arguments:
       execution-plan-path  Path to EXECUTION_PLAN.md
       podcast-path         Path to podcast project directory
       episode-number       Episode number (e.g., 1)
+      chapter              Chapter identifier (e.g., 1, CH01, CH02A, 17)
 
     Output:
-      Generates Motion title templates (.moti) in:
-        ~/Movies/Motion Templates.localized/Titles.localized/casting-software-spells/
+      Generates a single Motion title template (.motn) in:
+        ~/Movies/Motion Templates.localized/Titles.localized/casting-software-spells/EP01-infographics/
+
+    Available chapters:
+      CH01  Opening
+      CH02  Mission Briefing
+      CH03  Mission Zero: The Mess
+      CH04  Discovery: Resource IDs
+      CH05  Discovery: Library Bug
+      CH06  Discovery: Empty Timelines
+      CH07  Discovery: Metadata Correction
+      CH08  Discovery: Time Format
+      CH09  Discovery: Type Collisions
+      CH10  Process Failures
+      CH11  What Worked
+      CH12  Verdict: Roll It Flat
+      CH13  Mission One: Clean Slate
+      CH14  Sortie Zero: Research
+      CH15  Sorties One Through Eight
+      CH16  Current Status
+      CH17  Closing
 
     Example:
       swift \(name.lastPathComponent) \\
-        ~/Projects/SwiftSecuencia/EXECUTION_PLAN.md \\
+        ~/Movies/EXECUTION_PLAN.md \\
         ~/Projects/podcast-casting-software-spells \\
-        1
+        1 \\
+        CH03
     """)
 }
 
-guard CommandLine.arguments.count == 4 else {
+guard CommandLine.arguments.count == 5 else {
   printUsage()
   exit(1)
 }
@@ -834,6 +1313,7 @@ guard CommandLine.arguments.count == 4 else {
 let executionPlanPath = NSString(string: CommandLine.arguments[1]).expandingTildeInPath
 let podcastPath = NSString(string: CommandLine.arguments[2]).expandingTildeInPath
 let episodeNumber = Int(CommandLine.arguments[3]) ?? 1
+let chapterIdentifier = CommandLine.arguments[4]
 
 print("Parsing execution plan: \(executionPlanPath)")
 
@@ -843,49 +1323,47 @@ do {
   print("Operation: \(plan.featureName)")
   print("Branch: \(plan.branch)")
   print("Iteration: \(plan.iteration)")
-  print("Sorties: \(plan.sorties.count)")
 
-  for sortie in plan.sorties {
-    print("  S\(sortie.number): \(sortie.task) [\(sortie.status.displayLabel)]")
+  // Find the requested chapter
+  guard let chapter = findChapter(identifier: chapterIdentifier) else {
+    print("Error: Unknown chapter identifier '\(chapterIdentifier)'")
+    print("Use --help or run without arguments to see available chapters.")
+    exit(1)
   }
 
-  // Build folder name: EP01-M00-Operation-Pipeline-Exodus
-  let epTag = String(format: "EP%02d", episodeNumber)
-  let mTag = String(format: "M%02d", Int(plan.iteration) ?? 0)
-  let nameParts = plan.featureName.components(separatedBy: " ")
-    .map { $0.capitalized }
-    .joined(separator: "-")
-  let folderName = "\(epTag)-\(mTag)-\(nameParts)"
-  let templateName = "\(epTag) \(plan.featureName)"
+  print("Chapter: \(chapter.tag) - \(chapter.title)")
+  print("  Start: \(chapter.startSeconds)s")
+  print("  Duration: \(chapter.durationSeconds)s")
+  print("  Infographic elements: \(chapter.infographicLines.count)")
 
-  // Create output directories
+  // Output directory: EP01-infographics
+  let epTag = String(format: "EP%02d", episodeNumber)
+  let folderName = "\(epTag)-infographics"
   let titleDir = "\(titlesBase)/\(folderName)"
   let fm = FileManager.default
 
-  if fm.fileExists(atPath: titleDir) {
-    try fm.removeItem(atPath: titleDir)
-    print("Replaced existing: \(folderName)")
-  }
-
+  // Create output directory (do not remove existing -- other chapters may already be there)
   try fm.createDirectory(atPath: titleDir, withIntermediateDirectories: true)
-  try fm.createDirectory(atPath: "\(titleDir)/Media", withIntermediateDirectories: true)
 
-  // Generate .moti
-  let motiContent = generateTitleMoti(plan: plan)
-  let motiPath = "\(titleDir)/\(templateName).moti"
-  try motiContent.write(toFile: motiPath, atomically: true, encoding: .utf8)
-  print("Wrote: \(motiPath)")
+  // Generate .motn file for this chapter
+  let motnContent = generateChapterTemplate(chapter: chapter, plan: plan)
+  let motnFilename = "\(chapter.tag)-\(chapter.slug).motn"
+  let motnPath = "\(titleDir)/\(motnFilename)"
+  try motnContent.write(toFile: motnPath, atomically: true, encoding: .utf8)
+  print("Wrote: \(motnPath)")
 
-  // Generate thumbnails
-  let largePath = "\(titleDir)/large.png"
-  let smallPath = "\(titleDir)/small.png"
-  generateThumbnail(width: 320, height: 180, path: largePath, plan: plan)
-  generateThumbnail(width: 96, height: 96, path: smallPath, plan: plan)
+  // Generate chapter-specific thumbnails
+  let largePath = "\(titleDir)/\(chapter.tag)-large.png"
+  let smallPath = "\(titleDir)/\(chapter.tag)-small.png"
+  generateChapterThumbnail(
+    width: 320, height: 180, path: largePath, chapter: chapter, plan: plan)
+  generateChapterThumbnail(
+    width: 96, height: 96, path: smallPath, chapter: chapter, plan: plan)
   print("Wrote: \(largePath)")
   print("Wrote: \(smallPath)")
 
-  print("\nTitle template generated at:")
-  print("  \(titleDir)/")
+  print("\nChapter template generated at:")
+  print("  \(titleDir)/\(motnFilename)")
   print("\nReady for FCPX: Titles > casting-software-spells > \(folderName)")
 
 } catch {
