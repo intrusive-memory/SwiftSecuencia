@@ -115,7 +115,7 @@ enum SortieStatus: String {
 }
 
 /// Represents one chapter of the EP01 infographic sequence.
-/// Each chapter corresponds to one audio clip and one .motn template.
+/// Each chapter corresponds to one audio clip and one .moti template.
 struct Chapter {
   let number: Int          // e.g. 1, 2, 3... (note: 2A=18, 2B=19, 2C=20 for sub-chapters)
   let tag: String          // e.g. "CH01", "CH02", "CH02A"
@@ -1154,7 +1154,7 @@ func generateInfographicLayer(chapter: Chapter) -> String {
 
 // MARK: - Chapter Template Generation
 
-/// Generates a complete `.motn` OZML XML file for a single chapter.
+/// Generates a complete `.moti` OZML XML file for a single chapter.
 /// This is the primary function for Sortie 1: one template per chapter.
 func generateChapterTemplate(chapter: Chapter, plan: ExecutionPlan) -> String {
   let titleLayer = generateTitleCardLayer(plan: plan)
@@ -1577,7 +1577,7 @@ func printUsage() {
       chapter              Chapter identifier (e.g., 1, CH01, CH02A, 17)
 
     Output:
-      Generates a single Motion title template (.motn) in:
+      Generates a single Motion title template (.moti) in:
         ~/Movies/Motion Templates.localized/Titles.localized/casting-software-spells/EP01-infographics/
 
     Available chapters:
@@ -1648,9 +1648,9 @@ do {
   // Create output directory (do not remove existing -- other chapters may already be there)
   try fm.createDirectory(atPath: titleDir, withIntermediateDirectories: true)
 
-  // Generate .motn file for this chapter
+  // Generate .moti file for this chapter
   let motnContent = generateChapterTemplate(chapter: chapter, plan: plan)
-  let motnFilename = "\(chapter.tag)-\(chapter.slug).motn"
+  let motnFilename = "\(chapter.tag)-\(chapter.slug).moti"
   let motnPath = "\(titleDir)/\(motnFilename)"
   try motnContent.write(toFile: motnPath, atomically: true, encoding: .utf8)
   print("Wrote: \(motnPath)")
