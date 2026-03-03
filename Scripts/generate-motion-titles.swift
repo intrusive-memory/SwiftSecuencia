@@ -1091,8 +1091,9 @@ func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
 /// The infographic panel occupies x=150 to x=1400 on the 4096×2160 canvas.
 /// Panel center x ≈ 775; canvas center x = 2048, so panel offset = 775 - 2048 = -1273.
 /// Element x values in InfographicElement are panel-local (0–1200 range, center ~600).
-/// Y values are panel-local from bottom: 0=bottom, 800=top.
-/// Canvas Y: element.y - 580 maps panel-local y to canvas-centered y.
+/// Y values follow Motion's convention: higher element.y = higher on screen.
+/// The element range (~100–800) centers around y≈450, which maps to canvas center (y=0).
+/// Canvas Y: element.y - 450 maps panel-local y to canvas-centered y (preserving direction).
 func generateInfographicLayer(chapter: Chapter) -> String {
   var layer = ""
   let layerID = 40000
@@ -1106,10 +1107,11 @@ func generateInfographicLayer(chapter: Chapter) -> String {
     // X: element.x is panel-local (0=panel left). Convert to canvas coords:
     //    panel left is at canvas x=150, canvas center is x=2048
     //    so canvas x = (150 + element.x) - 2048 = element.x - 1898
-    // Y: element.y is panel-local (0=bottom ~canvas y=-580). Convert:
-    //    canvas y = element.y - 580
+    // Y: element.y uses higher-Y-is-higher-on-screen convention (same as Motion).
+    //    Element range is ~100–800, centered at ~450. Canvas center = 0.
+    //    canvas y = element.y - 450
     let canvasX = element.x - 1898
-    let canvasY = element.y - 580
+    let canvasY = element.y - 450
 
     if element.isProgressBar {
       let pct = Double(element.text) ?? 0.0
