@@ -24,14 +24,13 @@ let package = Package(
     ),
   ],
   dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "development"),
-    .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "development"),
+    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", branch: "main"),
+    .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", branch: "main"),
     .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
-    // Using intrusive-memory fork with Xcode 26 transitive dylib fix
-    .package(url: "https://github.com/intrusive-memory/pipeline-neo.git", branch: "xcode26-transitive-fix"),
+    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", branch: "main"),
   ],
   targets: [
     .target(
