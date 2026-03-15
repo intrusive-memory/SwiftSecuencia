@@ -188,6 +188,9 @@ extension Timecode {
   /// This ensures the resulting timecode aligns with frame boundaries, which is required
   /// for FCPXML export. The timecode is rounded to the nearest frame.
   ///
+  /// The implementation uses the frame rate's native timescale to ensure frame-aligned values.
+  /// For example, 23.98fps uses timescale 24000, while 60fps uses timescale 6000.
+  ///
   /// - Parameters:
   ///   - seconds: The time in seconds.
   ///   - frameRate: The frame rate to align to.
@@ -195,10 +198,15 @@ extension Timecode {
   public static func frameAligned(seconds: Double, frameRate: FrameRate) -> Timecode {
     // Calculate the number of frames (rounded to nearest)
     let fps = frameRate.framesPerSecond
-    let frameCount = Int((seconds * fps).rounded())
+    let frameCount = Int64((seconds * fps).rounded())
 
-    // Create timecode from frame count
-    return Timecode(frames: frameCount, frameRate: frameRate)
+    // Use frame rate's native timescale for frame-aligned values
+    let frameDuration = frameRate.frameDuration
+    let alignedTicks = frameCount * frameDuration.value
+    let timescale = frameDuration.timescale
+
+    // Create timecode with frame-aligned value
+    return Timecode(value: alignedTicks, timescale: timescale)
   }
 
   /// Converts this timecode to a frame-aligned timecode for the given frame rate.
