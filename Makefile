@@ -12,7 +12,7 @@ help:
 	@echo "  make test      - Run all tests (Apple Silicon only)"
 	@echo "  make clean     - Clean build artifacts"
 	@echo "  make resolve   - Resolve package dependencies"
-	@echo "  make install   - Install secuencia CLI to /usr/local/bin"
+	@echo "  make install   - Install secuencia CLI to bin/ directory"
 	@echo "  make release   - Build release binary"
 	@echo "  make dist      - Create distributable tarball for Homebrew"
 	@echo "  make lint      - Run SwiftLint with strict mode (matches CI)"
@@ -62,25 +62,24 @@ clean:
 	rm -rf bin
 	rm -rf dist
 
-# Install CLI to /usr/local/bin
+# Install CLI to project bin directory
 install: check-arch
 	@echo "📦 Building secuencia CLI for release..."
 	xcodebuild build \
 		-scheme secuencia \
 		-destination 'platform=macOS,arch=arm64' \
 		-configuration Release
-	@echo "📦 Installing secuencia to /usr/local/bin..."
-	@PRODUCT_PATH=$$(xcodebuild build \
-		-scheme secuencia \
-		-destination 'platform=macOS,arch=arm64' \
-		-configuration Release \
-		-showBuildSettings 2>/dev/null | \
-		grep -m 1 "BUILT_PRODUCTS_DIR" | \
-		sed 's/.*= //'); \
-	if [ -f "$$PRODUCT_PATH/secuencia" ]; then \
-		cp "$$PRODUCT_PATH/secuencia" /usr/local/bin/secuencia; \
-		chmod +x /usr/local/bin/secuencia; \
-		echo "✅ Installed secuencia to /usr/local/bin/secuencia"; \
+	@echo "📦 Installing secuencia to bin/..."
+	@mkdir -p bin
+	@DERIVED_DATA="$${HOME}/Library/Developer/Xcode/DerivedData"; \
+	PRODUCT_DIR=$$(find "$$DERIVED_DATA"/SwiftSecuencia-*/Build/Products/Release -name secuencia -type f 2>/dev/null | head -1 | xargs dirname); \
+	if [ -n "$$PRODUCT_DIR" ] && [ -f "$$PRODUCT_DIR/secuencia" ]; then \
+		cp "$$PRODUCT_DIR/secuencia" bin/secuencia; \
+		chmod +x bin/secuencia; \
+		echo "✅ Installed secuencia to bin/secuencia"; \
+		echo ""; \
+		echo "To use the CLI, run: ./bin/secuencia"; \
+		echo "Or add to PATH: export PATH=\"\$$(pwd)/bin:\$$PATH\""; \
 	else \
 		echo "❌ Error: Could not find built secuencia executable"; \
 		exit 1; \
