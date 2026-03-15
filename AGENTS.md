@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines
 
-**Last Updated**: 2026-03-02
-**Version**: 3.0.0
+**Last Updated**: 2026-03-15
+**Version**: 3.0.1
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -279,13 +279,26 @@ let outputURL = try await Task.detached(priority: .high) {
 
 ## Version & Release Info
 
-**Current**: 3.0.0 (Migrate FCPXML export to pipeline-neo v2.4.1+ dependency)
-**Previous**: 2.0.0 (CLI implementation with SecuenciaCLICore library, CI fixes)
+**Current**: 3.0.1 (Switch to upstream repos and main branch, Homebrew distribution)
+**Previous**: 3.0.0 (Migrate FCPXML export to pipeline-neo v2.4.1+ dependency)
 
 ### Versioning
 - **Major**: Architectural changes, new major features
 - **Minor**: New features, backward compatible
 - **Patch**: Bug fixes only
+
+### Distribution
+
+**Homebrew** (recommended):
+```bash
+brew tap intrusive-memory/tap
+brew install secuencia
+```
+
+**From Source**:
+```bash
+make dist  # Creates distributable tarball with SHA256
+```
 
 See **CHANGELOG.md** for full release history.
 
@@ -326,15 +339,21 @@ For **agent-specific** tooling and workflows, see:
 ## Quick Reference
 
 ```bash
-# Build & Test
-xcodebuild build -scheme SwiftSecuencia-Package -destination 'platform=macOS'
-xcodebuild test -scheme SwiftSecuencia-Package -destination 'platform=macOS'
+# Install CLI
+brew tap intrusive-memory/tap && brew install secuencia
+
+# Build & Test (development)
+make build
+make test
 
 # CLI Usage
 secuencia build timeline.json
 secuencia build --bundle --format-version 1.11 timeline.json
 secuencia validate timeline.json
 secuencia schema > schema.json
+
+# Distribution
+make dist  # Build release tarball for Homebrew
 ```
 
 **Repository**: https://github.com/intrusive-memory/SwiftSecuencia

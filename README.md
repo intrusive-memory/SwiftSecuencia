@@ -183,11 +183,20 @@ SwiftSecuencia includes a command-line tool for generating FCPXML timelines from
 
 ### Installation
 
+#### Homebrew (Recommended)
+
+```bash
+brew tap intrusive-memory/tap
+brew install secuencia
+```
+
+#### From Source
+
 Build the CLI binary:
 
 ```bash
-swift build -c release
-cp .build/release/secuencia /usr/local/bin/
+make release
+sudo make install  # Installs to /usr/local/bin/secuencia
 ```
 
 Or run directly without installing:

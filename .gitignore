@@ -39,3 +39,7 @@ Podfile.lock
 # Build artifacts
 bin/
 dist/
+
+# Code coverage
+*.profraw
+*.profdata
