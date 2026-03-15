@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines
 
 **Last Updated**: 2026-03-15
-**Version**: 3.0.1
+**Version**: 3.1.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -279,8 +279,8 @@ let outputURL = try await Task.detached(priority: .high) {
 
 ## Version & Release Info
 
-**Current**: 3.0.1 (Switch to upstream repos and main branch, Homebrew distribution)
-**Previous**: 3.0.0 (Migrate FCPXML export to pipeline-neo v2.4.1+ dependency)
+**Current**: 3.1.0 (Homebrew distribution with automated releases)
+**Previous**: 3.0.1 (Switch to upstream repos and main branch)
 
 ### Versioning
 - **Major**: Architectural changes, new major features
