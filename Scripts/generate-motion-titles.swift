@@ -11,14 +11,39 @@ let generatorsBase = motionTemplatesBase + "/Generators.localized/casting-softwa
 
 // MARK: - Layout Constants
 //
-// Design spec (SUP-INFOGRAPHICS-PLAN.md): Left Panel = x=150 to x=1400 on the 4096×2160 canvas.
-// infoPanelX/Width describe the zone on the full 4K canvas (used for coordinate reference).
-// Infographic elements within this zone are positioned relative to the panel's local coordinate space.
+// Canvas: 3840×2160 (UHD). Origin at center = (0, 0).
+// Background from background.motn defines the visual layout:
+//
+// Right dark panel (infographic target):
+//   Motion coords: center X=1320, Y=90, size 1120×1900
+//   Top edge Y=1040, Bottom edge Y=-860, Left edge X=760, Right edge X=1880
+//
+// Element coordinates in chapter definitions use a local design space:
+//   x: 100–1100 range (maps to panel width, 600 = panel center)
+//   y: 0–800 range (0 = bottom of panel, 800 = top of panel)
+//
+// Conversion to Motion canvas coords:
+//   canvasX = panelLeft + padding + (element.x - 100) / 1000 * usableWidth
+//   canvasY = panelBottom + (element.y / 800) * panelHeight
 
-let infoPanelX: Double = 150          // Left edge of infographic panel (canvas coords)
-let infoPanelY: Double = 40           // Top margin for infographic panel
-let infoPanelWidth: Double = 1250     // Width of infographic panel (150 → 1400)
-let infoPanelHeight: Double = 2000    // Height of infographic panel (canvas coords)
+let canvasWidth: Double = 3840         // Canvas width (UHD)
+let canvasHeight: Double = 2160        // Canvas height (UHD)
+let halfWidth: Double = 1920           // Half canvas width (origin offset)
+let halfHeight: Double = 1080          // Half canvas height (origin offset)
+
+// Right dark panel dimensions (from background.motn)
+let panelCenterX: Double = 1320        // Panel center X in Motion coords
+let panelCenterY: Double = 90          // Panel center Y in Motion coords
+let panelWidth: Double = 1120          // Panel width in pixels
+let panelHeight: Double = 1900         // Panel height in pixels
+let panelLeft: Double = 760            // Panel left edge (1320 - 560)
+let panelRight: Double = 1880          // Panel right edge (1320 + 560)
+let panelTop: Double = 1040            // Panel top edge (90 + 950)
+let panelBottom: Double = -860         // Panel bottom edge (90 - 950)
+
+// Teal accent bar position (from background.motn)
+let tealBarX: Double = -308            // Teal bar center X
+let tealBarY: Double = 640             // Teal bar center Y
 
 // MARK: - Color Palette
 
@@ -622,10 +647,192 @@ func allChapters() -> [Chapter] {
   ]
 }
 
+// MARK: - EP02 Chapter Definitions (OPERATION MARKUP JAILBREAK)
+
+func allChaptersEP02() -> [Chapter] {
+  return [
+    Chapter(
+      number: 1, tag: "CH01", slug: "opening", title: "Opening",
+      startSeconds: 0.000, durationSeconds: 37.600,
+      heading: "THE GENERAL",
+      infographicLines: [
+        InfographicElement(text: FAIcon.userShield, font: "FontAwesome5Pro-Solid", size: 120,
+                           x: 600, y: 500, color: commandWhite, alignment: 1, isIcon: true),
+        InfographicElement(text: "THE GENERAL", font: "HelveticaNeue-CondensedBold", size: 72,
+                           x: 600, y: 350, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: "FIELD DEBRIEF COMMENCING", font: "HelveticaNeue-Light", size: 36,
+                           x: 600, y: 270, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 2, tag: "CH02", slug: "mission-briefing", title: "Mission Briefing",
+      startSeconds: 37.600, durationSeconds: 70.880,
+      heading: "OBJECTIVE: iOS XML ABSTRACTION",
+      infographicLines: [
+        InfographicElement(text: "OBJECTIVE: iOS XML ABSTRACTION", font: "HelveticaNeue-CondensedBold", size: 44,
+                           x: 600, y: 700, color: commandWhite, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.lock, font: "FontAwesome5Pro-Solid", size: 50,
+                           x: 350, y: 560, color: missionRed, alignment: 1, isIcon: true),
+        InfographicElement(text: FAIcon.exchangeAlt, font: "FontAwesome5Pro-Solid", size: 50,
+                           x: 600, y: 560, color: cautionYellow, alignment: 1, isIcon: true),
+        InfographicElement(text: FAIcon.shieldCheck, font: "FontAwesome5Pro-Solid", size: 50,
+                           x: 850, y: 560, color: operatorGreen, alignment: 1, isIcon: true),
+        InfographicElement(text: "macOS Only", font: "HelveticaNeue-Light", size: 28,
+                           x: 350, y: 490, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: "\u{2192}", font: "HelveticaNeue-Bold", size: 40,
+                           x: 600, y: 490, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: "Cross-Platform", font: "HelveticaNeue-Light", size: 28,
+                           x: 850, y: 490, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: "7 WORK UNITS", font: "HelveticaNeue-Bold", size: 36,
+                           x: 350, y: 380, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: "25 SORTIES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 850, y: 380, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: "655 EXISTING TESTS", font: "HelveticaNeue-Bold", size: 32,
+                           x: 600, y: 300, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: "\"Agents don't take a dump without a plan\"", font: "HelveticaNeue-LightItalic", size: 26,
+                           x: 600, y: 220, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 3, tag: "CH03", slug: "the-architecture", title: "The Architecture",
+      startSeconds: 108.480, durationSeconds: 95.600,
+      heading: "PROTOCOL CONTRACTS + DUAL BACKENDS",
+      infographicLines: [
+        InfographicElement(text: "PROTOCOL CONTRACTS", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: intelBlue, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.sitemap, font: "FontAwesome5Pro-Solid", size: 50,
+                           x: 600, y: 580, color: intelBlue, alignment: 1, isIcon: true),
+        InfographicElement(text: "PNXMLNode", font: "Courier-Bold", size: 30,
+                           x: 200, y: 500, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "PNXMLElement", font: "Courier-Bold", size: 30,
+                           x: 200, y: 440, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "PNXMLDocument", font: "Courier-Bold", size: 30,
+                           x: 200, y: 380, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "PNXMLFactory", font: "Courier-Bold", size: 30,
+                           x: 200, y: 320, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5Pro-Solid", size: 36,
+                           x: 200, y: 230, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "Foundation (macOS)", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 230, color: intelBlue, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5Pro-Solid", size: 36,
+                           x: 200, y: 170, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "AEXML (iOS / cross-platform)", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 170, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "\"This is the way.\"", font: "HelveticaNeue-LightItalic", size: 28,
+                           x: 600, y: 80, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 4, tag: "CH04", slug: "the-migration", title: "The Migration",
+      startSeconds: 204.080, durationSeconds: 82.240,
+      heading: "THE BIG PUSH: 13 SORTIES",
+      infographicLines: [
+        InfographicElement(text: "THE BIG PUSH", font: "HelveticaNeue-CondensedBold", size: 56,
+                           x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
+        // Progress bar: 25/25 sorties = 100% (Operator Green = complete)
+        InfographicElement(percentage: 1.0, barWidth: 700, x: 550, y: 610, color: operatorGreen),
+        InfographicElement(text: "25 / 25 SORTIES", font: "HelveticaNeue-Bold", size: 32,
+                           x: 550, y: 570, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.fileCode, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 480, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "145 SOURCE FILES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 480, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.exchangeAlt, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 400, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "1,600+ CALL SITES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 400, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.fighterJet, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 320, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "13 SORTIES, 0 RETRIES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 280, y: 320, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "Directory by directory, like dominoes", font: "HelveticaNeue-LightItalic", size: 26,
+                           x: 600, y: 220, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 5, tag: "CH05", slug: "the-bug", title: "The Bug",
+      startSeconds: 286.320, durationSeconds: 106.160,
+      heading: "THE INDEX MISMATCH BUG",
+      infographicLines: [
+        InfographicElement(text: "THE INDEX MISMATCH", font: "HelveticaNeue-CondensedBold", size: 52,
+                           x: 600, y: 700, color: missionRed, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.bug, font: "FontAwesome5Pro-Solid", size: 80,
+                           x: 600, y: 560, color: missionRed, alignment: 1, isIcon: true),
+        InfographicElement(text: "removeChildren(where:)", font: "Courier-Bold", size: 28,
+                           x: 600, y: 450, color: cautionYellow, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.timesCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 370, color: missionRed, alignment: 0, isIcon: true),
+        InfographicElement(text: "childElements[0] != children[0]", font: "Courier", size: 26,
+                           x: 280, y: 370, color: missionRed, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 300, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Iterate full children array", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 300, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "662 TESTS: 4 \u{2192} 0 FAILURES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 600, y: 210, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: "\"This is why we verify.\"", font: "HelveticaNeue-LightItalic", size: 28,
+                           x: 600, y: 130, color: neutralGray, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 6, tag: "CH06", slug: "validation-and-platform", title: "Validation and Platform",
+      startSeconds: 392.480, durationSeconds: 96.720,
+      heading: "iOS PLATFORM EXPANSION",
+      infographicLines: [
+        InfographicElement(text: "iOS PLATFORM EXPANSION", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 700, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.shieldAlt, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 580, color: intelBlue, alignment: 0, isIcon: true),
+        InfographicElement(text: "Structural Validator", font: "HelveticaNeue-Bold", size: 32,
+                           x: 280, y: 580, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: "100+ element allowlist", font: "HelveticaNeue-Light", size: 26,
+                           x: 300, y: 530, color: neutralGray, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.codeBranch, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 440, color: cautionYellow, alignment: 0, isIcon: true),
+        InfographicElement(text: "PNXMLDefaultFactory()", font: "Courier-Bold", size: 28,
+                           x: 280, y: 440, color: cautionYellow, alignment: 0, isIcon: false),
+        InfographicElement(text: "64 call sites replaced", font: "HelveticaNeue-Light", size: 26,
+                           x: 300, y: 390, color: neutralGray, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 40,
+                           x: 200, y: 300, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: ".iOS(.v15)", font: "Courier-Bold", size: 32,
+                           x: 280, y: 300, color: operatorGreen, alignment: 0, isIcon: false),
+        InfographicElement(text: "686 TESTS | 0 FAILURES", font: "HelveticaNeue-Bold", size: 36,
+                           x: 600, y: 200, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: "MISSION COMPLETE", font: "HelveticaNeue-CondensedBold", size: 44,
+                           x: 600, y: 120, color: operatorGreen, alignment: 1, isIcon: false),
+      ]),
+    Chapter(
+      number: 7, tag: "CH07", slug: "closing", title: "Closing",
+      startSeconds: 489.200, durationSeconds: 82.880,
+      heading: "GENERAL OUT",
+      infographicLines: [
+        InfographicElement(text: "25 SORTIES | 0 RETRIES", font: "HelveticaNeue-CondensedBold", size: 44,
+                           x: 600, y: 700, color: operatorGreen, alignment: 1, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 580, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Machine-verifiable exit criteria", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 580, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 510, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Model selection by complexity", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 510, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 440, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Protocol + factory + conditionals", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 440, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.checkCircle, font: "FontAwesome5Pro-Solid", size: 32,
+                           x: 200, y: 370, color: operatorGreen, alignment: 0, isIcon: true),
+        InfographicElement(text: "Identity != equality (test both)", font: "HelveticaNeue-Bold", size: 30,
+                           x: 280, y: 370, color: commandWhite, alignment: 0, isIcon: false),
+        InfographicElement(text: FAIcon.shieldCheck, font: "FontAwesome5Pro-Solid", size: 60,
+                           x: 600, y: 230, color: operatorGreen, alignment: 1, isIcon: true),
+        InfographicElement(text: "\"This is the way.\"", font: "HelveticaNeue-CondensedBold", size: 48,
+                           x: 600, y: 140, color: commandWhite, alignment: 1, isIcon: false),
+      ]),
+  ]
+}
+
 /// Look up a chapter by its tag string (e.g. "CH01", "CH02A", etc.)
 /// Also supports numeric lookup: "1" -> "CH01", "2" -> "CH02", etc.
-func findChapter(identifier: String) -> Chapter? {
-  let chapters = allChapters()
+/// Routes to the correct episode's chapter list based on episode number.
+func findChapter(identifier: String, episode: Int = 1) -> Chapter? {
+  let chapters = episode == 2 ? allChaptersEP02() : allChapters()
   // Try exact tag match first
   if let ch = chapters.first(where: { $0.tag.lowercased() == identifier.lowercased() }) {
     return ch
@@ -762,14 +969,14 @@ func textNode(
 ) -> String {
   let textLength = text.count
   return """
-    <scenenode name="\(escapeXML(name))" id="\(id)" factoryID="16" version="5">
+    <scenenode name="\(escapeXML(name))" id="\(id)" factoryID="\(textFactoryID)" version="5">
     \t\t\t<paragraphMarginsCached cached="0"/>
     \t\t\t<scrollMarginsCached cached="0"/>
     \t\t\t<crawlMarginsCached cached="0"/>
     \t\t\t<host hostID="0"/>
     \t\t\t<textPathModified textPathModifiedVal="0"/>
     \t\t\t<paragraphStyle id="\(paragraphID)"/>
-    \t\t\t<style name="Style" id="\(styleID)" factoryID="1">
+    \t\t\t<style name="Style" id="\(styleID)" factoryID="\(styleFactoryID)">
     \t\t\t\t<copyFlags>65535</copyFlags>
     \t\t\t\t<previewWidth>0</previewWidth>
     \t\t\t\t<previewHeight>0</previewHeight>
@@ -1081,19 +1288,83 @@ func layerClose(fixedWidth: Int, fixedHeight: Int) -> String {
     """
 }
 
+// MARK: - Background-Based Template Generation
+
+/// Path to the background OZML template with vector shapes (no text)
+let backgroundMotnPath = "/Volumes/brick/media/background/background.motn"
+
+/// Text factory ID used by textNode() — must match factory declaration added to background
+let textFactoryID = 17
+/// Style factory ID used by textNode() — must match factory declaration added to background
+let styleFactoryID = 16
+
+/// Two additional factory declarations needed for infographic text nodes.
+/// These are appended to the background's existing factories.
+let additionalFactories = """
+
+<factory id="\(styleFactoryID)" uuid="044beba5ad3211d7ac9b000393833f6a">
+\t<description>Style</description>
+\t<manufacturer>Apple</manufacturer>
+\t<version>1</version>
+</factory>
+
+<factory id="\(textFactoryID)" uuid="babfc7777f4711d7aaa7000393833f6a">
+\t<description>Text</description>
+\t<manufacturer>Apple</manufacturer>
+\t<version>1</version>
+</factory>
+
+"""
+
+/// Reads background.motn as the complete base template,
+/// adds Text/Style factories, and inserts the infographic layer before </scene>.
+/// No factory remapping needed — we use the background's own factory numbering
+/// and add our text factories at IDs that don't conflict.
+func generateFromBackground(chapter: Chapter) -> String {
+  guard var content = try? String(contentsOfFile: backgroundMotnPath, encoding: .utf8) else {
+    print("Error: Could not read background.motn at \(backgroundMotnPath)")
+    return ""
+  }
+
+  // 1. Add Text and Style factory declarations after the last existing factory
+  //    Find the last </factory> tag and insert after it
+  guard let lastFactory = content.range(of: "</factory>", options: .backwards,
+                                         range: content.startIndex..<content.range(of: "<build>")!.lowerBound) else {
+    print("Error: Could not find factory declarations in background.motn")
+    return ""
+  }
+  content.insert(contentsOf: additionalFactories, at: lastFactory.upperBound)
+
+  // 2. Generate the infographic layer
+  let infographicLayer = generateInfographicLayer(chapter: chapter)
+
+  // 3. Insert infographic layer before </scene>
+  guard let sceneEnd = content.range(of: "</scene>") else {
+    print("Error: Could not find </scene> in background.motn")
+    return ""
+  }
+  content.insert(contentsOf: infographicLayer + "\n", at: sceneEnd.lowerBound)
+
+  return content
+}
+
 // MARK: - Infographic Layer Generation
 
-/// Generates the OZML text nodes for a chapter's infographic layer (left panel).
+/// Generates the OZML text nodes for a chapter's infographic layer (right dark panel).
 /// Each InfographicElement becomes a text node; icons use Font Awesome font.
 /// Progress bar elements render as block-character bars.
 ///
-/// Coordinate system note: Motion's canvas origin is at center (0,0).
-/// The infographic panel occupies x=150 to x=1400 on the 4096×2160 canvas.
-/// Panel center x ≈ 775; canvas center x = 2048, so panel offset = 775 - 2048 = -1273.
-/// Element x values in InfographicElement are panel-local (0–1200 range, center ~600).
-/// Y values follow Motion's convention: higher element.y = higher on screen.
-/// The element range (~100–800) centers around y≈450, which maps to canvas center (y=0).
-/// Canvas Y: element.y - 450 maps panel-local y to canvas-centered y (preserving direction).
+/// Coordinate system: Motion's canvas origin is at center (0,0) of a 3840×2160 canvas.
+/// The right dark panel spans:
+///   Motion coords: X=760→1880, Y=-860→1040 (center at X=1320, Y=90)
+///
+/// Element x/y values in InfographicElement are in panel-local design space:
+///   x: 100–1100 (600 = panel center)
+///   y: 0–800 (0 = bottom, 800 = top; higher y = higher visual position)
+///
+/// Conversion to Motion canvas coords:
+///   canvasX = panelLeft + (element.x - 100) / 1000 * panelWidth
+///   canvasY = panelBottom + (element.y / 800) * panelHeight
 func generateInfographicLayer(chapter: Chapter) -> String {
   var layer = ""
   let layerID = 40000
@@ -1103,15 +1374,11 @@ func generateInfographicLayer(chapter: Chapter) -> String {
   for (i, element) in chapter.infographicLines.enumerated() {
     let nodeID = layerID + 100 + (i * 100)
 
-    // Canvas coordinate offsets:
-    // X: element.x is panel-local (0=panel left). Convert to canvas coords:
-    //    panel left is at canvas x=150, canvas center is x=2048
-    //    so canvas x = (150 + element.x) - 2048 = element.x - 1898
-    // Y: element.y uses higher-Y-is-higher-on-screen convention (same as Motion).
-    //    Element range is ~100–800, centered at ~450. Canvas center = 0.
-    //    canvas y = element.y - 450
-    let canvasX = element.x - 1898
-    let canvasY = element.y - 450
+    // Convert element coords (panel-local design space) to Motion canvas coords
+    // Element x: 100→1100 maps to panel left→right (600 = center = X=1320)
+    // Element y: 0→800 maps to panel bottom→top (0 = Y=-860, 800 = Y=1040)
+    let canvasX = panelLeft + ((element.x - 100.0) / 1000.0) * panelWidth
+    let canvasY = panelBottom + (element.y / 800.0) * panelHeight
 
     if element.isProgressBar {
       let pct = Double(element.text) ?? 0.0
@@ -1148,301 +1415,17 @@ func generateInfographicLayer(chapter: Chapter) -> String {
     }
   }
 
-  layer += layerClose(fixedWidth: 4096, fixedHeight: 2160)
+  layer += layerClose(fixedWidth: 3840, fixedHeight: 2160)
   return layer
 }
 
 // MARK: - Chapter Template Generation
 
 /// Generates a complete `.moti` OZML XML file for a single chapter.
-/// This is the primary function for Sortie 1: one template per chapter.
+/// Uses background.motn as the complete base (vector shapes only, no text),
+/// then inserts only the infographic text layer for this chapter.
 func generateChapterTemplate(chapter: Chapter, plan: ExecutionPlan) -> String {
-  let titleLayer = generateTitleCardLayer(plan: plan)
-  let infographicLayer = generateInfographicLayer(chapter: chapter)
-
-  return """
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE ozxmlscene>
-    <ozml version="5.13">
-
-    <displayversion>5.7</displayversion>
-
-    <factory id="1" uuid="044beba5ad3211d7ac9b000393833f6a">
-    \t<description>Style</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="2" uuid="0a5c0b1d4acd11d8b650000a95a6b5a8">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="3" uuid="0e8d443513b611d89395000a95af9f7e">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="4" uuid="10405f52139811d8b4db000a95af9f7e">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="5" uuid="1595b452229211d78c7f00039389b702">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="6" uuid="1c5986a34e9646e08fa8e92b03ba1aaf">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="7" uuid="27f3ee8b229211d7925a00039389b702">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="8" uuid="46c844a813d311d8a438000a95af9f7e">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="9" uuid="558f10b4a1c011d7998900039389b702">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="10" uuid="65cb4dc9d4504fa281921f5f751fba06">
-    \t<description>Widget</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="11" uuid="69f1e0a52e7911d8b19a000a95b0025a">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="12" uuid="7644521e2e7911d891a6000a95b0025a">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="13" uuid="7d468273c013498e9806a0d7bc32fddf">
-    \t<description>Project</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="14" uuid="878a64bd193011d8bac3000a95af9f7e">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="15" uuid="aee0a63927494ed19a9667c9f83badfd">
-    \t<description>Material</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="16" uuid="babfc7777f4711d7aaa7000393833f6a">
-    \t<description>Text</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="17" uuid="fca4a88380df4dab943a0962bdb1ae75">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-    <factory id="18" uuid="fdc1944b229111d7b1c300039389b702">
-    \t<description>Channel</description>
-    \t<manufacturer>Apple</manufacturer>
-    \t<version>1</version>
-    </factory>
-
-
-    <build></build>
-
-    <description></description>
-
-    <canvas>
-    \t<layout>1</layout>
-    \t<activeView>0</activeView>
-    </canvas>
-
-    <viewer subview="0">
-    \t<resolutionMode>0</resolutionMode>
-    \t<dynamicResolution>1</dynamicResolution>
-    \t<viewmode>0</viewmode>
-    \t<overlayOptions>125708</overlayOptions>
-    \t<oscOptions>30</oscOptions>
-    \t<compensateAspectRatio>1</compensateAspectRatio>
-    \t<renderFields>0</renderFields>
-    \t<showMotionBlur>0</showMotionBlur>
-    \t<showFrameBlending>1</showFrameBlending>
-    \t<showLighting>1</showLighting>
-    \t<showShadows>1</showShadows>
-    \t<showReflection>1</showReflection>
-    \t<showDepthOfField>0</showDepthOfField>
-    \t<renderFullView>0</renderFullView>
-    \t<renderQuality>2</renderQuality>
-    \t<textRenderQuality>2</textRenderQuality>
-    \t<showHighQualityResampling>0</showHighQualityResampling>
-    \t<showShapeAntialiasing>1</showShapeAntialiasing>
-    \t<show3DIntersectionAntialiasing>0</show3DIntersectionAntialiasing>
-    \t<cameraType>0</cameraType>
-    \t<cameraName>Active Camera</cameraName>
-    \t<mirrorHMD>0</mirrorHMD>
-    \t<panZoom camera="0" zoom="1" panX="0" panY="0" mode="2" centered="1"/>
-    </viewer>
-
-    <projectPanel>
-    \t<layersPreviewColumn>1</layersPreviewColumn>
-    \t<layersOpacityColumn>0</layersOpacityColumn>
-    \t<layersBlendColumn>0</layersBlendColumn>
-    \t<displayMasks>1</displayMasks>
-    \t<displayBehaviors>1</displayBehaviors>
-    \t<displayEffects>1</displayEffects>
-    \t<layersVerticalZoom>1.7999999523162842</layersVerticalZoom>
-    \t<mediaPreviewColumn>1</mediaPreviewColumn>
-    \t<mediaTypeColumn>1</mediaTypeColumn>
-    \t<mediaDurationColumn>1</mediaDurationColumn>
-    \t<mediaInUseColumn>1</mediaInUseColumn>
-    \t<mediaFrameSizeColumn>1</mediaFrameSizeColumn>
-    \t<mediaCompressorColumn>1</mediaCompressorColumn>
-    \t<mediaDepthColumn>1</mediaDepthColumn>
-    \t<mediaFrameRateColumn>1</mediaFrameRateColumn>
-    \t<mediaDataRateColumn>1</mediaDataRateColumn>
-    \t<mediaAudioRateColumn>1</mediaAudioRateColumn>
-    \t<mediaAudioFormatColumn>1</mediaAudioFormatColumn>
-    \t<mediaFileSizeColumn>1</mediaFileSizeColumn>
-    \t<mediaFileCreatedColumn>1</mediaFileCreatedColumn>
-    \t<mediaDileModifiedColumn>1</mediaDileModifiedColumn>
-    \t<mediaVerticalZoom>1.7999999523162842</mediaVerticalZoom>
-    </projectPanel>
-
-    <timeline>
-    \t<displayVideo>1</displayVideo>
-    \t<displayAudio>0</displayAudio>
-    \t<displayKeyframes>1</displayKeyframes>
-    \t<displayMasks>1</displayMasks>
-    \t<displayBehaviors>1</displayBehaviors>
-    \t<displayEffects>1</displayEffects>
-    \t<videoVerticalZoom>1.5555555555555556</videoVerticalZoom>
-    \t<audioVerticalZoom>1.5555555820465088</audioVerticalZoom>
-    \t<displayRange in="-1103385203 1729492187 3 0" out="25637982184 1000000000 3 0"/>
-    </timeline>
-
-    <curveeditor>
-    \t<autozoom>0</autozoom>
-    \t<snapping>0</snapping>
-    \t<displayAudioWaveform>0</displayAudioWaveform>
-    \t<lockKeyframesInTime>0</lockKeyframesInTime>
-    \t<displayRange in="-1103385203 1729492187 3 0" out="25637982184 1000000000 3 0"/>
-    \t<currentviewvolume originx="-0.63798218418895924" originy="-62.5" width="26.275964368" height="125"/>
-    \t<snapshotChannels>0</snapshotChannels>
-    </curveeditor>
-
-    <inspector>
-    \t<collapseState id="./1/100" state="1"/>
-    \t<collapseState id="./1/200" state="1"/>
-    \t<collapseState id="./1/344" state="1"/>
-    </inspector>
-
-    <scene>
-    \t<sceneSettings>
-    \t\t<width>4096</width>
-    \t\t<height>2160</height>
-    \t\t<duration>600</duration>
-    \t\t<shouldOverrideFCDuration>0</shouldOverrideFCDuration>
-    \t\t<frameRate>24</frameRate>
-    \t\t<NTSC>0</NTSC>
-    \t\t<pixelAspectRatio>1</pixelAspectRatio>
-    \t\t<workingGamut>0</workingGamut>
-    \t\t<viewGamut>-1</viewGamut>
-    \t\t<optimizeForDisplay>0</optimizeForDisplay>
-    \t\t<backgroundColor red="0" green="0" blue="0" alpha="1"/>
-    \t\t<audioChannels>2</audioChannels>
-    \t\t<audioBitsPerSample>32</audioBitsPerSample>
-    \t\t<fieldRenderingMode>0</fieldRenderingMode>
-    \t\t<motionBlurSamples>8</motionBlurSamples>
-    \t\t<motionBlurDuration>1</motionBlurDuration>
-    \t\t<sharpScaling>0</sharpScaling>
-    \t\t<startTimecode>0</startTimecode>
-    \t\t<presetPath>/Applications/Motion.app/Contents/Resources/en.lproj/Presets/Project/4K - Digital Cinema.preset</presetPath>
-    \t\t<backgroundMode>0</backgroundMode>
-    \t\t<reflectionRecursionLimit>2</reflectionRecursionLimit>
-    \t\t<glyphOSCMode>0</glyphOSCMode>
-    \t\t<animateFlag>0</animateFlag>
-    \t\t<parameterColorSpaceID>3</parameterColorSpaceID>
-    \t\t<savePreviewMovie>0</savePreviewMovie>
-    \t\t<Object3DEnvironments>100</Object3DEnvironments>
-    \t\t<DRTSupport>0</DRTSupport>
-    \t\t<onHDRDisplay>0</onHDRDisplay>
-    \t</sceneSettings>
-    \t<publishSettings>
-    \t\t<version>2</version>
-    \t</publishSettings>
-    \t<currentFrame>0 1 1 0</currentFrame>
-    \t<currentObject>20001</currentObject>
-    \t<activeLayer>20000</activeLayer>
-    \t<timeRange offset="0 1 1 0" duration="3840000 153600 1 0"/>
-    \t<playRange offset="0 1 1 0" duration="3840000 153600 1 0"/>
-    \t<flags>1</flags>
-    \t<audioTracks>0</audioTracks>
-    \t<timemarkerset/>
-    \t<guideset/>
-    \t<curvesets selected="1"/>
-    \t<scenenode name="Project" id="10000" factoryID="13" version="5">
-    \t\t<scenenode name="Widget" id="10002" factoryID="10" version="5">
-    \t\t\t<flags>0</flags>
-    \t\t\t<timing in="0 1 1 0" out="-6400 153600 1 0" offset="0 1 1 0"/>
-    \t\t\t<foldFlags>0</foldFlags>
-    \t\t\t<baseFlags>16</baseFlags>
-    \t\t\t<parameter name="Properties" id="1" flags="8589938704"/>
-    \t\t\t<parameter name="Object" id="2" flags="8589938704">
-    \t\t\t\t<parameter name="Options" id="103" flags="8589938688"/>
-    \t\t\t\t<parameter name="Hidden" id="102" flags="8589934608" default="0" value="1"/>
-    \t\t\t\t<parameter name="Snapshots" id="101" flags="8589938706"/>
-    \t\t\t\t<parameter name="Widget" id="100" flags="8589934608" default="1.7777777777777777" value="1.7777777777777777"/>
-    \t\t\t</parameter>
-    \t\t</scenenode>
-    \t\t<flags>0</flags>
-    \t\t<timing in="0 1 1 0" out="-6400 153600 1 0" offset="0 1 1 0"/>
-    \t\t<foldFlags>0</foldFlags>
-    \t\t<baseFlags>16</baseFlags>
-    \t\t<parameter name="Properties" id="1" flags="8589938704"/>
-    \t\t<parameter name="Object" id="2" flags="8589938704"/>
-    \t</scenenode>
-    \(titleLayer)
-    \(infographicLayer)
-    \t<footage name="Media Layer" id="10006">
-    \t\t<flags>0</flags>
-    \t\t<timing in="0 1 1 0" out="0 153600 1 0" offset="0 1 1 0"/>
-    \t\t<foldFlags>0</foldFlags>
-    \t\t<baseFlags>524304</baseFlags>
-    \t\t<parameter name="Properties" id="1" flags="8589938704"/>
-    \t\t<parameter name="Object" id="2" flags="8589938704"/>
-    \t</footage>
-    </scene>
-
-    </ozml>
-    """
+  return generateFromBackground(chapter: chapter)
 }
 
 /// Generates just the title card layer (center panel) for a chapter template.
@@ -1493,7 +1476,7 @@ func generateTitleCardLayer(plan: ExecutionPlan) -> String {
             alignment: 1,
             colorR: 0.5, colorG: 0.5, colorB: 0.5
         ))
-    \(layerClose(fixedWidth: 4096, fixedHeight: 2160))
+    \(layerClose(fixedWidth: 3840, fixedHeight: 2160))
     """
   return layer
 }
@@ -1580,7 +1563,7 @@ func printUsage() {
       Generates a single Motion title template (.moti) in:
         ~/Movies/Motion Templates.localized/Titles.localized/casting-software-spells/EP01-infographics/
 
-    Available chapters:
+    Available chapters (EP01 - OPERATION PIPELINE EXODUS):
       CH01  Opening
       CH02  Mission Briefing
       CH03  Mission Zero: The Mess
@@ -1598,6 +1581,15 @@ func printUsage() {
       CH15  Sorties One Through Eight
       CH16  Current Status
       CH17  Closing
+
+    Available chapters (EP02 - OPERATION MARKUP JAILBREAK):
+      CH01  Opening
+      CH02  Mission Briefing
+      CH03  The Architecture
+      CH04  The Migration
+      CH05  The Bug
+      CH06  Validation and Platform
+      CH07  Closing
 
     Example:
       swift \(name.lastPathComponent) \\
@@ -1628,7 +1620,7 @@ do {
   print("Iteration: \(plan.iteration)")
 
   // Find the requested chapter
-  guard let chapter = findChapter(identifier: chapterIdentifier) else {
+  guard let chapter = findChapter(identifier: chapterIdentifier, episode: episodeNumber) else {
     print("Error: Unknown chapter identifier '\(chapterIdentifier)'")
     print("Use --help or run without arguments to see available chapters.")
     exit(1)
@@ -1639,25 +1631,26 @@ do {
   print("  Duration: \(chapter.durationSeconds)s")
   print("  Infographic elements: \(chapter.infographicLines.count)")
 
-  // Output directory: EP01-infographics
-  let epTag = String(format: "EP%02d", episodeNumber)
-  let folderName = "\(epTag)-infographics"
-  let titleDir = "\(titlesBase)/\(folderName)"
+  // Output: per-directory structure under Titles.localized/casting-software-spells/
+  // Each chapter gets its own directory: CH01-opening/CH01-opening.moti, large.png, small.png
+  // No Media/ subdirectory needed — background is embedded as vector shapes
+  let templateName = "\(chapter.tag)-\(chapter.slug)"
+  let templateDir = "\(titlesBase)/\(templateName)"
   let fm = FileManager.default
 
-  // Create output directory (do not remove existing -- other chapters may already be there)
-  try fm.createDirectory(atPath: titleDir, withIntermediateDirectories: true)
+  // Create template directory
+  try fm.createDirectory(atPath: templateDir, withIntermediateDirectories: true)
 
   // Generate .moti file for this chapter
   let motnContent = generateChapterTemplate(chapter: chapter, plan: plan)
-  let motnFilename = "\(chapter.tag)-\(chapter.slug).moti"
-  let motnPath = "\(titleDir)/\(motnFilename)"
+  let motnFilename = "\(templateName).moti"
+  let motnPath = "\(templateDir)/\(motnFilename)"
   try motnContent.write(toFile: motnPath, atomically: true, encoding: .utf8)
   print("Wrote: \(motnPath)")
 
-  // Generate chapter-specific thumbnails
-  let largePath = "\(titleDir)/\(chapter.tag)-large.png"
-  let smallPath = "\(titleDir)/\(chapter.tag)-small.png"
+  // Generate chapter-specific thumbnails (large.png and small.png, not prefixed)
+  let largePath = "\(templateDir)/large.png"
+  let smallPath = "\(templateDir)/small.png"
   generateChapterThumbnail(
     width: 320, height: 180, path: largePath, chapter: chapter, plan: plan)
   generateChapterThumbnail(
@@ -1666,8 +1659,13 @@ do {
   print("Wrote: \(smallPath)")
 
   print("\nChapter template generated at:")
-  print("  \(titleDir)/\(motnFilename)")
-  print("\nReady for FCPX: Titles > casting-software-spells > \(folderName)")
+  print("  \(templateDir)/\(motnFilename)")
+  print("\nDirectory structure:")
+  print("  \(templateDir)/")
+  print("    \(motnFilename)")
+  print("    large.png")
+  print("    small.png")
+  print("\nReady for FCPX: Titles > casting-software-spells > \(templateName)")
 
 } catch {
   print("Error: \(error.localizedDescription)")

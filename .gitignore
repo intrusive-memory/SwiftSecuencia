@@ -35,3 +35,11 @@ playground.xcworkspace
 # CocoaPods (in case someone uses it)
 Pods/
 Podfile.lock
+
+# Build artifacts
+bin/
+dist/
+
+# Code coverage
+*.profraw
+*.profdata
