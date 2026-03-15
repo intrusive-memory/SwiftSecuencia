@@ -5,7 +5,79 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-02-13
+## [3.1.0] - 2026-03-15
+
+### Added - Release Automation & Homebrew Distribution
+
+**Feature Release**: Automated release workflow and Homebrew distribution support
+
+#### GitHub Actions Release Workflow
+- **Automated binary builds** on release creation
+  - Uses macOS 26 runner with Apple Silicon
+  - Builds release binary and creates distributable tarball
+  - Uploads binary assets to GitHub releases automatically
+  - Triggers Homebrew tap updates via repository dispatch
+
+- **Manual release workflow dispatch**
+  - Can trigger release workflow manually with tag input
+  - Useful for re-building or patching releases
+  - Full SHA256 verification of tarballs
+
+#### Homebrew Distribution
+- **New Makefile targets** for distribution
+  - `make release` - Build release binary with Xcode
+  - `make dist` - Create distributable tarball with SHA256
+  - Tarball naming: `secuencia-{version}-arm64-macos.tar.gz`
+  - Automatic version detection from git tags
+
+- **Distribution workflow**
+  1. Build release binary with `xcodebuild`
+  2. Package binary in tarball
+  3. Compute SHA256 checksum
+  4. Upload to GitHub release
+  5. Notify Homebrew tap for formula update
+
+#### Development Dependencies
+- **Switched to pipeline-neo development branch**
+  - Testing library changes before upstream merge
+  - Temporary change for development (will revert to upstream main after testing)
+  - Allows testing pipeline-neo enhancements
+
+### Changed
+- **Scripts/generate-motion-titles.swift** - Refactored Motion template generation
+  - Improved infographic layout helpers
+  - Better coordinate system documentation
+  - More maintainable structure
+
+- **Makefile cleanup target** - Enhanced to remove `bin/` and `dist/` directories
+
+### Documentation
+- Updated AGENTS.md with release workflow information
+- Minor updates to CLAUDE.md and GEMINI.md
+
+### Developer Impact
+
+**New Capabilities**:
+- Automated release builds via GitHub Actions
+- Homebrew distribution via `intrusive-memory/homebrew-tap`
+- Manual distribution packaging with `make dist`
+
+**Installation via Homebrew** (after tap update):
+```bash
+brew tap intrusive-memory/tap
+brew install secuencia
+```
+
+### Commits
+- `42b9f61` Scripts refactor
+- `3176810` Temporarily switch to intrusive-memory/pipeline-neo development branch
+- `5142637` Bump version to 3.1.0 and update documentation
+- `da01eed` Add GitHub Actions release workflow
+- `b189f73` Add Homebrew distribution targets to Makefile
+
+---
+
+## [3.0.1] - 2026-02-13
 
 ### Fixed - CLI Architecture Refactor
 
@@ -457,6 +529,11 @@ SwiftSecuencia v1.0.0 is **production-ready** for generating Final Cut Pro timel
 - Confirm audio plays and mixes properly
 - Report any issues on GitHub
 
+[3.1.0]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v3.1.0
+[3.0.1]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v3.0.1
+[3.0.0]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v3.0.0
+[2.0.1]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v2.0.1
+[2.0.0]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v2.0.0
 [1.0.9]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.9
 [1.0.8]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.8
 [1.0.7]: https://github.com/intrusive-memory/SwiftSecuencia/releases/tag/v1.0.7
