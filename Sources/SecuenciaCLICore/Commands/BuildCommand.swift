@@ -177,7 +177,15 @@ public struct Build: AsyncParsableCommand {
   /// Validates FCPXML against the DTD for the specified version.
   /// Returns true if validation passes or is skipped, false if it fails.
   private func validateFCPXML(xmlString: String, version: FCPXMLVersion) throws -> Bool {
-    // Check if DTD is available for this version
+    // In strict mode, validate without checking DTD availability first
+    // This will throw an error if DTD is missing, which is the desired behavior
+    if strict {
+      let validator = FCPXMLDTDValidator()
+      let result = try validator.validate(xmlContent: xmlString, version: version)
+      return result.isValid
+    }
+
+    // In non-strict mode, check if DTD is available and skip gracefully if not
     guard dtdAvailableFor(version: version) else {
       fputs(
         "⚠️  DTD validation skipped: no DTD available for FCPXML version \(version.stringValue)\n",

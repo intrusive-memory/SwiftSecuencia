@@ -66,13 +66,13 @@ FCPXML uses rational numbers to represent time values with 64-bit numerators and
 | 59.94 fps | `1001/60000s` |
 | 60 fps | `100/6000s` |
 
-## Required Naming Conventions
+## Practical Interoperability Conventions
 
-FCPXML has strict naming requirements for several elements. Violating them causes FCP to reject the file or silently misinterpret it.
+FCPXML has naming conventions that Final Cut Pro expects for proper import and media recognition. While the FCPXML DTD allows more flexibility in these naming patterns, Final Cut Pro expects these conventions for proper import and media recognition. Deviating from these patterns may cause import failures or incorrect behavior.
 
 ### Resource IDs — `r`-prefix + incrementing integer
 
-All resource elements (`<format>`, `<asset>`, `<effect>`, `<media>`) require a unique `id` attribute. The **required convention** is:
+All resource elements (`<format>`, `<asset>`, `<effect>`, `<media>`) require a unique `id` attribute. The **FCP interoperability convention** is:
 
 ```
 r1, r2, r3, r4, ...
@@ -85,7 +85,7 @@ r1, r2, r3, r4, ...
 
 ### Format Element `name` — Apple `FFVideoFormat` Naming Scheme
 
-The `<format>` element's `name` attribute must match Apple's internal format registry for FCP to recognize the video format correctly. The pattern is:
+The `<format>` element's `name` attribute should match Apple's internal format registry for FCP to recognize the video format correctly. The pattern is:
 
 ```
 FFVideoFormat{resolution}{field}{fps}

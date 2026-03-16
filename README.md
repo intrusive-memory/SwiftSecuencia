@@ -268,15 +268,17 @@ secuencia build timeline.json
 ```
 
 **Version Compatibility Chart:**
-| FCPXML Version | Final Cut Pro | Supported |
-|---|---|---|
-| 1.14 | 12.0+ | ✅ Default |
-| 1.13 | 11.x | ✅ |
-| 1.12 | 10.7+ | ✅ |
-| 1.11 | 10.5+ | ✅ |
-| 1.10 | 10.4.1+ | ✅ |
-| 1.9 | 10.3+ | ✅ |
-| 1.8 | 10.2+ | ✅ |
+| FCPXML Version | Final Cut Pro | Supported | DTD Validation |
+|---|---|---|---|
+| 1.14 | 12.0+ | ✅ Default | ✅ |
+| 1.13 | 11.x | ✅ | ✅ |
+| 1.12 | 10.7+ | ✅ | ✅ |
+| 1.11 | 10.5+ | ✅ | ✅ |
+| 1.10 | 10.4.1+ | ✅ | ✅ |
+| 1.9 | 10.3+ | ✅ | ✅ |
+| 1.8 | 10.2+ | ✅ | ✅ |
+
+**DTD Validation:** All versions include DTD (Document Type Definition) validation to ensure generated FCPXML conforms to Apple's official specification. Use `--strict` mode to fail builds on validation errors.
 
 #### `secuencia validate` - Validate JSON
 

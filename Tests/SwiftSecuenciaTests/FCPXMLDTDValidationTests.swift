@@ -391,7 +391,7 @@ import Testing
   // Test against multiple DTD versions
   // Note: Only test versions 1.9+ as earlier versions have different DTD requirements
   // (e.g., v1.8 doesn't support media-rep element)
-  let versions: [FCPXMLVersion] = [.v1_9, .v1_10, .v1_11, .v1_12, .v1_13]
+  let versions: [FCPXMLVersion] = [.v1_9, .v1_10, .v1_11, .v1_12, .v1_13, .v1_14]
 
   for version in versions {
     var exporter = FCPXMLExporter(version: version)

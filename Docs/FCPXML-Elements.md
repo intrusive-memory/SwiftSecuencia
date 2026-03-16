@@ -53,7 +53,6 @@ Defines external media file reference.
 | `id` | ID | Yes | Unique identifier |
 | `name` | String | No | Display name |
 | `uid` | String | No | FCP-assigned unique ID |
-| `src` | URL | Yes | File URL to media |
 | `start` | Time | No | Media start time |
 | `duration` | Time | No | Media duration |
 | `hasVideo` | 0/1 | No | Has video track |
@@ -68,6 +67,8 @@ Defines external media file reference.
 | `stereoscopicOverride` | String | No | Stereoscopic override |
 
 **Children:** `bookmark?`, `metadata?`, `media-rep*`
+
+**Note:** Since FCPXML v1.9, the `src` attribute moved from `<asset>` to `<media-rep>` child elements. Each asset can contain multiple media representations with different source files.
 
 ---
 

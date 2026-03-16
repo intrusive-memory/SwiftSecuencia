@@ -33,7 +33,7 @@ if result.isValid {
 
 **Features:**
 - Validates FCPXML content against DTD files
-- Supports versions 1.8 through 1.13
+- Supports versions 1.8 through 1.14
 - Provides detailed error messages from xmllint
 - Automatically resolves DTD file paths
 
@@ -41,13 +41,14 @@ if result.isValid {
 
 Located at: `Tests/SwiftSecuenciaTests/Resources/DTD/`
 
-Official DTD files from [CommandPost](https://github.com/CommandPost/CommandPost):
+Official DTD files from Apple's Final Cut Pro and [CommandPost](https://github.com/CommandPost/CommandPost):
 - FCPXMLv1_8.dtd
 - FCPXMLv1_9.dtd
 - FCPXMLv1_10.dtd
 - FCPXMLv1_11.dtd
 - FCPXMLv1_12.dtd
 - FCPXMLv1_13.dtd
+- FCPXMLv1_14.dtd
 
 ### 3. Validation Tests
 
@@ -82,7 +83,7 @@ This ensures that:
 
 ## Supported FCPXML Versions
 
-The validator supports versions **1.9 through 1.13**.
+The validator supports versions **1.9 through 1.14**.
 
 **Note:** Version 1.8 has different DTD requirements (e.g., doesn't support `media-rep` element) and is not currently supported by the exporter.
 
