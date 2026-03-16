@@ -8,7 +8,7 @@ import SwiftSecuencia
 
 #if os(macOS)
   extension FCPXMLVersion {
-    /// Creates a version from a string (e.g., "1.11", "1.13").
+    /// Creates a version from a string (e.g., "1.11", "1.13", "1.14").
     static func from(string: String) -> FCPXMLVersion {
       switch string {
       case "1.8": return .v1_8
@@ -17,6 +17,7 @@ import SwiftSecuencia
       case "1.11": return .v1_11
       case "1.12": return .v1_12
       case "1.13": return .v1_13
+      case "1.14": return .v1_14
       default: return .default
       }
     }
@@ -41,8 +42,8 @@ public struct Build: AsyncParsableCommand {
     name: .long, help: "Produce a .fcpxmld bundle with embedded media instead of standalone FCPXML")
   public var bundle: Bool = false
 
-  @Option(name: .long, help: "FCPXML version to generate (default: 1.11)")
-  public var formatVersion: String = "1.11"
+  @Option(name: .long, help: "FCPXML version to generate (default: 1.13, supports 1.8-1.14)")
+  public var formatVersion: String = "1.13"
 
   @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
   public var strict: Bool = false

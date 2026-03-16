@@ -163,14 +163,21 @@ public struct TimelineBuilder: Sendable {
     }
 
     // Map rate
-    let rateStr = config.rate.replacingOccurrences(of: "kHz", with: "")
+    // Accepted forms: "48kHz", "48000", "44.1kHz", "44100", "96kHz", "96000"
+    // When the kHz suffix is present and the stripped value is a whole integer,
+    // multiply by 1000 to convert kHz → Hz (e.g. "48kHz" → 48 → 48000).
+    let hasKHzSuffix = config.rate.lowercased().contains("khz")
+    let rateStr = config.rate
+      .replacingOccurrences(of: "kHz", with: "", options: .caseInsensitive)
       .replacingOccurrences(of: " ", with: "")
       .replacingOccurrences(of: ",", with: "")
 
     let rateInt: Int
     if let parsed = Int(rateStr) {
-      rateInt = parsed
+      // Integer path: "48kHz"→48→48000, "96kHz"→96→96000, "48000"→48000
+      rateInt = hasKHzSuffix ? parsed * 1000 : parsed
     } else if let parsed = Double(rateStr) {
+      // Decimal path: "44.1kHz"→44.1→44100 (always in kHz when decimal)
       rateInt = Int(parsed * 1000)
     } else {
       throw TimelineBuilderError.invalidAudioRate(config.rate)
@@ -325,6 +332,10 @@ extension ColorSpace {
       return .rec709
     case "rec2020", "2020":
       return .rec2020
+    case "rec2020hlg", "rec2020-hlg", "hlg":
+      return .rec2020HLG
+    case "rec2020pq", "rec2020-pq", "pq":
+      return .rec2020PQ
     case "srgb":
       return .sRGB
     default:
