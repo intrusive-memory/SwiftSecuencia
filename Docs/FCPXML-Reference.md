@@ -4,8 +4,17 @@
 
 FCPXML (Final Cut Pro XML) is Apple's XML interchange format for Final Cut Pro X. It allows third-party applications to create, read, and manipulate Final Cut Pro projects, timelines, and media references.
 
-**Current Version:** 1.11 (as of Final Cut Pro 10.7+)
-**Supported Versions:** 1.6 through 1.11
+**Current Version:** 1.14 (as of Final Cut Pro 12.0+)
+**Supported Versions:** 1.8 through 1.14
+
+### Version History
+
+| FCPXML Version | Final Cut Pro Version | Release Date | Key Features |
+|----------------|----------------------|--------------|--------------|
+| 1.14 | FCP 12.0+ | March 2025 | AI search (`isRelatedTo`), transcript/visual scope, `match-analysis-type` |
+| 1.13 | FCP 11.0+ | November 2024 | Spatial video (`heroEye`, `adjust-stereo-3D`), `hidden-clip-marker`, high frame rates (90/100/119.88/120 fps) |
+| 1.12 | FCP 10.8+ | March 2024 | Filter `nameOverride`, `optical-flow-frc` frame sampling |
+| 1.11 | FCP 10.7+ | November 2023 | Caption improvements, enhanced metadata |
 
 ## Document Structure
 
@@ -14,7 +23,7 @@ An FCPXML document follows this basic hierarchy:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE fcpxml>
-<fcpxml version="1.11">
+<fcpxml version="1.14">
     <resources>
         <!-- Formats, Assets, Effects, Media definitions -->
     </resources>
@@ -57,13 +66,82 @@ FCPXML uses rational numbers to represent time values with 64-bit numerators and
 | 59.94 fps | `1001/60000s` |
 | 60 fps | `100/6000s` |
 
+## Required Naming Conventions
+
+FCPXML has strict naming requirements for several elements. Violating them causes FCP to reject the file or silently misinterpret it.
+
+### Resource IDs — `r`-prefix + incrementing integer
+
+All resource elements (`<format>`, `<asset>`, `<effect>`, `<media>`) require a unique `id` attribute. The **required convention** is:
+
+```
+r1, r2, r3, r4, ...
+```
+
+- **Always starts at `r1`** — the format resource is conventionally assigned `r1`.
+- **Each subsequent resource increments the counter**: `r2`, `r3`, etc.
+- IDs must be unique within the document — using duplicate IDs causes FCP import to fail.
+- SwiftSecuencia assigns IDs automatically in this scheme; you do not set them in the JSON input.
+
+### Format Element `name` — Apple `FFVideoFormat` Naming Scheme
+
+The `<format>` element's `name` attribute must match Apple's internal format registry for FCP to recognize the video format correctly. The pattern is:
+
+```
+FFVideoFormat{resolution}{field}{fps}
+```
+
+Where:
+- `{resolution}` — frame dimensions using shorthand for standard resolutions or full WxH for non-standard:
+  - Standard HD/UHD: `720`, `1080`, `2160` (shorthand for 1280×720, 1920×1080, 3840×2160)
+  - DCI/non-standard: `4096x2160`, `1440x1080`, etc. (full width×height)
+- `{field}` — `p` for progressive, `i` for interlaced
+- `{fps}` — frame rate suffix:
+  - NTSC fractional rates: 4 digits (`2398` for 23.98, `2997` for 29.97, `5994` for 59.94)
+  - Whole-number rates: 2 digits (`24`, `25`, `30`, `50`, `60`, `90`, `100`, `120`)
+
+**Examples:**
+
+| Resolution | Frame Rate | Format Name |
+|------------|------------|-------------|
+| 3840×2160 (UHD) | 23.98 fps | `FFVideoFormat2160p2398` |
+| 3840×2160 (UHD) | 24 fps | `FFVideoFormat2160p24` |
+| 3840×2160 (UHD) | 25 fps | `FFVideoFormat2160p25` |
+| 3840×2160 (UHD) | 29.97 fps | `FFVideoFormat2160p2997` |
+| 4096×2160 (DCI 4K) | 23.98 fps | `FFVideoFormat4096x2160p2398` |
+| 1920×1080 (HD) | 23.98 fps | `FFVideoFormat1080p2398` |
+| 1920×1080 (HD) | 25 fps | `FFVideoFormat1080p25` |
+| 1920×1080 (HD) | 29.97 fps | `FFVideoFormat1080p2997` |
+| 1920×1080 (HD) | 59.94 fps (interlaced) | `FFVideoFormat1080i5994` |
+| 1280×720 (HD) | 29.97 fps | `FFVideoFormat720p2997` |
+
+SwiftSecuencia derives this name from the `format.width`, `format.height`, and `format.frameRate` fields in your JSON and sets it automatically in the generated FCPXML.
+
+### Asset `name` Attribute
+
+The `<asset>` element's `name` attribute appears in FCP's browser as the clip's display name. It is not required to be unique, but should be human-readable. SwiftSecuencia derives it from the clip's `name` field in the JSON.
+
+### Chapter Markers
+
+Chapter markers in FCPXML are `<chapter-marker>` elements nested **inside** an `<asset-clip>` element (not top-level). The `value` attribute is the chapter title:
+
+```xml
+<asset-clip ref="r2" offset="0s" duration="30s" name="Act 1" start="0s" tcFormat="NDF">
+    <chapter-marker start="0s" duration="0s" value="Introduction"/>
+</asset-clip>
+```
+
+**Note:** The JSON `marker` clip type (with `markerType: "chapter"`) is accepted and validated by `secuencia validate`, but the current FCPXML exporter does not yet emit `<chapter-marker>` elements in its output. If chapter markers are needed, post-process the generated FCPXML to insert `<chapter-marker>` nodes into the appropriate `<asset-clip>` elements.
+
+---
+
 ## Core Elements
 
 ### Root Element
 
 ```xml
 <!ELEMENT fcpxml (import-options?, resources?, (library | event* | (%event_item;)*))>
-<!ATTLIST fcpxml version CDATA #FIXED "1.11">
+<!ATTLIST fcpxml version CDATA #FIXED "1.14">
 ```
 
 ### Resources
@@ -91,15 +169,17 @@ Defines video format specifications:
 - `colorSpace`: Color space specification
 - `fieldOrder`: Interlacing (progressive, upper first, lower first)
 - `paspH`, `paspV`: Pixel aspect ratio
+- `projection` (v1.13+): Spherical projection type for 360° video
+- `stereoscopic` (v1.13+): Stereoscopic video flag (0 or 1)
+- `heroEye` (v1.13+): Hero eye for spatial video (`left`, `right`)
 
 #### Asset
 
-Defines media file references:
+Defines media file references. Since FCPXML v1.9, the `src` attribute has been moved from `<asset>` to the `<media-rep>` child element.
 
 ```xml
 <asset id="r2"
        name="Interview_A"
-       src="file:///path/to/media.mov"
        start="0s"
        duration="3600s"
        hasVideo="1"
@@ -108,20 +188,34 @@ Defines media file references:
        audioSources="1"
        audioChannels="2"
        audioRate="48000">
-    <media-rep kind="original-media" src="file:///path/to/media.mov"/>
+    <media-rep kind="original-media"
+               sig="1234567890ABCDEF"
+               src="file:///path/to/media.mov"
+               suggestedFilename="Interview_A.mov"/>
 </asset>
 ```
 
 **Attributes:**
 - `id` (required): Unique identifier
 - `name`: Display name
-- `src` (required): File URL to media
 - `start`: Media start time
 - `duration`: Media duration
 - `hasVideo`, `hasAudio`: Media type flags (0 or 1)
 - `format`: Reference to format ID
 - `audioRate`: Sample rate (32000, 44100, 48000, 96000)
 - `audioChannels`: Number of audio channels
+- `videoSources` (v1.13+): Number of video sources
+- `colorSpaceOverride` (v1.13+): Override color space for this asset
+- `projectionOverride` (v1.13+): Override projection type for 360° video
+- `stereoscopicOverride` (v1.13+): Override stereoscopic flag
+- `heroEyeOverride` (v1.13+): Override hero eye for spatial video
+- `auxVideoFlags` (v1.13+): Auxiliary video flags for spatial/360° content
+
+**Media-Rep Child Element (v1.9+):**
+- `kind` (required): Type of media representation (`original-media`, `proxy-media`, `optimized-media`)
+- `sig`: File signature for media matching
+- `src` (required): File URL to media
+- `suggestedFilename`: Suggested filename when exporting
 
 #### Effect
 
@@ -404,6 +498,67 @@ Alternative clips container:
 </title>
 ```
 
+## Captions
+
+Captions (subtitles/closed captions) were introduced in FCPXML v1.10. They can be embedded in iTT (iTunes Timed Text) format or referenced externally.
+
+### Caption Element
+
+```xml
+<caption name="English"
+         start="100s"
+         duration="10s"
+         enabled="1"
+         lane="1"
+         offset="0s"
+         role="captions.iTT?captionFormat=ITT">
+    <text>
+        <text-style ref="ts1">Hello, world!</text-style>
+    </text>
+    <text-style-def id="ts1">
+        <text-style font="Helvetica"
+                    fontSize="24"
+                    fontColor="1 1 1 1"
+                    backgroundColor="0 0 0 0.8"
+                    alignment="center"/>
+    </text-style-def>
+    <note>Speaker identification</note>
+</caption>
+```
+
+**Attributes:**
+- `name`: Display name for the caption
+- `start`: Start time in timeline
+- `duration`: Duration of caption display
+- `enabled`: Active state (0 or 1)
+- `lane`: Vertical track position
+- `offset`: Position in parent timeline
+- `role`: Caption role (typically `captions.iTT?captionFormat=ITT`)
+
+**Child Elements:**
+- `<text>`: Caption text content with styling
+- `<text-style-def>`: Text style definitions
+- `<note>`: Optional notes or speaker identification
+
+### iTT Caption Example
+
+```xml
+<caption name="English Captions"
+         start="0s"
+         duration="3600s"
+         role="captions.iTT?captionFormat=ITT">
+    <text>
+        <text-style ref="ts1">Welcome to the presentation.</text-style>
+    </text>
+    <text-style-def id="ts1">
+        <text-style font="Helvetica"
+                    fontSize="24"
+                    fontColor="1 1 1 1"
+                    backgroundColor="0 0 0 0.8"/>
+    </text-style-def>
+</caption>
+```
+
 ## Transitions
 
 ```xml
@@ -524,7 +679,7 @@ Alternative clips container:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE fcpxml>
-<fcpxml version="1.11">
+<fcpxml version="1.14">
     <resources>
         <format id="r1"
                 name="FFVideoFormat1080p2398"
@@ -535,25 +690,27 @@ Alternative clips container:
 
         <asset id="r2"
                name="A001_C001"
-               src="file:///Volumes/Media/A001_C001.mov"
                start="0s"
                duration="600s"
                hasVideo="1"
                hasAudio="1"
                format="r1"
                audioChannels="2"
-               audioRate="48000"/>
+               audioRate="48000">
+            <media-rep kind="original-media" src="file:///Volumes/Media/A001_C001.mov"/>
+        </asset>
 
         <asset id="r3"
                name="A001_C002"
-               src="file:///Volumes/Media/A001_C002.mov"
                start="0s"
                duration="450s"
                hasVideo="1"
                hasAudio="1"
                format="r1"
                audioChannels="2"
-               audioRate="48000"/>
+               audioRate="48000">
+            <media-rep kind="original-media" src="file:///Volumes/Media/A001_C002.mov"/>
+        </asset>
 
         <effect id="r4"
                 name="Cross Dissolve"

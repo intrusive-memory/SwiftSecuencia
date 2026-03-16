@@ -367,6 +367,18 @@
       // Add tcStart (always 0 for now)
       element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
 
+      // Add tcFormat (DF for drop-frame, NDF for non-drop-frame)
+      let tcFormat = frameRate.isDropFrame ? "DF" : "NDF"
+      element.addAttribute(XMLNode.attribute(withName: "tcFormat", stringValue: tcFormat) as! XMLNode)
+
+      // Add audioLayout from timeline
+      let audioLayoutValue = timeline.audioLayout.fcpxmlValue
+      element.addAttribute(XMLNode.attribute(withName: "audioLayout", stringValue: audioLayoutValue) as! XMLNode)
+
+      // Add audioRate from timeline (convert to FCPXML "k" format)
+      let audioRateValue = formatAudioRateForFCPXML(timeline.audioRate)
+      element.addAttribute(XMLNode.attribute(withName: "audioRate", stringValue: audioRateValue) as! XMLNode)
+
       // Generate spine
       let spine = try generateSpineElementWithProvider(
         timeline: timeline, resourceMap: resourceMap, frameRate: frameRate)
@@ -418,6 +430,18 @@
 
       // Add tcStart (always 0 for now)
       element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
+
+      // Add tcFormat (DF for drop-frame, NDF for non-drop-frame)
+      let tcFormat = frameRate.isDropFrame ? "DF" : "NDF"
+      element.addAttribute(XMLNode.attribute(withName: "tcFormat", stringValue: tcFormat) as! XMLNode)
+
+      // Add audioLayout from timeline
+      let audioLayoutValue = timeline.audioLayout.fcpxmlValue
+      element.addAttribute(XMLNode.attribute(withName: "audioLayout", stringValue: audioLayoutValue) as! XMLNode)
+
+      // Add audioRate from timeline (convert to FCPXML "k" format)
+      let audioRateValue = formatAudioRateForFCPXML(timeline.audioRate)
+      element.addAttribute(XMLNode.attribute(withName: "audioRate", stringValue: audioRateValue) as! XMLNode)
 
       // Generate spine
       let spine = try generateSpineElement(
@@ -506,6 +530,24 @@
     private mutating func nextResourceID() -> String {
       resourceIDCounter += 1
       return "r\(resourceIDCounter)"
+    }
+
+    /// Formats an AudioRate for FCPXML audioRate attribute.
+    ///
+    /// Converts sample rates to FCPXML "k" suffix format:
+    /// - 48000 Hz → "48k"
+    /// - 44100 Hz → "44.1k"
+    /// - 96000 Hz → "96k"
+    ///
+    /// - Parameter rate: The audio rate to format.
+    /// - Returns: FCPXML-formatted audio rate string.
+    private func formatAudioRateForFCPXML(_ rate: AudioRate) -> String {
+      let kHz = Double(rate.sampleRate) / 1000.0
+      if kHz.truncatingRemainder(dividingBy: 1) == 0 {
+        return "\(Int(kHz))k"
+      } else {
+        return String(format: "%.1fk", kHz)
+      }
     }
   }
 

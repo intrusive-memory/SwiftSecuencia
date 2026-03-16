@@ -1,539 +1,429 @@
 ---
-feature_name: OPERATION PIPELINE EXODUS
-starting_point_commit: 1cbed22dafd46bfee26be7e6c14b579dc8d299c6
-mission_branch: mission/pipeline-exodus/01
-iteration: 02
+feature_name: OPERATION SPECIFICATION PARADE
+starting_point_commit: 7e74cc49f6898b1fd01682c5ac42857e94541c6d
+mission_branch: mission/specification-parade/03
+iteration: 3
 ---
 
-# EXECUTION PLAN — Operation Pipeline Exodus (Iteration 02)
+# EXECUTION_PLAN — FCPXML Audit Remediation
 
-**Mission:** Replace the embedded Pipeline module in SwiftSecuencia with the pipeline-neo dependency for FCPXML generation.
+**Mission:** Bring SwiftSecuencia's FCPXML documentation and library code into alignment with the current Apple FCPXML spec (v1.8–v1.14), prioritizing correctness of generated output.
 
-**Branch:** `mission/pipeline-exodus/01`
-**Starting Commit:** `44d7ec4` (SwiftSecuencia v2.0.0 - CLI Implementation)
-**Previous Iteration:** `mission/pipeline-exodus/00` (see `OPERATION_PIPELINE_EXODUS_01_BRIEF.md` for lessons learned)
-**Target Completion:** 8-10 sorties (vs 37 in iteration 0)
+**Source Plan:** `~/.claude/plans/inherited-sprouting-twilight.md`
 
 ---
 
-## Lessons Carried Forward
+## Terminology
 
-### What Worked in Iteration 01 (Keep These)
-1. **Adapter extension pattern** - `timeline.toPipelineNeoTimeline()`
-2. **FileAssetProvider** for testing - fast, no SwiftData overhead
-3. **Three-tier error taxonomy** - `FCPXMLExportError`, `FCPXMLBundleExportError`, `FCPXMLValidationError`
-4. **iOS compatibility** via `#if os(macOS)` guards
+> **Mission** — A definable, testable scope of work. Defines scope, acceptance criteria, and dependency structure.
 
-### What Failed in Iteration 01 (Fix These)
-1. **No API exploration** - Sortie 0 is MANDATORY research sprint
-2. **ResourceMap retrofitted** - Build it into adapters from day one
-3. **Regex XML processing** - Use `XMLDocument` to remove invalid `<library name="...">` attribute
-4. **False metadata conclusion** - Pipeline Neo DOES export metadata; verify with integration test
-5. **Over-planning** - Target file-level deliverables, not function-level
-6. **No exit criteria** - Define "done" before starting
+> **Sortie** — An atomic, testable unit of work executed by a single autonomous AI agent in one dispatch. One aircraft, one mission, one return.
+
+> **Work Unit** — A grouping of sorties (package, component, phase).
+
+---
+
+## Context
+
+An audit revealed:
+- Reference doc is outdated (targets v1.11, current is v1.14)
+- Doc examples contradict code and Apple conventions
+- Library missing attributes on generated elements (`tcFormat`, `audioLayout`, `audioRate`)
+- CLI version mapping doesn't expose v1.14 despite PipelineNeo supporting it
+
+**Key Decisions Required:**
+1. Should default version move from 1.11 to 1.13?
+2. Should UHD format name be `FFVideoFormat2160p2398` or `FFVideoFormat3840x2160p2398`?
+
+---
+
+## Work Units
+
+| Work Unit | Directory | Sorties | Layer | Dependencies |
+|-----------|-----------|---------|-------|-------------|
+| SwiftSecuencia | . | 7 | 1 | none (sequential within unit) |
+
+---
+
+## Sortie 0: Current State Verification & Format Name Testing
+
+**Priority**: 23.5 — CRITICAL research foundation (blocks all 6 downstream sorties, establishes format decisions)
+**Agent**: Supervising (has DTD validation step)
+**Estimated effort**: 13 turns (26% of budget)
+
+**Entry criteria**:
+- [ ] First sortie — no prerequisites
+
+**Tasks**:
+1. Read current `Docs/FCPXML-Reference.md` and catalog all discrepancies mentioned in audit
+2. Read current `Sources/SwiftSecuencia/Export/FCPXMLExporter.swift` exporter logic for sequence attributes
+3. Read `Sources/SwiftSecuencia/Format/VideoFormat.swift` format naming logic (lines 84-98)
+4. Read `Sources/SwiftSecuencia/Format/FrameRate.swift` frame rate suffix logic (lines 124-151)
+5. **CRITICAL**: Generate test FCPXML with UHD format `FFVideoFormat2160p2398` and validate with `xmllint --dtdvalid` against v1.13 DTD
+6. Document findings: Does `FFVideoFormat2160p2398` validate? Or does it need `FFVideoFormat3840x2160p2398`?
+7. Catalog current sequence element attributes vs. what's missing (`tcFormat`, `audioLayout`, `audioRate`)
+
+**Deliverables**:
+- [ ] `sortie-0-audit-findings.md` — Current state documentation
+- [ ] `sortie-0-uhd-format-test.fcpxml` — Test output for format name validation
+- [ ] `sortie-0-dtd-validation-result.txt` — DTD validation result
+
+**Exit criteria**:
+- [ ] All discrepancies cataloged with file/line references
+- [ ] UHD format name decision made (keep `2160p` or change to `3840x2160p`)
+- [ ] Missing sequence attributes documented
+- [ ] DTD validation result recorded (pass/fail for current format naming)
+
+**Model:** Sonnet
+**Complexity score:** 10 (research + validation)
+
+---
+
+## Sortie 1: Documentation Fixes (Phase 1)
+
+**Priority**: 2.5 — Documentation only (no code dependencies)
+**Agent**: Sub-agent (no build steps, can run in parallel with Sortie 2)
+**Estimated effort**: 11 turns (22% of budget)
+
+**Entry criteria**:
+- [ ] Sortie 0 complete — audit findings documented
+- [ ] Format name decision made (from Sortie 0 validation)
+
+**Tasks**:
+1. **Update version info** (`Docs/FCPXML-Reference.md` lines 7-8):
+   - Change "Current Version: 1.11" → "Current Version: 1.14"
+   - Change "Supported Versions: 1.6 through 1.11" → "Supported Versions: 1.8 through 1.14"
+   - Add version history table (1.11→1.14 with FCP versions and dates)
+
+2. **Fix format name pattern** (lines 60-103):
+   - Correct pattern to `FFVideoFormat{resolution}{field}{fps}`
+   - Document standard resolution shorthand (1080, 720, 2160) vs full WxH for non-standard
+   - Fix fps suffix examples: `2398`, `2997`, `5994` for NTSC; `24`, `25`, `30`, `50`, `60` for clean rates
+   - Update examples table to match code behavior
+
+3. **Fix asset element example** (lines 159-177):
+   - Remove `src` from `<asset>` attributes (it's on `<media-rep>` since v1.9)
+   - Show `<media-rep>` as required child element
+   - Add `media-rep` attribute documentation: `kind`, `sig`, `src`, `suggestedFilename`
+
+4. **Add newer format/asset attributes**:
+   - Format element: `projection`, `stereoscopic`, `heroEye` (v1.13+)
+   - Asset element: `videoSources`, `colorSpaceOverride`, `projectionOverride`, `stereoscopicOverride`, `heroEyeOverride`, `auxVideoFlags`
+   - Mark as optional with version notes
+
+5. **Add version changelog section**:
+   - v1.12: `nameOverride` on filters, `optical-flow-frc` frame sampling
+   - v1.13: Spatial video (`heroEye`, `adjust-stereo-3D`), `hidden-clip-marker`, high frame rates (90/100/119.88/120)
+   - v1.14: AI search (`isRelatedTo`), transcript/visual scope, `match-analysis-type`
+
+6. **Add caption element documentation**:
+   - Document `<caption>` element attributes (`name`, `start`, `duration`, `enabled`, `lane`, `offset`, `role`)
+   - Child elements (`text`, `text-style-def`, `note`)
+   - Include iTT caption example
+
+**Deliverables**:
+- [ ] `Docs/FCPXML-Reference.md` updated with all Phase 1 fixes
+
+**Exit criteria**:
+- [ ] Version info updated to 1.14 (lines 7-8 modified)
+- [ ] Format name pattern section updated (lines 60-103) with correct pattern and examples
+- [ ] Asset element example updated (lines 159-177) with media-rep structure
+- [ ] Newer attributes documented: format (projection, stereoscopic, heroEye) and asset (6 override attributes)
+- [ ] Version changelog section added (v1.12, v1.13, v1.14 entries)
+- [ ] Caption element section added with attributes table, child elements list, and iTT caption example
+
+**Model:** Sonnet
+**Complexity score:** 8 (documentation work, medium volume)
+
+---
+
+## Sortie 2: Add Missing Sequence Attributes (Phase 2A, 2B)
+
+**Priority**: 9.0 — Core exporter changes (blocks 2 downstream sorties)
+**Agent**: Supervising (has build verification)
+**Estimated effort**: 11 turns (22% of budget)
+
+**Entry criteria**:
+- [ ] Sortie 0 complete — missing attributes cataloged
+
+**Tasks**:
+1. **Add `tcFormat` to sequence element**:
+   - File: `Sources/SwiftSecuencia/Export/FCPXMLExporter.swift` (line ~368)
+   - After setting `tcStart`, add `tcFormat` based on frame rate
+   - If `frameRate.isDropFrame` → `"DF"`, otherwise → `"NDF"`
+   - Apply to both `generateSequenceElementWithProvider` and `generateSequenceElement` methods
+
+2. **Add `audioLayout` and `audioRate` to sequence element**:
+   - Add optional `audioLayout` attribute (default `"stereo"`)
+   - Add optional `audioRate` attribute (default `"48k"`)
+   - Source from Timeline's audio configuration if available, otherwise use defaults
+
+3. **Verify attributes added correctly**:
+   - Check XML structure matches DTD expectations
+   - Ensure both export methods (with/without provider) generate attributes
+
+**Deliverables**:
+- [ ] `Sources/SwiftSecuencia/Export/FCPXMLExporter.swift` updated with sequence attributes
+
+**Exit criteria**:
+- [ ] `tcFormat` attribute added (DF/NDF based on frame rate)
+- [ ] `audioLayout` attribute added (default "stereo")
+- [ ] `audioRate` attribute added (default "48k")
+- [ ] Both export methods updated consistently
+- [ ] Code compiles without errors
+
+**Model:** Sonnet
+**Complexity score:** 7 (targeted code changes, clear requirements)
+
+---
+
+## Sortie 3: CLI Version Mapping & Default Version (Phase 2C, 2D)
+
+**Priority**: 5.0 — Simple CLI mapping (blocks 1 downstream sortie)
+**Agent**: Supervising (has build verification)
+**Estimated effort**: 12 turns (24% of budget)
+**⚠️ Decision Required**: Default version (1.11 or 1.13) - can decide during execution
+
+**Entry criteria**:
+- [ ] Sortie 2 complete — exporter attributes added
+
+**Tasks**:
+1. **Expose v1.14 in CLI**:
+   - File: `Sources/SecuenciaCLICore/Commands/BuildCommand.swift` (lines 12-22)
+   - Add `case "1.14": return .v1_14` to version switch
+   - Verify PipelineNeo already supports v1_14
+
+2. **Update default version (if decided)**:
+   - File: `Sources/SwiftSecuencia/SwiftSecuencia.swift`
+   - If decision is to update: change default from `.v1_11` to `.v1_13`
+   - Rationale: v1.13 is backward-compatible with FCP 11+, covers spatial video
+   - If decision is to keep 1.11: document rationale (maximum compatibility)
+
+3. **Update version documentation**:
+   - Ensure CLI help text reflects v1.14 availability
+   - Update any README or CLI docs mentioning supported versions
+
+**Deliverables**:
+- [ ] `Sources/SecuenciaCLICore/Commands/BuildCommand.swift` with v1.14 support
+- [ ] `Sources/SwiftSecuencia/SwiftSecuencia.swift` default version updated (if decided)
+
+**Exit criteria**:
+- [ ] CLI accepts `--version 1.14` flag
+- [ ] v1.14 case maps to `.v1_14`
+- [ ] Default version set per decision (1.11 or 1.13)
+- [ ] Code compiles without errors
+
+**Model:** Haiku
+**Complexity score:** 3 (simple code additions)
+
+---
+
+## Sortie 4: Format Name Verification & Fix (Phase 3)
+
+**Priority**: 6.0 — Format verification (blocks tests)
+**Agent**: Supervising (has build verification)
+**Estimated effort**: 10-12 turns (20-24% of budget)
+**Note**: Conditional sortie - decision made by Sortie 0 validation results
+
+**Entry criteria**:
+- [ ] Sortie 0 complete — format name validation result available
+
+**Tasks**:
+1. **If Sortie 0 validation PASSED** (current format works):
+   - No code changes needed
+   - Document that `FFVideoFormat2160p2398` is DTD-compliant
+   - Skip file modifications
+
+2. **If Sortie 0 validation FAILED** (needs full WxH):
+   - File: `Sources/SwiftSecuencia/Format/VideoFormat.swift` (lines 86-87)
+   - Change `"2160"` to `"3840x2160"` for standard UHD resolutions
+   - Verify DCI formats still use full WxH (4096x2160)
+
+3. **Update format name logic**:
+   - Ensure standard resolutions (720p, 1080p) still use shorthand
+   - Only change UHD (2160p) if validation requires it
+
+**Deliverables**:
+- [ ] `Sources/SwiftSecuencia/Format/VideoFormat.swift` updated (if needed)
+- [ ] `sortie-4-format-decision.md` documenting the decision and outcome
+
+**Exit criteria**:
+- [ ] Format name decision implemented (change or no-change)
+- [ ] If changed: UHD formats use `3840x2160` pattern
+- [ ] If unchanged: documented that current naming is DTD-compliant
+- [ ] Code compiles without errors
+
+**Model:** Haiku
+**Complexity score:** 4 (conditional change, depends on Sortie 0)
+
+---
+
+## Sortie 5: Test Updates (Phase 4)
+
+**Priority**: 5.0 — Test verification (blocks 1 downstream sortie)
+**Agent**: Supervising (has make test step)
+**Estimated effort**: 14 turns (28% of budget)
+
+**Entry criteria**:
+- [ ] Sortie 2 complete — sequence attributes added
+- [ ] Sortie 4 complete — format name decision implemented
+
+**Tasks**:
+1. **Add test assertions for new sequence attributes**:
+   - File: `Tests/SwiftSecuenciaTests/FCPXMLExportTests.swift`
+   - Assert `tcFormat` is "DF" for drop-frame, "NDF" for non-drop-frame
+   - Assert `audioLayout` is "stereo" (or custom value if set)
+   - Assert `audioRate` is "48k" (or custom value if set)
+   - Create test timeline with drop-frame and non-drop-frame rates
+
+2. **Update format name tests (if Sortie 4 changed logic)**:
+   - File: `Tests/SwiftSecuenciaTests/VideoFormatTests.swift`
+   - If format pattern changed: update test assertions for UHD format names
+   - Verify `FFVideoFormat2160p2398` or `FFVideoFormat3840x2160p2398` as appropriate
+   - Verify other standard formats (720p, 1080p) unchanged
+
+3. **Run full test suite**:
+   - Ensure all existing tests still pass
+   - New assertions added for new attributes
+
+**Deliverables**:
+- [ ] `Tests/SwiftSecuenciaTests/FCPXMLExportTests.swift` with new attribute tests
+- [ ] `Tests/SwiftSecuenciaTests/VideoFormatTests.swift` updated (if format changed)
+
+**Exit criteria**:
+- [ ] Test assertions for `tcFormat`, `audioLayout`, `audioRate` added
+- [ ] Format name tests updated if Sortie 4 changed pattern
+- [ ] `make test` passes all tests
+- [ ] New tests verify correct attribute generation
+
+**Model:** Sonnet
+**Complexity score:** 6 (test logic, multiple scenarios)
+
+---
+
+## Sortie 6: Schema Update (Phase 5, conditional)
+
+**Priority**: 2.0 — Conditional schema update (no dependencies)
+**Agent**: Supervising (has build verification)
+**Estimated effort**: 10-12 turns (20-24% of budget)
+
+**Entry criteria**:
+- [ ] Sortie 3 complete — CLI supports v1.14
+- [ ] Sortie 5 complete — tests pass
+
+**Tasks**:
+1. **Review schema.json for version references**:
+   - File: `Sources/SecuenciaCLICore/Resources/schema.json`
+   - Check if any JSON input fields reference FCPXML versions
+   - Check if version enum needs updating to include v1.14
+
+2. **Update schema if needed**:
+   - Add v1.14 to version enums or validations
+   - Update descriptions to reflect v1.8–v1.14 support range
+   - Ensure schema matches CLI capabilities
+
+3. **If no changes needed**:
+   - Document that schema is version-agnostic or already correct
+   - Skip file modification
+
+**Deliverables**:
+- [ ] `Sources/SecuenciaCLICore/Resources/schema.json` updated (if needed)
+- [ ] `sortie-6-schema-review.md` documenting schema state
+
+**Exit criteria**:
+- [ ] Schema reviewed for version references
+- [ ] Schema updated if needed, or documented as not requiring changes
+- [ ] `make build` succeeds
+- [ ] JSON schema validation passes
+
+**Model:** Haiku
+**Complexity score:** 2 (conditional, low impact)
+
+---
+
+## Parallelism Structure
+
+**Critical Path**: Sortie 0 → Sortie 2 → Sortie 5 → Sortie 6 (4 sorties)
+
+**Parallel Execution Groups**:
+- **Group 1** (Sequential): Sortie 0 (supervising agent - DTD validation)
+- **Group 2** (Can run in parallel after Sortie 0):
+  - Sortie 1 (sub-agent 1 - documentation, no builds)
+  - Sortie 2 (supervising agent - exporter changes with build)
+- **Group 3** (Sequential after Sortie 2): Sortie 3, Sortie 4 (both have builds)
+- **Group 4** (Sequential after Sortie 3+4): Sortie 5 (supervising - make test)
+- **Group 5** (Sequential after Sortie 5): Sortie 6 (supervising - make build)
+
+**Agent Constraints**:
+- **Supervising agent**: Handles all sorties with build/test steps (Sorties 0, 2, 3, 4, 5, 6)
+- **Sub-agent 1**: Documentation work (Sortie 1 only)
+
+---
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Work units | 1 (SwiftSecuencia) |
+| Total sorties | 7 |
+| Dependency structure | sequential with 1 parallel opportunity |
+| Critical path | 4 sorties (0 → 2 → 5 → 6) |
+| Agent allocation | 1 supervising + 1 sub-agent |
+| Parallelism potential | Limited (6/7 sorties require builds) |
+| Average sortie size | 11.6 turns (23% of 50-turn budget) |
+| Estimated execution time | ~3-4 hours (assuming 30 min/sortie avg) |
+
+---
+
+## Open Questions & Missing Documentation
+
+### Unresolved Items
+
+| Sortie | Issue Type | Description | Resolution Strategy |
+|--------|-----------|-------------|---------------------|
+| 3 | Open question | Default version decision: stay at 1.11 or update to 1.13? | Agent will research compatibility trade-offs and recommend during execution. Not blocking - can decide in Sortie 3. |
+| 4 | Conditional | Entire sortie depends on Sortie 0 DTD validation result | Resolved by Sortie 0 - not blocking. If validation passes, sortie becomes no-op. |
+
+**Status**: ✓ Plan is executable - decisions can be made during execution
 
 ---
 
 ## Mission Exit Criteria
 
-This migration is complete when:
-
-- [ ] All FCPXML export functionality works via pipeline-neo dependency
-- [ ] All existing tests pass (migrated to use `PipelineNeo.` namespacing)
-- [ ] DTD validation passes (r-prefixed resource IDs, no invalid attributes)
-- [ ] Metadata export verified (markers, keywords, ratings - integration test confirms)
-- [ ] iOS build succeeds with FCPXML excluded (`#if os(macOS)`)
-- [ ] CI pipeline passes
-- [ ] No embedded Pipeline module code remains
-
----
-
-## Sortie 0: API Exploration & Research
-
-**Model:** Sonnet
-**Priority:** CRITICAL — This 30-minute investment prevents 34 DTD validation failures
-**Estimated Context:** 20% (research, no code changes)
-
-### Objectives
-
-Read pipeline-neo source code and understand its behavior BEFORE writing adapters.
-
-### Tasks
-
-1. **Read Pipeline Neo source:**
-   - `FCPXMLExporter.swift` (lines 1-400) - full export logic
-   - Note lines 143-158: metadata serialization (markers, keywords, ratings, etc.)
-   - Note lines 179-193: clip-level metadata serialization
-   - Note `formatResourceID = "r1"` constant - confirms r-prefixed ID requirement
-
-2. **Catalog type collisions:**
-   - List all public types in Pipeline Neo that collide with SwiftSecuencia
-   - Known collisions: `Timeline`, `Marker`, `ChapterMarker`, `Keyword`, `Rating`, `Metadata`, `ColorSpace`, `ClipPlacement`, `RippleInsertResult`, `ClipShift`, `RippleLaneOption`
-   - Decide: Use `PipelineNeo.` qualified names in production code, type aliases in tests
-
-3. **Export sample timeline WITH metadata:**
-   - Create minimal test: Timeline with 2 clips, 1 marker, 1 keyword
-   - Pass to `PipelineNeo.FCPXMLExporter.export()`
-   - Save output to `sortie-0-sample-output.fcpxml`
-
-4. **Validate against DTD:**
-   - Run `xmllint --dtdvalid` on sample output
-   - Document any validation failures
-   - Confirm: Resource IDs must match `r\d+` pattern (e.g., `"r1"`, `"r2"`)
-   - Confirm: `<library>` element does NOT accept `name` attribute (upstream bug)
-
-5. **Document findings:**
-   - ResourceMap requirements: UUID → `"r1"`, `"r2"`, etc. in sorted order
-   - Empty timeline behavior: `PipelineNeo.FCPXMLExporter` throws for empty timelines
-   - Library name bug: Must be removed via `XMLDocument`, not regex
-   - Metadata export: CONFIRMED working (lines 143-193 of `FCPXMLExporter.swift`)
-   - CMTime timescale: Pipeline Neo uses 600, old module used 24000 (both valid)
-
-### Deliverables
-
-- [ ] `sortie-0-research-notes.md` - Findings document
-- [ ] `sortie-0-sample-output.fcpxml` - Sample export for reference
-- [ ] `sortie-0-type-collisions.md` - List of naming collisions and resolution strategy
-
-### Exit Criteria
-
-- [ ] All Pipeline Neo public types cataloged
-- [ ] ResourceMap format documented (`r1`, `r2`, etc.)
-- [ ] Empty timeline behavior documented
-- [ ] Library name bug documented with XMLDocument fix approach
-- [ ] Metadata export confirmed working (not a Pipeline Neo limitation)
-
----
-
-## Sortie 1: Package Setup & Dependency Migration
-
-**Model:** Sonnet
-**Estimated Context:** 30%
-
-### Objectives
-
-Add pipeline-neo dependency and remove the embedded Pipeline module.
-
-### Tasks
-
-1. **Update Package.swift:**
-   ```swift
-   .package(url: "https://github.com/stovak/pipeline-neo.git", from: "2.3.1")
-   ```
-   - Add to target dependencies: `.product(name: "PipelineNeo", package: "pipeline-neo")`
-   - Add platform restriction: `.when(platforms: [.macOS])`
-
-2. **Remove embedded Pipeline module:**
-   - Delete `Sources/Pipeline/` directory
-   - Remove Pipeline target from Package.swift
-   - Update all imports: `import Pipeline` → (remove, will use PipelineNeo later)
-
-3. **Verify clean state:**
-   - Run `xcodebuild -resolvePackageDependencies`
-   - Confirm pipeline-neo fetched successfully
-   - Confirm build fails with expected errors (Pipeline types missing)
-
-### Deliverables
-
-- [ ] `Package.swift` updated
-- [ ] `Sources/Pipeline/` removed
-- [ ] Dependency resolution succeeds
-
-### Exit Criteria
-
-- [ ] `xcodebuild -resolvePackageDependencies` succeeds
-- [ ] pipeline-neo v2.3.1 in package graph
-- [ ] No embedded Pipeline code remains
-- [ ] Build fails with expected "Cannot find type 'Timeline'" errors (to be fixed in Sortie 3)
-
----
-
-## Sortie 2: ResourceMap Architecture
-
-**Model:** Sonnet
-**Estimated Context:** 40%
-
-### Objectives
-
-Build the ResourceMap pattern into the adapter layer from day one (not retrofitted).
-
-### Tasks
-
-1. **Create `ResourceMap.swift`:**
-   ```swift
-   /// Maps UUIDs to FCPXML-compliant resource IDs (r1, r2, r3, ...)
-   public struct ResourceMap {
-       private let formatID: String = "r1"
-       private var assetIDs: [UUID: String] = [:]
-
-       public init()
-
-       public func formatResourceID() -> String { formatID }
-
-       public mutating func registerAsset(_ uuid: UUID) -> String
-       public func assetResourceID(for uuid: UUID) -> String?
-   }
-   ```
-
-2. **Implement registration logic:**
-   - Format is always `"r1"`
-   - Assets are `"r2"`, `"r3"`, `"r4"`, ... in sorted UUID order
-   - Thread-safe for concurrent access (use `actor` if needed)
-
-3. **Write tests:**
-   - Format ID is always `"r1"`
-   - Assets get sequential IDs starting from `"r2"`
-   - Same UUID returns same ID on repeated calls
-   - UUIDs sorted deterministically
-
-### Deliverables
-
-- [ ] `Sources/SwiftSecuencia/Adapters/ResourceMap.swift`
-- [ ] `Tests/SwiftSecuenciaTests/ResourceMapTests.swift`
-
-### Exit Criteria
-
-- [ ] All ResourceMap tests pass
-- [ ] Format ID is `"r1"`
-- [ ] Asset IDs are `"r2"+` in sorted order
-- [ ] Registration is idempotent
-
----
-
-## Sortie 3: Timeline & Metadata Adapters
-
-**Model:** Sonnet
-**Estimated Context:** 60%
-
-### Objectives
-
-Implement adapter extensions with ResourceMap integration from the start. **Include metadata adapters** (they are NOT dead code - see corrected Discovery #4 from brief).
-
-### Tasks
-
-1. **Create `TimelineAdapters.swift`:**
-   - `Timeline.toPipelineNeoTimeline(resourceMap:) -> PipelineNeo.Timeline`
-   - `VideoFormat.toPipelineNeoTimelineFormat(resourceMap:) -> PipelineNeo.TimelineFormat`
-   - `TimelineClip.toPipelineNeoTimelineClip(resourceMap:, assetProvider:) -> PipelineNeo.TimelineClip`
-
-2. **Create metadata adapters:**
-   - `Marker.toPipelineNeoMarker() -> PipelineNeo.Marker`
-   - `ChapterMarker.toPipelineNeoChapterMarker() -> PipelineNeo.ChapterMarker`
-   - `Keyword.toPipelineNeoKeyword() -> PipelineNeo.Keyword`
-   - `Rating.toPipelineNeoRating() -> PipelineNeo.Rating`
-   - `Metadata.toPipelineNeoMetadata() -> PipelineNeo.Metadata`
-
-3. **Reference implementation from iteration 0:**
-   - See `mission/pipeline-exodus/00:Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift`
-   - Reuse the adapter pattern (it worked)
-   - ADD ResourceMap parameter to all methods that need it
-   - Keep metadata adapters (do NOT skip them)
-
-### Deliverables
-
-- [ ] `Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift`
-- [ ] All adapters accept `resourceMap:` where needed
-- [ ] Metadata adapters included (markers, keywords, ratings)
-
-### Exit Criteria
-
-- [ ] All adapter methods compile
-- [ ] ResourceMap parameter on asset-related adapters
-- [ ] No raw UUIDs passed to Pipeline Neo (all go through ResourceMap)
-- [ ] Metadata adapters present and compiling
-
----
-
-## Sortie 4: Asset Provider Wrapper
-
-**Model:** Opus
-**Estimated Context:** 70%
-
-### Objectives
-
-Wrap SwiftData asset access for pipeline-neo with ResourceMap integration.
-
-### Tasks
-
-1. **Create `PipelineNeoAssetProvider.swift`:**
-   - Implement `PipelineNeo.AssetProvider` protocol
-   - Fetch assets from SwiftData ModelContext
-   - Convert to `PipelineNeo.Asset` using ResourceMap
-   - Handle missing assets gracefully
-
-2. **Create `FileAssetProvider.swift` (for testing):**
-   - In-memory registry: `[UUID: FileAssetEntry]`
-   - No SwiftData dependency
-   - Fast, lightweight for unit tests
-
-3. **Reference implementation:**
-   - See `mission/pipeline-exodus/00:Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift`
-   - Keep the efficient batching pattern
-   - Ensure ResourceMap is used for asset ID conversion
-
-### Deliverables
-
-- [ ] `Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift`
-- [ ] `Tests/SwiftSecuenciaTests/Helpers/FileAssetProvider.swift`
-
-### Exit Criteria
-
-- [ ] AssetProvider wrapper compiles
-- [ ] FileAssetProvider available for tests
-- [ ] Asset IDs converted via ResourceMap (`"r2"`, `"r3"`, etc.)
-
----
-
-## Sortie 5: SwiftSecuenciaExporter (Core Bridge)
-
-**Model:** Opus
-**Estimated Context:** 80%
-
-### Objectives
-
-Implement the core FCPXML exporter with empty-timeline guard, library name fix via XMLDocument, and error mapping.
-
-### Tasks
-
-1. **Create `SwiftSecuenciaExporter.swift`:**
-   ```swift
-   @MainActor
-   public struct SwiftSecuenciaExporter {
-       public func exportFCPXML(
-           timeline: Timeline,
-           projectName: String,
-           eventName: String,
-           assetProvider: PipelineNeo.AssetProvider
-       ) async throws -> String
-   }
-   ```
-
-2. **Build ResourceMap:**
-   - `buildResourceMap(timeline:, assetProvider:)` helper
-   - Assign `"r1"` to format
-   - Assign `"r2"+` to assets in sorted UUID order
-
-3. **Empty timeline guard:**
-   - If timeline has no clips, return hand-crafted minimal FCPXML string
-   - Bypass Pipeline Neo (it throws on empty timelines)
-   - Reference: `mission/pipeline-exodus/00` implementation
-
-4. **Library name fix (XMLDocument, NOT regex):**
-   - After Pipeline Neo export, parse FCPXML as `XMLDocument`
-   - Find `<library>` element
-   - Remove `name` attribute using `XMLElement.removeAttribute(forName:)`
-   - Re-serialize to string
-
-5. **Error mapping:**
-   - Create `ExportErrorMapping.swift`
-   - Map Pipeline Neo errors → `FCPXMLExportError` cases
-   - Use `remappingExportErrors(_:)` boundary function
-   - Reference: `mission/pipeline-exodus/00:Sources/SwiftSecuencia/Export/ExportErrorMapping.swift`
-
-### Deliverables
-
-- [ ] `Sources/SwiftSecuencia/Export/SwiftSecuenciaExporter.swift`
-- [ ] `Sources/SwiftSecuencia/Export/ExportErrorMapping.swift`
-- [ ] Empty timeline guard implemented
-- [ ] Library name fix via XMLDocument
-
-### Exit Criteria
-
-- [ ] Exporter compiles
-- [ ] Empty timeline returns valid minimal FCPXML
-- [ ] Library name attribute removed via XMLDocument (not regex)
-- [ ] Error mapping prevents Pipeline Neo errors from leaking
-
----
-
-## Sortie 6: SwiftSecuenciaBundleExporter
-
-**Model:** Sonnet
-**Estimated Context:** 60%
-
-### Objectives
-
-Implement .fcpbundle export with media file coordination and library name post-processing.
-
-### Tasks
-
-1. **Create `SwiftSecuenciaBundleExporter.swift`:**
-   - Bundle structure: `{name}.fcpbundle/` with `Info.fcpxml` and `Media/`
-   - Use `SwiftSecuenciaExporter` for FCPXML generation
-   - Copy media files from SwiftData to `Media/` directory
-   - Post-process `Info.fcpxml` to remove library name attribute
-
-2. **Media file coordination:**
-   - Fetch asset binary data from ModelContext
-   - Write to bundle with r-prefixed filenames (`r2.m4a`, `r3.wav`, etc.)
-   - Update asset `src` paths in FCPXML to relative `Media/` paths
-
-3. **Library name post-processing:**
-   - Read `Info.fcpxml` after creation
-   - Parse as XMLDocument
-   - Remove `<library name="...">` attribute
-   - Rewrite file
-
-### Deliverables
-
-- [ ] `Sources/SwiftSecuencia/Export/SwiftSecuenciaBundleExporter.swift`
-
-### Exit Criteria
-
-- [ ] Bundle exporter compiles
-- [ ] Creates `.fcpbundle/` directory structure
-- [ ] Copies media files to `Media/`
-- [ ] FCPXML has relative media paths
-- [ ] Library name attribute removed from `Info.fcpxml`
-
----
-
-## Sortie 7: Test Migration & Metadata Integration
-
-**Model:** Sonnet (may need Opus if context overruns)
-**Estimated Context:** 90%
-
-### Objectives
-
-Migrate existing tests and ADD metadata integration test to verify Pipeline Neo exports metadata correctly.
-
-### Tasks
-
-1. **Update test imports:**
-   - Add `import PipelineNeo` to all test files
-   - Use type aliases for colliding types:
-     ```swift
-     typealias PNTimeline = PipelineNeo.Timeline
-     typealias PNMarker = PipelineNeo.Marker
-     // ... etc.
-     ```
-   - Create `Tests/SwiftSecuenciaTests/Helpers/PipelineNeoTypeAliases.swift` for shared aliases
-
-2. **Migrate test files:**
-   - `FCPXMLExportTests.swift` → use `SwiftSecuenciaExporter`
-   - `FCPXMLBundleExportTests.swift` → use `SwiftSecuenciaBundleExporter`
-   - `TimelineAdapterTests.swift` → test adapters with ResourceMap
-   - `AssetProviderAdapterTests.swift` → test FileAssetProvider
-
-3. **ADD metadata integration test (CRITICAL):**
-   - Create timeline with markers, keywords, ratings
-   - Pass through full adapter → exporter pipeline
-   - Assert metadata appears in FCPXML output
-   - This verifies Pipeline Neo DOES export metadata (corrects false conclusion from iteration 0)
-
-4. **DTD validation tests:**
-   - Validate resource IDs are r-prefixed (`r1`, `r2`, etc.)
-   - Validate no `<library name="...">` attribute
-   - Use `xmllint --dtdvalid` if available
-
-### Deliverables
-
-- [ ] `Tests/SwiftSecuenciaTests/Helpers/PipelineNeoTypeAliases.swift`
-- [ ] All test files updated with type aliases
-- [ ] Metadata integration test (NEW - verifies Pipeline Neo exports metadata)
-- [ ] DTD validation tests
-
-### Exit Criteria
-
-- [ ] All tests pass
-- [ ] Metadata integration test confirms markers/keywords/ratings appear in FCPXML
-- [ ] DTD validation passes (r-prefixed IDs, no library name attribute)
-- [ ] No namespace collision errors
-
----
-
-## Sortie 8: CI & CLI Updates
-
-**Model:** Haiku
-**Estimated Context:** 30%
-
-### Objectives
-
-Update build commands, validation commands, and CI pipeline.
-
-### Tasks
-
-1. **Update CLI commands:**
-   - `build` command uses `SwiftSecuenciaExporter`
-   - `validate` command uses `SwiftSecuenciaExporter` + DTD validation
-
-2. **Update GitHub Actions:**
-   - Ensure `macos-26` runner
-   - Run tests: `make test` (uses xcodebuild)
-   - Run validation: `make validate` (if exists)
-
-3. **iOS compatibility:**
-   - Verify iOS build succeeds with FCPXML excluded
-   - `#if os(macOS)` guards in place
-   - Pipeline Neo dependency platform-restricted
-
-### Deliverables
-
-- [ ] CLI commands updated
-- [ ] CI pipeline updated
-- [ ] iOS build verification
-
-### Exit Criteria
-
+This remediation is complete when:
+
+- [ ] `Docs/FCPXML-Reference.md` updated to v1.14 with corrected examples
+- [ ] Sequence elements generate `tcFormat`, `audioLayout`, `audioRate` attributes
+- [ ] CLI supports `--version 1.14` flag
+- [ ] Default version decision made and implemented (1.11 or 1.13)
+- [ ] Format name decision made and implemented (2160p or 3840x2160p)
+- [ ] All tests pass with new assertions for sequence attributes
+- [ ] Schema.json updated if needed
 - [ ] `make build` succeeds
-- [ ] `make test` passes all tests
-- [ ] CI pipeline green
-- [ ] iOS build succeeds (FCPXML excluded)
+- [ ] `make test` passes
+- [ ] `make lint` passes
+- [ ] Generated FCPXML validates against v1.13 DTD with `xmllint --dtdvalid`
 
 ---
 
-## Sortie Summary
+## Out of Scope (Deferred)
 
-| Sortie | Task | Model | Context | Deliverables |
-|--------|------|-------|---------|--------------|
-| 0 | API Exploration & Research | Sonnet | 20% | Research notes, sample output, collision list |
-| 1 | Package Setup | Sonnet | 30% | Package.swift, remove Pipeline module |
-| 2 | ResourceMap Architecture | Sonnet | 40% | ResourceMap.swift + tests |
-| 3 | Timeline & Metadata Adapters | Sonnet | 60% | TimelineAdapters.swift (with metadata) |
-| 4 | Asset Provider Wrapper | Opus | 70% | PipelineNeoAssetProvider + FileAssetProvider |
-| 5 | SwiftSecuenciaExporter | Opus | 80% | Core exporter + error mapping |
-| 6 | SwiftSecuenciaBundleExporter | Sonnet | 60% | Bundle exporter |
-| 7 | Test Migration & Metadata | Sonnet | 90% | All tests + metadata integration test |
-| 8 | CI & CLI Updates | Haiku | 30% | CLI + CI updates |
+These items identified in the audit are **NOT included**:
 
-**Total:** 9 sorties (vs 37 in iteration 0)
+1. Gap element auto-generation (feature addition, not correctness fix)
+2. Caption FCPXML output generation (new feature, only WebVTT export exists)
+3. Chapter marker FCPXML output (model exists, output not implemented)
+4. v1.14 DTD file extraction from FCP 12.0 app bundle
+5. `audioChannels`/`audioRate` on asset elements (optional, low impact)
+6. `format` ref on asset elements (optional, FCP infers from context)
+7. Spatial video attribute generation (`heroEye`, `stereoscopic`, `adjust-stereo-3D`) — documented only
 
 ---
 
-## Reference Files from Iteration 0
+## Verification Steps
 
-Preserved on `mission/pipeline-exodus/00` branch:
-
-| File | Purpose |
-|------|---------|
-| `Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift` | Adapter pattern reference (including metadata) |
-| `Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift` | Asset conversion pattern |
-| `Sources/SwiftSecuencia/Export/SwiftSecuenciaExporter.swift` | Core bridge pattern (with ResourceMap) |
-| `Sources/SwiftSecuencia/Export/ExportErrorMapping.swift` | Three-tier error taxonomy |
-| `Tests/SwiftSecuenciaTests/PipelineNeoIntegrationTests.swift` | Integration test structure |
-| `OPERATION_PIPELINE_EXODUS_01_BRIEF.md` | Lessons learned document |
-
-**Do NOT copy-paste directly.** Use as reference for patterns that worked. All code must be rewritten with ResourceMap from the start.
-
----
-
-## Success Metrics
-
-- **Sortie completion:** 100% (9/9)
-- **Context overruns:** ≤ 2 sorties (vs 7 in iteration 0)
-- **Test pass rate:** 100%
-- **DTD validation:** 100% pass
-- **Metadata export:** Verified in integration test
-- **Duration:** Target < 12 hours (vs 36.6 in iteration 0)
-
----
-
-## Risk Mitigation
-
-| Risk | Mitigation |
-|------|------------|
-| Type naming collisions | Use `PipelineNeo.` qualified names in production, type aliases in tests |
-| Context overruns | Use Opus for known expensive sorties (4, 5) |
-| Metadata export failures | Sortie 7 includes dedicated integration test |
-| DTD validation failures | Sortie 0 validates format BEFORE writing adapters |
-| ResourceMap retrofit | Sortie 2 builds ResourceMap BEFORE adapters |
+1. `make build` — Everything compiles
+2. `make test` — All tests pass with new assertions
+3. `make lint` — No violations
+4. Manual: Generate sample FCPXML and validate with `xmllint --dtdvalid` against v1.13 DTD
+5. Spot-check: Import generated FCPXML into Final Cut Pro to confirm it opens correctly

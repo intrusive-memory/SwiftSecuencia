@@ -216,7 +216,9 @@ struct SchemaCommandTests {
     let colorSpaceEnum = colorSpace?["enum"] as? [String]
     #expect(colorSpaceEnum?.contains("rec709") == true)
     #expect(colorSpaceEnum?.contains("rec2020") == true)
-    #expect(colorSpaceEnum?.contains("dciP3") == true)
+    #expect(colorSpaceEnum?.contains("rec2020hlg") == true)
+    #expect(colorSpaceEnum?.contains("rec2020pq") == true)
+    #expect(colorSpaceEnum?.contains("srgb") == true)
 
     // Check AudioConfig has layout enum
     let audioConfig = defs?["AudioConfig"] as? [String: Any]

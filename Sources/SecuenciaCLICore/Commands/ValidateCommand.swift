@@ -146,6 +146,13 @@ public struct Validate: AsyncParsableCommand {
       }
     }
 
+    // Marker clips warning
+    if let markerClips = clipsByType[.marker], !markerClips.isEmpty {
+      warnings.append(
+        "\(markerClips.count) marker clip(s) present — markers pass validation but are not emitted by 'secuencia build'"
+      )
+    }
+
     // Print warnings
     if !warnings.isEmpty {
       print("\n⚠️  Warnings:")
