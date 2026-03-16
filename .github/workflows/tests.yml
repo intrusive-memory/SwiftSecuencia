@@ -216,7 +216,7 @@ jobs:
 
       - name: Install CLI binary
         run: |
-          echo "📦 Installing secuencia to /usr/local/bin..."
+          echo "📦 Installing secuencia to bin/..."
           make install
 
       - name: Verify CLI installation and help output
@@ -224,24 +224,24 @@ jobs:
           echo "🧪 Testing CLI binary with --help..."
 
           # Verify binary exists
-          if [ ! -f /usr/local/bin/secuencia ]; then
-            echo "❌ secuencia binary not found at /usr/local/bin/secuencia"
+          if [ ! -f bin/secuencia ]; then
+            echo "❌ secuencia binary not found at bin/secuencia"
             exit 1
           fi
 
           # Verify binary is executable
-          if [ ! -x /usr/local/bin/secuencia ]; then
+          if [ ! -x bin/secuencia ]; then
             echo "❌ secuencia binary is not executable"
             exit 1
           fi
 
           # Execute --help and capture output
-          HELP_OUTPUT=$(secuencia --help 2>&1)
+          HELP_OUTPUT=$(./bin/secuencia --help 2>&1)
           EXIT_CODE=$?
 
           # Verify exit code is 0
           if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ secuencia --help exited with code $EXIT_CODE"
+            echo "❌ ./bin/secuencia --help exited with code $EXIT_CODE"
             exit 1
           fi
 
@@ -251,7 +251,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### CLI Integration Test Results" >> $GITHUB_STEP_SUMMARY
             echo "- Binary compiled successfully" >> $GITHUB_STEP_SUMMARY
-            echo "- Binary installed to /usr/local/bin/secuencia" >> $GITHUB_STEP_SUMMARY
+            echo "- Binary installed to bin/secuencia" >> $GITHUB_STEP_SUMMARY
             echo "- Help screen displays correctly" >> $GITHUB_STEP_SUMMARY
             echo "- Exit code: 0" >> $GITHUB_STEP_SUMMARY
           else
