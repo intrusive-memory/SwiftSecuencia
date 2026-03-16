@@ -25,7 +25,8 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "Name of the timeline that will appear in Final Cut Pro"
+          "description": "Name of the timeline. REQUIRED — a missing or empty name causes a JSON decode failure. This value appears in Final Cut Pro as both the event name and the project name.",
+          "minLength": 1
         },
         "format": {
           "$ref": "#/$defs/FormatConfig"
@@ -58,8 +59,8 @@
         },
         "colorSpace": {
           "type": "string",
-          "description": "Color space for the video",
-          "enum": ["rec709", "rec2020", "dciP3"]
+          "description": "Color space for the video. Defaults to rec709 if omitted. HDR options: rec2020hlg (Hybrid Log-Gamma), rec2020pq (Dolby Vision / HDR10). Maps to FCPXML colorSpace values: rec709→\"1-1-1 (Rec. 709)\", rec2020→\"9-18-9 (Rec. 2020)\", etc.",
+          "enum": ["rec709", "rec2020", "rec2020hlg", "rec2020pq", "srgb"]
         }
       }
     },
@@ -75,8 +76,8 @@
         },
         "rate": {
           "type": "string",
-          "description": "Audio sample rate",
-          "enum": ["44.1kHz", "48kHz", "96kHz"]
+          "description": "Audio sample rate. Accepted forms: kHz-suffixed string (\"44.1kHz\", \"48kHz\", \"96kHz\") or raw Hz integer string (\"44100\", \"48000\", \"96000\"). Both forms parse to the same AudioRate value. The FCPXML output always uses the raw Hz integer (e.g. audioRate=\"48000\").",
+          "enum": ["44.1kHz", "48kHz", "96kHz", "44100", "48000", "96000"]
         }
       }
     },

@@ -8,7 +8,7 @@ import SwiftSecuencia
 
 #if os(macOS)
   extension FCPXMLVersion {
-    /// Creates a version from a string (e.g., "1.11", "1.13").
+    /// Creates a version from a string (e.g., "1.11", "1.13", "1.14").
     static func from(string: String) -> FCPXMLVersion {
       switch string {
       case "1.8": return .v1_8
@@ -17,6 +17,7 @@ import SwiftSecuencia
       case "1.11": return .v1_11
       case "1.12": return .v1_12
       case "1.13": return .v1_13
+      case "1.14": return .v1_14
       default: return .default
       }
     }
@@ -41,8 +42,8 @@ public struct Build: AsyncParsableCommand {
     name: .long, help: "Produce a .fcpxmld bundle with embedded media instead of standalone FCPXML")
   public var bundle: Bool = false
 
-  @Option(name: .long, help: "FCPXML version to generate (default: 1.11)")
-  public var formatVersion: String = "1.11"
+  @Option(name: .long, help: "FCPXML version to generate (default: 1.14, supports 1.8-1.14)")
+  public var formatVersion: String = "1.14"
 
   @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
   public var strict: Bool = false
@@ -176,7 +177,15 @@ public struct Build: AsyncParsableCommand {
   /// Validates FCPXML against the DTD for the specified version.
   /// Returns true if validation passes or is skipped, false if it fails.
   private func validateFCPXML(xmlString: String, version: FCPXMLVersion) throws -> Bool {
-    // Check if DTD is available for this version
+    // In strict mode, validate without checking DTD availability first
+    // This will throw an error if DTD is missing, which is the desired behavior
+    if strict {
+      let validator = FCPXMLDTDValidator()
+      let result = try validator.validate(xmlContent: xmlString, version: version)
+      return result.isValid
+    }
+
+    // In non-strict mode, check if DTD is available and skip gracefully if not
     guard dtdAvailableFor(version: version) else {
       fputs(
         "⚠️  DTD validation skipped: no DTD available for FCPXML version \(version.stringValue)\n",

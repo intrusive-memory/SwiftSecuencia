@@ -396,3 +396,188 @@ import Testing
   // Verify timeline name is used as project name
   #expect(xml.contains("<project name=\"My Timeline\">"))
 }
+
+// MARK: - Sequence Attribute Tests
+
+@MainActor
+@Test func exportSequenceWithNonDropFrameTcFormat() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with non-drop-frame rate (24fps)
+  let timeline = Timeline(name: "Non-Drop Frame Timeline")
+  timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps24)
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify tcFormat is "NDF" for non-drop-frame
+  #expect(xml.contains("tcFormat=\"NDF\""))
+}
+
+@MainActor
+@Test func exportSequenceWithDropFrameTcFormat() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with drop-frame rate (29.97fps)
+  let timeline = Timeline(name: "Drop Frame Timeline")
+  timeline.videoFormat = VideoFormat.hd1080p(frameRate: .fps29_97)
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify tcFormat is "DF" for drop-frame
+  #expect(xml.contains("tcFormat=\"DF\""))
+}
+
+@MainActor
+@Test func exportSequenceWithDefaultAudioLayout() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with default audio layout (stereo)
+  let timeline = Timeline(name: "Default Audio Timeline")
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioLayout defaults to "stereo"
+  #expect(xml.contains("audioLayout=\"stereo\""))
+}
+
+@MainActor
+@Test func exportSequenceWithMonoAudioLayout() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with mono audio layout
+  let timeline = Timeline(
+    name: "Mono Audio Timeline",
+    audioLayout: .mono
+  )
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioLayout is "mono"
+  #expect(xml.contains("audioLayout=\"mono\""))
+}
+
+@MainActor
+@Test func exportSequenceWithSurroundAudioLayout() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with surround audio layout
+  let timeline = Timeline(
+    name: "Surround Audio Timeline",
+    audioLayout: .surround
+  )
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioLayout is "surround"
+  #expect(xml.contains("audioLayout=\"surround\""))
+}
+
+@MainActor
+@Test func exportSequenceWithDefaultAudioRate() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with default audio rate (48kHz)
+  let timeline = Timeline(name: "Default Audio Rate Timeline")
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioRate defaults to "48k"
+  #expect(xml.contains("audioRate=\"48k\""))
+}
+
+@MainActor
+@Test func exportSequenceWith96kHzAudioRate() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with 96kHz audio rate
+  let timeline = Timeline(
+    name: "96kHz Audio Timeline",
+    audioRate: .rate96kHz
+  )
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioRate is "96k"
+  #expect(xml.contains("audioRate=\"96k\""))
+}
+
+@MainActor
+@Test func exportSequenceWith44_1kHzAudioRate() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with 44.1kHz audio rate
+  let timeline = Timeline(
+    name: "44.1kHz Audio Timeline",
+    audioRate: .rate44_1kHz
+  )
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify audioRate is "44.1k"
+  #expect(xml.contains("audioRate=\"44.1k\""))
+}
+
+@MainActor
+@Test func exportSequenceWithAllAttributesCombined() async throws {
+  let config = ModelConfiguration(isStoredInMemoryOnly: true)
+  let container = try ModelContainer(
+    for: Timeline.self, TimelineClip.self, TypedDataStorage.self, configurations: config)
+  let context = ModelContext(container)
+
+  // Create timeline with specific frame rate, audio layout, and audio rate
+  let timeline = Timeline(
+    name: "Combined Attributes Timeline",
+    audioLayout: .surround,
+    audioRate: .rate96kHz
+  )
+  timeline.videoFormat = VideoFormat.uhd4K(frameRate: .fps23_98)
+  context.insert(timeline)
+
+  var exporter = FCPXMLExporter(version: .v1_11)
+  let xml = try exporter.export(timeline: timeline, modelContext: context)
+
+  // Verify all three attributes are present
+  #expect(xml.contains("tcFormat=\"NDF\""))  // 23.98 is non-drop-frame
+  #expect(xml.contains("audioLayout=\"surround\""))
+  #expect(xml.contains("audioRate=\"96k\""))
+}

@@ -1,7 +1,7 @@
 # AI Agent Development Guidelines
 
-**Last Updated**: 2026-03-15
-**Version**: 3.1.0
+**Last Updated**: 2026-03-16
+**Version**: 3.2.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -211,6 +211,28 @@ let outputURL = try await Task.detached(priority: .high) {
 | swift-timecode | 3.0.0 | Timecode arithmetic |
 | WebVTT | 1.0.0+ | Timing data export |
 | ZIPFoundation | 0.9.20 | Bundle compression |
+
+### Why pipeline-neo?
+
+**Purpose**: pipeline-neo provides battle-tested FCPXML element construction and DTD validation.
+
+**What it provides**:
+- Low-level FCPXML element generation (format, asset, sequence, clip elements)
+- DTD file management and validation (v1.8-v1.14)
+- XML namespace handling and attribute marshaling
+- Proven reliability from production use
+
+**Why development branch**: Tracking `development` instead of a version tag because:
+- Xcode 26.2 compatibility fixes for transitive dependencies
+- Active maintenance for latest Swift and macOS versions
+- Once stable, will switch to version tags
+
+**License**: MIT License (Reuel Kim)
+
+**Alternative considered**: Writing FCPXML generation from scratch was rejected due to:
+- High complexity of FCPXML spec (14 versions, 100+ element types)
+- DTD validation requires deep XML knowledge
+- Existing battle-tested implementation reduces risk
 
 ---
 

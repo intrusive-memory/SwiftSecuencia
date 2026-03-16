@@ -90,7 +90,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.1.0")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.2.0")
 ]
 ```
 
@@ -242,6 +242,44 @@ Total duration: 45.00s
 Lanes: -1...1
 ```
 
+#### FCPXML Version Support
+
+SwiftSecuencia supports FCPXML versions 1.8 through 1.14, with **1.14 as the default** (compatible with Final Cut Pro 12.0+).
+
+**Supported Versions:**
+- 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14 (default)
+
+**Default Write Version:**
+- Version 1.14 for Final Cut Pro 12.0 and later
+
+**Specifying a Different Version:**
+
+Use the `--format-version` flag to export in a specific FCPXML format:
+
+```bash
+# Export as FCPXML 1.13 (Final Cut Pro 11.x)
+secuencia build --format-version 1.13 timeline.json
+
+# Export as FCPXML 1.10 (Final Cut Pro 10.x)
+secuencia build --format-version 1.10 timeline.json
+
+# Export as default FCPXML 1.14 (Final Cut Pro 12.0+)
+secuencia build timeline.json
+```
+
+**Version Compatibility Chart:**
+| FCPXML Version | Final Cut Pro | Supported | DTD Validation |
+|---|---|---|---|
+| 1.14 | 12.0+ | ✅ Default | ✅ |
+| 1.13 | 11.x | ✅ | ✅ |
+| 1.12 | 10.7+ | ✅ | ✅ |
+| 1.11 | 10.5+ | ✅ | ✅ |
+| 1.10 | 10.4.1+ | ✅ | ✅ |
+| 1.9 | 10.3+ | ✅ | ✅ |
+| 1.8 | 10.2+ | ✅ | ✅ |
+
+**DTD Validation:** All versions include DTD (Document Type Definition) validation to ensure generated FCPXML conforms to Apple's official specification. Use `--strict` mode to fail builds on validation errors.
+
 #### `secuencia validate` - Validate JSON
 
 Validate a JSON timeline definition without generating FCPXML:
@@ -314,7 +352,7 @@ SwiftSecuencia accepts JSON files describing timelines. This schema defines the 
     },
     "audio": {
       "layout": "stereo",
-      "rate": "48kHz"
+      "rate": "48000"
     }
   },
   "clips": [
@@ -355,13 +393,13 @@ SwiftSecuencia accepts JSON files describing timelines. This schema defines the 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `timeline.name` | string | ✅ | Name of the timeline (appears in Final Cut Pro) |
+| `timeline.name` | string | ✅ | **Required, non-empty.** Name of the timeline — appears in FCP as both the event name and project name. Missing or empty causes a JSON decode failure. |
 | `timeline.format.width` | integer | ✅ | Video width in pixels (e.g., 1920, 3840) |
 | `timeline.format.height` | integer | ✅ | Video height in pixels (e.g., 1080, 2160) |
 | `timeline.format.frameRate` | string | ✅ | Frame rate: `"23.98"`, `"24"`, `"25"`, `"29.97"`, `"30"`, `"50"`, `"59.94"`, `"60"` |
 | `timeline.format.colorSpace` | string | ❌ | Color space: `"rec709"`, `"rec2020"`, `"dciP3"` |
 | `timeline.audio.layout` | string | ✅ | Audio layout: `"mono"`, `"stereo"`, `"surround"` |
-| `timeline.audio.rate` | string | ✅ | Sample rate: `"44.1kHz"`, `"48kHz"`, `"96kHz"` |
+| `timeline.audio.rate` | string | ✅ | Sample rate. kHz form: `"44.1kHz"`, `"48kHz"`, `"96kHz"`. Raw Hz form: `"44100"`, `"48000"`, `"96000"`. Both accepted. |
 | `clips[].name` | string | ✅ | Name of the clip or marker |
 | `clips[].file` | string | ⚠️ | Path to media file (required for video/audio/image, not for markers) |
 | `clips[].offset` | string | ✅ | Start time on timeline (see Time String Formats below) |
@@ -401,6 +439,22 @@ The `type` field combined with file extension determines MIME type:
 - **Absolute paths**: Used as-is (must start with `/`)
 - **Validation**: All paths verified to exist before export
 - **Deduplication**: Multiple clips referencing the same file share a single asset in FCPXML
+
+#### FCPXML Internals — Naming Managed Automatically
+
+The following FCPXML naming conventions are handled by the exporter and do not require input in the JSON:
+
+| FCPXML Attribute | Convention | Example |
+|-----------------|------------|---------|
+| Resource `id` | `r`-prefix + integer, starting at `r1` for the format resource | `r1`, `r2`, `r3` |
+| `<format name>` | Apple `FFVideoFormat{W}x{H}[p\|i]{FPS4}` scheme | `FFVideoFormat3840x2160p2398` |
+| Asset `uid` | SHA-256-derived UUID from file path (stable across builds) | `32523D19-...` |
+
+The FPS suffix in format names is 4 digits with no decimal: 23.98→`2398`, 24→`2400`, 29.97→`2997`, 30→`3000`.
+
+#### Chapter Marker Caveat
+
+The `"marker"` clip type with `"markerType": "chapter"` passes `secuencia validate` but is **not yet emitted** by `secuencia build`. Chapter markers are stored in the Timeline model but the current FCPXML exporter does not write `<chapter-marker>` elements to the spine output. Use standard FCP chapter marker tools or post-process the FCPXML if chapter navigation is required.
 
 #### Programmatic Access
 
