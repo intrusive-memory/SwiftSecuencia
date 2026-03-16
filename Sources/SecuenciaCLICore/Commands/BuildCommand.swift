@@ -42,8 +42,8 @@ public struct Build: AsyncParsableCommand {
     name: .long, help: "Produce a .fcpxmld bundle with embedded media instead of standalone FCPXML")
   public var bundle: Bool = false
 
-  @Option(name: .long, help: "FCPXML version to generate (default: 1.13, supports 1.8-1.14)")
-  public var formatVersion: String = "1.13"
+  @Option(name: .long, help: "FCPXML version to generate (default: 1.14, supports 1.8-1.14)")
+  public var formatVersion: String = "1.14"
 
   @Flag(name: .long, help: "Fail if DTD validation finds errors (default: warn only)")
   public var strict: Bool = false

@@ -64,8 +64,8 @@ public struct SwiftSecuencia {
   public static let version = "3.1.0"
 
   /// The default FCPXML version produced by this library.
-  /// v1.13 provides spatial video support and works with FCP 11+.
-  public static let defaultFCPXMLVersion = "1.13"
+  /// v1.14 provides spatial video support and works with FCP 12.0+.
+  public static let defaultFCPXMLVersion = "1.14"
 
   /// Supported FCPXML versions for export.
   public static let supportedVersions = ["1.8", "1.9", "1.10", "1.11", "1.12", "1.13", "1.14"]

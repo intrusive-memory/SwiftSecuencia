@@ -3,7 +3,7 @@ import Testing
 @testable import SwiftSecuencia
 
 @Test func defaultFCPXMLVersion() async throws {
-  #expect(SwiftSecuencia.defaultFCPXMLVersion == "1.13")
+  #expect(SwiftSecuencia.defaultFCPXMLVersion == "1.14")
 }
 
 @Test func supportedVersionsIncludesLatest() async throws {

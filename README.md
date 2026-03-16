@@ -90,7 +90,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.1.0")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.2.0")
 ]
 ```
 
@@ -241,6 +241,42 @@ Unique assets: 3
 Total duration: 45.00s
 Lanes: -1...1
 ```
+
+#### FCPXML Version Support
+
+SwiftSecuencia supports FCPXML versions 1.8 through 1.14, with **1.14 as the default** (compatible with Final Cut Pro 12.0+).
+
+**Supported Versions:**
+- 1.8, 1.9, 1.10, 1.11, 1.12, 1.13, 1.14 (default)
+
+**Default Write Version:**
+- Version 1.14 for Final Cut Pro 12.0 and later
+
+**Specifying a Different Version:**
+
+Use the `--format-version` flag to export in a specific FCPXML format:
+
+```bash
+# Export as FCPXML 1.13 (Final Cut Pro 11.x)
+secuencia build --format-version 1.13 timeline.json
+
+# Export as FCPXML 1.10 (Final Cut Pro 10.x)
+secuencia build --format-version 1.10 timeline.json
+
+# Export as default FCPXML 1.14 (Final Cut Pro 12.0+)
+secuencia build timeline.json
+```
+
+**Version Compatibility Chart:**
+| FCPXML Version | Final Cut Pro | Supported |
+|---|---|---|
+| 1.14 | 12.0+ | ✅ Default |
+| 1.13 | 11.x | ✅ |
+| 1.12 | 10.7+ | ✅ |
+| 1.11 | 10.5+ | ✅ |
+| 1.10 | 10.4.1+ | ✅ |
+| 1.9 | 10.3+ | ✅ |
+| 1.8 | 10.2+ | ✅ |
 
 #### `secuencia validate` - Validate JSON
 
