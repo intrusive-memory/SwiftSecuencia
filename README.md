@@ -90,7 +90,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.2.0")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.2.1")
 ]
 ```
 
