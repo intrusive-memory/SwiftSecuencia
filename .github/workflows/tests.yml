@@ -155,30 +155,6 @@ jobs:
           echo "🔨 Building for macOS"
           make build
 
-      - name: Run FCPXML DTD validation tests
-        run: |
-          echo "🔍 Running FCPXML DTD validation tests..."
-          set +e
-          xcodebuild test \
-            -scheme SwiftSecuencia-Package \
-            -destination 'platform=macOS,arch=arm64' \
-            -only-testing:SwiftSecuenciaTests/FCPXMLDTDValidationTests 2>&1 | tee dtd_validation_output.txt
-          set -e
-
-          if grep -q "TEST SUCCEEDED" dtd_validation_output.txt; then
-            echo "✅ All FCPXML DTD validation tests passed" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### DTD Validation Results" >> $GITHUB_STEP_SUMMARY
-            echo "- Validates generated FCPXML against official DTD files (v1.9-v1.13)" >> $GITHUB_STEP_SUMMARY
-            echo "- Ensures compliance with Apple's FCPXML specification" >> $GITHUB_STEP_SUMMARY
-            echo "- Tests empty timelines, single/multi-clip, multi-lane, and various video formats" >> $GITHUB_STEP_SUMMARY
-            exit 0
-          else
-            echo "❌ FCPXML DTD validation failed" >> $GITHUB_STEP_SUMMARY
-            cat dtd_validation_output.txt
-            exit 1
-          fi
-
       - name: Run all unit tests on macOS
         run: |
           echo "🧪 Running all unit tests on macOS"
