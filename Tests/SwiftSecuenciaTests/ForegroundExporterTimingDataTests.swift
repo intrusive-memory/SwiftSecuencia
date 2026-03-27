@@ -17,37 +17,6 @@ import Testing
 @MainActor
 struct ForegroundExporterTimingDataTests {
 
-  // MARK: - Test Helpers
-
-  /// Creates real audio data using macOS `say` command
-  private func createTestAudioData(
-    duration: Double = 1.0
-  ) throws -> Data {
-    let tempURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString + ".m4a")
-
-    // Use `say` command to generate real audio
-    // Generate enough words to fill the duration (approx 2 words per second)
-    let wordCount = max(Int(duration * 2), 1)
-    let text = Array(repeating: "test", count: wordCount).joined(separator: " ")
-
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
-    process.arguments = ["-o", tempURL.path, "--data-format=alac", text]
-
-    try process.run()
-    process.waitUntilExit()
-
-    guard process.terminationStatus == 0 else {
-      throw NSError(domain: "TestAudioGeneration", code: Int(process.terminationStatus))
-    }
-
-    let data = try Data(contentsOf: tempURL)
-    try? FileManager.default.removeItem(at: tempURL)
-
-    return data
-  }
-
   // MARK: - Tests
 
   @Test("Direct export generates WebVTT file")
@@ -60,8 +29,8 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test audio elements with real audio data
-    let audioData1 = try createTestAudioData(duration: 2.0)
-    let audioData2 = try createTestAudioData(duration: 3.0)
+    let audioData1 = try TestUtilities.generateAudioData(duration: 2.0)
+    let audioData2 = try TestUtilities.generateAudioData(duration: 3.0)
 
     let elements = [
       TypedDataStorage(
@@ -126,7 +95,7 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test audio element with real audio data
-    let audioData = try createTestAudioData(duration: 2.0)
+    let audioData = try TestUtilities.generateAudioData(duration: 2.0)
 
     let element = TypedDataStorage(
       providerId: "test",
@@ -180,7 +149,7 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test audio element with real audio data
-    let audioData = try createTestAudioData(duration: 2.0)
+    let audioData = try TestUtilities.generateAudioData(duration: 2.0)
 
     let element = TypedDataStorage(
       providerId: "test",
@@ -230,7 +199,7 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test audio element with real audio data
-    let audioData = try createTestAudioData(duration: 2.0)
+    let audioData = try TestUtilities.generateAudioData(duration: 2.0)
 
     let element = TypedDataStorage(
       providerId: "test",
@@ -279,7 +248,7 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test asset with real audio data
-    let audioData = try createTestAudioData(duration: 2.0)
+    let audioData = try TestUtilities.generateAudioData(duration: 2.0)
 
     let asset = TypedDataStorage(
       providerId: "test",
@@ -349,7 +318,7 @@ struct ForegroundExporterTimingDataTests {
     let modelContext = ModelContext(container)
 
     // Create test asset with real audio data
-    let audioData = try createTestAudioData(duration: 2.0)
+    let audioData = try TestUtilities.generateAudioData(duration: 2.0)
 
     let asset = TypedDataStorage(
       providerId: "test",

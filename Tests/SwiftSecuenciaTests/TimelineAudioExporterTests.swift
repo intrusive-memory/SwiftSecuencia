@@ -30,37 +30,6 @@ struct TimelineAudioExporterTests {
     )
   }
 
-  /// Creates real audio data using macOS `say` command
-  private func createTestAudioData(
-    duration: Double = 1.0,
-    sampleRate: Double = 44100.0,
-    frequency: Double = 440.0
-  ) throws -> Data {
-    let tempURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString + ".m4a")
-
-    // Use `say` command to generate real audio
-    // Generate enough words to fill the duration (approx 2 words per second)
-    let wordCount = max(Int(duration * 2), 1)
-    let text = Array(repeating: "test", count: wordCount).joined(separator: " ")
-
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
-    process.arguments = ["-o", tempURL.path, "--data-format=alac", text]
-
-    try process.run()
-    process.waitUntilExit()
-
-    guard process.terminationStatus == 0 else {
-      throw NSError(domain: "TestAudioGeneration", code: Int(process.terminationStatus))
-    }
-
-    let data = try Data(contentsOf: tempURL)
-    try? FileManager.default.removeItem(at: tempURL)
-
-    return data
-  }
-
   /// Creates a test TypedDataStorage with audio data
   @MainActor
   private func createTestAudioAsset(
@@ -68,7 +37,7 @@ struct TimelineAudioExporterTests {
     duration: Double = 1.0,
     prompt: String = "Test Audio"
   ) throws -> TypedDataStorage {
-    let audioData = try createTestAudioData(duration: duration)
+    let audioData = try TestUtilities.generateAudioData(duration: duration)
 
     let asset = TypedDataStorage(
       providerId: "test-provider",
