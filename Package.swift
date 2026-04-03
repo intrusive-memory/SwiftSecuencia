@@ -24,13 +24,13 @@ let package = Package(
     ),
   ],
   dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", from: "7.0.2"),
-    .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", from: "1.4.1"),
+    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", from: "7.0.0"),
+    .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", from: "1.0.0"),
     .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
     .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
-    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.5.2"),
+    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.0.0"),
   ],
   targets: [
     .target(
