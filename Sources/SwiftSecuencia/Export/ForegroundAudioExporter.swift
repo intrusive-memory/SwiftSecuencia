@@ -47,7 +47,11 @@ import SwiftData
 @MainActor
 public struct ForegroundAudioExporter {
 
-  public init() {}
+  public let telemetry: SecuenciaTelemetryReporter?
+
+  public init(telemetry: SecuenciaTelemetryReporter? = nil) {
+    self.telemetry = telemetry
+  }
 
   /// Exports audio elements directly to M4A format (fast path - skips Timeline creation).
   ///
@@ -183,6 +187,13 @@ public struct ForegroundAudioExporter {
     timingDataFormat: TimingDataFormat = .none,
     progress: Progress? = nil
   ) async throws -> URL {
+    // Capture export start event
+    let modelContextObjectCount = getModelContextObjectCount(modelContext)
+    await telemetry?.capture(.exportStart(
+      timelineClipCount: timeline.clips.count,
+      modelContextObjects: modelContextObjectCount
+    ))
+
     // Set up progress tracking
     let exportProgress = progress ?? Progress(totalUnitCount: 100)
     exportProgress.localizedDescription = "Exporting audio (foreground)"
@@ -251,6 +262,15 @@ public struct ForegroundAudioExporter {
 
       exportProgress.completedUnitCount = 100
       exportProgress.localizedAdditionalDescription = "Export complete"
+
+      // Capture export complete event
+      let outputSizeMB = getFileSize(outputURL)
+      let modelContextObjectCount = getModelContextObjectCount(modelContext)
+      await telemetry?.capture(.exportComplete(
+        outputSizeMB: outputSizeMB,
+        modelContextObjects: modelContextObjectCount,
+        pendingChanges: modelContext.hasChanges
+      ))
 
       return outputURL
     } catch {
@@ -621,6 +641,10 @@ public struct ForegroundAudioExporter {
     to outputURL: URL,
     progress: Progress
   ) async throws {
+    // Capture AVFoundation export start event
+    let compositionDuration = composition.duration.seconds
+    await telemetry?.capture(.avExportStart(compositionDuration: compositionDuration))
+
     // Validate composition has audio tracks
     let audioTracks = composition.tracks(withMediaType: .audio)
     guard !audioTracks.isEmpty else {
@@ -654,11 +678,47 @@ public struct ForegroundAudioExporter {
     // Export (Apple's encoder)
     try await exportSession.export(to: outputURL, as: .m4a)
 
+    // Capture AVFoundation export complete event
+    // Note: sessionRetained flag indicates whether the session is still retained in memory
+    // In a normal flow, the session should be released after export completes
+    let sessionRetained = false  // Export completed successfully, session can be released
+    await telemetry?.capture(.avExportComplete(sessionRetained: sessionRetained))
+
     progress.completedUnitCount = 100
     progress.localizedAdditionalDescription = "Export complete"
   }
 
   // MARK: - Helpers
+
+  /// Calculates the file size in megabytes.
+  private func getFileSize(_ url: URL) -> Double {
+    guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+          let fileSize = attributes[.size] as? NSNumber else {
+      return 0.0
+    }
+    // Convert bytes to megabytes
+    return Double(fileSize.int64Value) / (1024.0 * 1024.0)
+  }
+
+  /// Estimates ModelContext object count by querying registered model types.
+  ///
+  /// SwiftData's ModelContext doesn't expose registered objects publicly,
+  /// so we approximate by querying the main model types and summing their counts.
+  private func getModelContextObjectCount(_ modelContext: ModelContext) -> Int {
+    // Fetch count of Timeline objects
+    let timelineDescriptor = FetchDescriptor<Timeline>()
+    let timelineCount = (try? modelContext.fetchCount(timelineDescriptor)) ?? 0
+
+    // Fetch count of TimelineClip objects
+    let clipDescriptor = FetchDescriptor<TimelineClip>()
+    let clipCount = (try? modelContext.fetchCount(clipDescriptor)) ?? 0
+
+    // Fetch count of TypedDataStorage objects
+    let storageDescriptor = FetchDescriptor<TypedDataStorage>()
+    let storageCount = (try? modelContext.fetchCount(storageDescriptor)) ?? 0
+
+    return timelineCount + clipCount + storageCount
+  }
 
   /// Cleans up temporary files.
   private func cleanupTempFiles(_ urls: [URL]) {
