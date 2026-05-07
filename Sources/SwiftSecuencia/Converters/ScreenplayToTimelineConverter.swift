@@ -47,8 +47,28 @@ public struct ScreenplayToTimelineConverter {
   /// Default duration for clips without duration metadata (3 seconds)
   private static let defaultClipDuration: Double = 3.0
 
+  /// Optional telemetry reporter for diagnostic events
+  private let telemetry: SecuenciaTelemetryReporter?
+
   /// Creates a new screenplay to timeline converter.
-  public init() {}
+  ///
+  /// - Parameter telemetry: Optional telemetry reporter for capturing conversion events
+  public init(telemetry: SecuenciaTelemetryReporter? = nil) {
+    self.telemetry = telemetry
+  }
+
+  /// Calculates the total audio data size in megabytes from audio elements.
+  ///
+  /// Sums the binary value byte counts of all audio elements and converts to MB.
+  ///
+  /// - Parameter elements: Array of TypedDataStorage elements
+  /// - Returns: Total size in megabytes
+  private func calculateAudioDataMB(_ elements: [TypedDataStorage]) -> Double {
+    let totalBytes = elements.reduce(0) { total, element in
+      total + (element.binaryValue?.count ?? 0)
+    }
+    return Double(totalBytes) / (1024 * 1024)
+  }
 
   /// Converts screenplay elements to a Timeline with sequenced audio clips (direct element access).
   ///
@@ -82,6 +102,13 @@ public struct ScreenplayToTimelineConverter {
     lane: Int = 0,
     progress: Progress? = nil
   ) async throws -> Timeline {
+    // Capture timeline conversion start event
+    let totalAudioMB = calculateAudioDataMB(audioElements)
+    await telemetry?.capture(.timelineConversionStart(
+      elementCount: audioElements.count,
+      totalAudioMB: totalAudioMB
+    ))
+
     // Set up progress tracking
     let conversionProgress = progress ?? Progress(totalUnitCount: 100)
     conversionProgress.localizedDescription = "Converting audio to timeline"
@@ -150,6 +177,12 @@ public struct ScreenplayToTimelineConverter {
     // Phase 3: Finalize (10%)
     conversionProgress.localizedAdditionalDescription = "Finalizing timeline"
     conversionProgress.completedUnitCount = 100
+
+    // Capture timeline conversion complete event
+    await telemetry?.capture(.timelineConversionComplete(
+      clipCount: timeline.clips.count,
+      durationSeconds: timeline.duration.seconds
+    ))
 
     return timeline
   }
