@@ -3,7 +3,7 @@
 **⚠️ Read [AGENTS.md](AGENTS.md) first** for universal project documentation.
 
 **Last Updated**: 2026-05-06
-**Version**: 3.2.4
+**Version**: 3.2.4-dev
 
 ---
 
