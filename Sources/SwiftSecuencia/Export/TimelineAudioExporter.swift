@@ -38,6 +38,11 @@ public enum AudioExportError: Error, LocalizedError, Equatable {
   case invalidAudioData(assetId: UUID, reason: String)
   case exportFailed(reason: String)
   case cancelled
+  /// The directory the exporter was asked to stage its per-clip temp WAVs in
+  /// does not exist and could not be created, or exists but is not writable.
+  /// Surfaced eagerly so a bad `--cache-dir` / permissions problem fails loudly
+  /// up front instead of silently spilling clips into the system temp dir.
+  case workDirectoryNotWritable(path: String)
 
   public var errorDescription: String? {
     switch self {
@@ -51,6 +56,8 @@ public enum AudioExportError: Error, LocalizedError, Equatable {
       return "Export failed: \(reason)"
     case .cancelled:
       return "Export operation was cancelled"
+    case .workDirectoryNotWritable(let path):
+      return "Audio work directory is not writable: \(path)"
     }
   }
 }
@@ -99,8 +106,52 @@ public struct TimelineAudioExporter {
   /// Standard sample rate for export (44.1kHz)
   private static let sampleRate: Double = 44100.0
 
+  /// Directory the per-clip temp WAVs are staged in while building the
+  /// `AVMutableComposition`. When `nil`, falls back to the system temp dir
+  /// (`FileManager.default.temporaryDirectory`) — the historical behaviour.
+  ///
+  /// Callers running under a caller-owned cache/temp tree (e.g. a CLI's
+  /// `--cache-dir`, or a hermetic CI sandbox) pass that directory here so the
+  /// exporter never spills audio into the shared system temp dir. The directory
+  /// is created if absent and its writability is checked eagerly, so a bad path
+  /// or a permissions problem throws `AudioExportError.workDirectoryNotWritable`
+  /// up front rather than failing partway through the per-clip writes.
+  public let workDirectory: URL?
+
   /// Creates an audio exporter.
-  public init() {}
+  ///
+  /// - Parameter workDirectory: Directory to stage per-clip temp WAVs in. When
+  ///   `nil` (default), the system temp dir is used.
+  public init(workDirectory: URL? = nil) {
+    self.workDirectory = workDirectory
+  }
+
+  /// Resolve the directory temp clips are staged in, creating it if needed and
+  /// verifying it is writable. Throws `AudioExportError.workDirectoryNotWritable`
+  /// when an explicit `workDirectory` cannot be created or written to. A `nil`
+  /// `workDirectory` returns the system temp dir unchecked (legacy behaviour).
+  private func resolvedWorkDirectory() throws -> URL {
+    guard let dir = workDirectory else {
+      return FileManager.default.temporaryDirectory
+    }
+    let fm = FileManager.default
+    var isDir: ObjCBool = false
+    if fm.fileExists(atPath: dir.path, isDirectory: &isDir) {
+      guard isDir.boolValue, fm.isWritableFile(atPath: dir.path) else {
+        throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+      }
+      return dir
+    }
+    do {
+      try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    } catch {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    guard fm.isWritableFile(atPath: dir.path) else {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    return dir
+  }
 
   /// Exports a timeline to an M4A audio file.
   ///
@@ -218,6 +269,11 @@ public struct TimelineAudioExporter {
     let composition = AVMutableComposition()
     var tempFiles: [URL] = []
 
+    // Resolve (and validate) the staging directory once, up front: a bad
+    // `workDirectory` / permissions problem throws here before any clip is
+    // written. `nil` workDirectory resolves to the system temp dir.
+    let stagingDirectory = try resolvedWorkDirectory()
+
     // Sort all clips by offset
     let sortedClips = audioClips.sorted { $0.offset < $1.offset }
 
@@ -237,7 +293,8 @@ public struct TimelineAudioExporter {
       let tempURL = try await insertClipIntoTrack(
         clip: clip,
         track: compositionTrack,
-        modelContext: modelContext
+        modelContext: modelContext,
+        stagingDirectory: stagingDirectory
       )
       tempFiles.append(tempURL)
     }
@@ -251,7 +308,8 @@ public struct TimelineAudioExporter {
   private func insertClipIntoTrack(
     clip: TimelineClip,
     track: AVMutableCompositionTrack,
-    modelContext: SwiftData.ModelContext
+    modelContext: SwiftData.ModelContext,
+    stagingDirectory: URL
   ) async throws -> URL {
     // Fetch the asset
     guard let asset = clip.fetchAsset(in: modelContext) else {
@@ -265,7 +323,7 @@ public struct TimelineAudioExporter {
     // Create temporary file for the audio
     // IMPORTANT: Do NOT delete this file until after export completes!
     // AVMutableComposition references the file by URL, not by loading it into memory
-    let tempURL = FileManager.default.temporaryDirectory
+    let tempURL = stagingDirectory
       .appendingPathComponent(UUID().uuidString)
       .appendingPathExtension(fileExtension(for: asset.mimeType))
 

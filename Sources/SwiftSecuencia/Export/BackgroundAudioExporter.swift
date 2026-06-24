@@ -50,12 +50,19 @@ public actor BackgroundAudioExporter {
   /// - Parameters:
   ///   - timelineID: Persistent identifier of the Timeline to export
   ///   - outputURL: Destination file URL for the M4A file
+  ///   - workDirectory: Directory to stage per-clip temp WAVs in. When `nil`
+  ///     (default), the system temp dir is used. Callers under a caller-owned
+  ///     cache/temp tree (a CLI `--cache-dir`, a hermetic CI sandbox) pass that
+  ///     directory so the exporter never spills audio into the shared system
+  ///     temp dir. Validated eagerly — a bad path or permissions problem throws
+  ///     `AudioExportError.workDirectoryNotWritable`.
   ///   - progress: Optional Progress object for tracking
   /// - Returns: URL of the created M4A file
   /// - Throws: AudioExportError if export fails
   public func exportAudio(
     timelineID: PersistentIdentifier,
     to outputURL: URL,
+    workDirectory: URL? = nil,
     progress: Progress? = nil
   ) async throws -> URL {
     // Set up progress tracking
@@ -100,6 +107,7 @@ public actor BackgroundAudioExporter {
     let (composition, tempFiles) = try await buildComposition(
       from: timeline,
       audioClips: audioClips,
+      workDirectory: workDirectory,
       progress: exportProgress
     )
     await updateProgress(exportProgress, completedUnits: 40, description: nil)
@@ -165,6 +173,7 @@ public actor BackgroundAudioExporter {
   private func buildComposition(
     from timeline: Timeline,
     audioClips: [TimelineClip],
+    workDirectory: URL?,
     progress: Progress
   ) async throws -> (composition: AVMutableComposition, tempFiles: [URL]) {
     let sortedClips = audioClips.sorted { $0.offset < $1.offset }
@@ -173,6 +182,7 @@ public actor BackgroundAudioExporter {
     await updateProgress(progress, completedUnits: nil, description: "Writing audio files to disk")
     let tempFiles = try await writeAudioFilesToDisk(
       clips: sortedClips,
+      workDirectory: workDirectory,
       progress: progress
     )
 
@@ -202,6 +212,7 @@ public actor BackgroundAudioExporter {
   /// This keeps all audio data in memory temporarily for faster parallel writes.
   private func writeAudioFilesToDisk(
     clips: [TimelineClip],
+    workDirectory: URL?,
     progress: Progress
   ) async throws -> [URL] {
     // Step 1: Batch fetch all assets from SwiftData (OPTIMIZATION: batch instead of one-by-one)
@@ -246,6 +257,11 @@ public actor BackgroundAudioExporter {
       audioFiles.append(AudioFileData(data: audioData, fileExtension: ext))
     }
 
+    // Resolve (and validate) the staging directory once, up front: a bad
+    // `workDirectory` / permissions problem throws here before the parallel
+    // writers spin up. `nil` workDirectory resolves to the system temp dir.
+    let stagingDirectory = try resolvedWorkDirectory(workDirectory)
+
     // Step 2: Write all files to disk in parallel (I/O heavy)
     return try await withThrowingTaskGroup(of: (Int, URL).self) { group in
       var tempURLs: [Int: URL] = [:]
@@ -253,7 +269,7 @@ public actor BackgroundAudioExporter {
       for (index, audioFile) in audioFiles.enumerated() {
         group.addTask {
           // Create temp file URL
-          let tempURL = FileManager.default.temporaryDirectory
+          let tempURL = stagingDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(audioFile.fileExtension)
 
@@ -441,6 +457,33 @@ public actor BackgroundAudioExporter {
         progress.localizedAdditionalDescription = description
       }
     }
+  }
+
+  /// Resolve the directory temp clips are staged in, creating it if needed and
+  /// verifying it is writable. Throws `AudioExportError.workDirectoryNotWritable`
+  /// when an explicit `workDirectory` cannot be created or written to. A `nil`
+  /// `workDirectory` returns the system temp dir unchecked (legacy behaviour).
+  private func resolvedWorkDirectory(_ workDirectory: URL?) throws -> URL {
+    guard let dir = workDirectory else {
+      return FileManager.default.temporaryDirectory
+    }
+    let fm = FileManager.default
+    var isDir: ObjCBool = false
+    if fm.fileExists(atPath: dir.path, isDirectory: &isDir) {
+      guard isDir.boolValue, fm.isWritableFile(atPath: dir.path) else {
+        throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+      }
+      return dir
+    }
+    do {
+      try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    } catch {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    guard fm.isWritableFile(atPath: dir.path) else {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    return dir
   }
 
   /// Cleans up temporary files created during composition building.
