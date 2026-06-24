@@ -49,8 +49,53 @@ public struct ForegroundAudioExporter {
 
   public let telemetry: SecuenciaTelemetryReporter?
 
-  public init(telemetry: SecuenciaTelemetryReporter? = nil) {
+  /// Directory the per-clip temp WAVs are staged in while building the
+  /// `AVMutableComposition`. When `nil`, falls back to the system temp dir
+  /// (`FileManager.default.temporaryDirectory`) — the historical behaviour.
+  ///
+  /// Callers running under a caller-owned cache/temp tree (e.g. a CLI's
+  /// `--cache-dir`, or a hermetic CI sandbox) pass that directory here so the
+  /// exporter never spills audio into the shared system temp dir. The directory
+  /// is created if absent and its writability is checked eagerly, so a bad path
+  /// or a permissions problem throws `AudioExportError.workDirectoryNotWritable`
+  /// up front rather than failing deep inside the parallel write phase.
+  public let workDirectory: URL?
+
+  public init(
+    telemetry: SecuenciaTelemetryReporter? = nil,
+    workDirectory: URL? = nil
+  ) {
     self.telemetry = telemetry
+    self.workDirectory = workDirectory
+  }
+
+  /// Resolve the directory temp clips are staged in, creating it if needed and
+  /// verifying it is writable. Throws `AudioExportError.workDirectoryNotWritable`
+  /// when an explicit `workDirectory` cannot be created or written to.
+  ///
+  /// When `workDirectory` is `nil` the system temp dir is returned unchecked —
+  /// it is assumed writable, matching the pre-`workDirectory` behaviour.
+  private func resolvedWorkDirectory() throws -> URL {
+    guard let dir = workDirectory else {
+      return FileManager.default.temporaryDirectory
+    }
+    let fm = FileManager.default
+    var isDir: ObjCBool = false
+    if fm.fileExists(atPath: dir.path, isDirectory: &isDir) {
+      guard isDir.boolValue, fm.isWritableFile(atPath: dir.path) else {
+        throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+      }
+      return dir
+    }
+    do {
+      try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    } catch {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    guard fm.isWritableFile(atPath: dir.path) else {
+      throw AudioExportError.workDirectoryNotWritable(path: dir.path)
+    }
+    return dir
   }
 
   /// Exports audio elements directly to M4A format (fast path - skips Timeline creation).
@@ -459,6 +504,12 @@ public struct ForegroundAudioExporter {
     audioData: [(data: Data, fileExtension: String)],
     progress: Progress
   ) async throws -> [URL] {
+    // Resolve (and validate) the staging directory once, up front: a bad
+    // `workDirectory` / permissions problem throws here before we spin up the
+    // parallel writers, so the failure is loud and immediate rather than a
+    // partial spill. `nil` workDirectory resolves to the system temp dir.
+    let stagingDirectory = try resolvedWorkDirectory()
+
     // Write files in parallel using TaskGroup with high priority + FileHandle optimization
     return try await withThrowingTaskGroup(of: (Int, URL).self) { group in
       var tempURLs: [Int: URL] = [:]
@@ -466,7 +517,7 @@ public struct ForegroundAudioExporter {
       for (index, audio) in audioData.enumerated() {
         // Each write task runs with high priority
         group.addTask(priority: .high) {
-          let tempURL = FileManager.default.temporaryDirectory
+          let tempURL = stagingDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension(audio.fileExtension)
 

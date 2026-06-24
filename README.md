@@ -1,3 +1,7 @@
+---
+type: doc
+---
+
 # SwiftSecuencia
 
 A Swift library for professional media timeline generation and export.
@@ -90,7 +94,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.2.1")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.3.0")
 ]
 ```
 
@@ -708,6 +712,26 @@ WEBVTT
   "version": "1.0"
 }
 ```
+
+#### Caller-Owned Work Directory (v3.3.0)
+
+By default, the audio exporters stage their intermediate per-clip WAV files in the
+system temporary directory. Callers that need to control where this scratch space
+lives — for sandboxed apps, app-group containers, or volumes with more headroom —
+can pass an explicit `workDirectory`:
+
+```swift
+let exporter = ForegroundAudioExporter(workDirectory: myWorkDir)
+// or
+let exporter = TimelineAudioExporter(workDirectory: myWorkDir)
+// or
+let exporter = BackgroundAudioExporter(modelContainer: container, workDirectory: myWorkDir)
+```
+
+- The directory is created if needed and verified writable before any clip is staged.
+- An unwritable or uncreatable directory throws `AudioExportError.workDirectoryNotWritable(path:)`.
+- Passing `nil` (the default) preserves the legacy system-temp behaviour, so this is
+  fully backward compatible.
 
 #### Technical Details
 
