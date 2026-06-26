@@ -260,7 +260,7 @@ public struct ForegroundAudioExporter {
 
     // Step 2: Build composition (35%)
     exportProgress.localizedAdditionalDescription = "Building composition"
-    let (composition, tempFiles) = try await buildComposition(
+    let (composition, tempFiles, audioMix) = try await buildComposition(
       from: timeline,
       audioClips: audioClips,
       modelContext: modelContext,
@@ -280,6 +280,7 @@ public struct ForegroundAudioExporter {
       try await exportComposition(
         composition,
         to: outputURL,
+        audioMix: audioMix,
         progress: exportProgress
       )
 
@@ -427,7 +428,7 @@ public struct ForegroundAudioExporter {
     audioClips: [TimelineClip],
     modelContext: ModelContext,
     progress: Progress
-  ) async throws -> (composition: AVMutableComposition, tempFiles: [URL]) {
+  ) async throws -> (composition: AVMutableComposition, tempFiles: [URL], audioMix: AVMutableAudioMix) {
     let sortedClips = audioClips.sorted { $0.offset < $1.offset }
 
     // Phase 1: Load all audio data into memory (15%)
@@ -460,13 +461,13 @@ public struct ForegroundAudioExporter {
 
     // Phase 3: Build composition (10%)
     progress.localizedAdditionalDescription = "Building audio composition"
-    let composition = try await buildCompositionFromFiles(
+    let (composition, audioMix) = try await buildCompositionFromFiles(
       clips: sortedClips,
       tempFiles: tempFiles,
       progress: progress
     )
 
-    return (composition, tempFiles)
+    return (composition, tempFiles, audioMix)
   }
 
   /// Phase 1: Load all audio data into memory.
@@ -634,9 +635,13 @@ public struct ForegroundAudioExporter {
     clips: [TimelineClip],
     tempFiles: [URL],
     progress: Progress
-  ) async throws -> AVMutableComposition {
+  ) async throws -> (composition: AVMutableComposition, audioMix: AVMutableAudioMix) {
     let composition = AVMutableComposition()
     let clipProgressIncrement = 10.0 / Double(clips.count)
+
+    // Collect one (track, linear-volume) entry per clip so we can build an
+    // AVMutableAudioMix that applies each clip's volumeDb / isMuted.
+    var mixEntries: [(track: AVAssetTrack, volume: Float)] = []
 
     for (index, clip) in clips.enumerated() {
       // Check for cancellation
@@ -676,12 +681,17 @@ public struct ForegroundAudioExporter {
       // Insert into composition
       try compositionTrack.insertTimeRange(timeRange, of: sourceTrack, at: insertTime)
 
+      // Record this clip's per-track gain for the audio mix.
+      let volume = Self.linearAmplitude(volumeDb: clip.volumeDb, isMuted: clip.isMuted)
+      mixEntries.append((track: compositionTrack, volume: volume))
+
       // Update progress
       let progressUnits = Int64(30 + Int((Double(index + 1) * clipProgressIncrement)))
       progress.completedUnitCount = progressUnits
     }
 
-    return composition
+    let audioMix = Self.makeAudioMix(mixEntries)
+    return (composition, audioMix)
   }
 
   // MARK: - Composition Export
@@ -690,6 +700,7 @@ public struct ForegroundAudioExporter {
   private func exportComposition(
     _ composition: AVMutableComposition,
     to outputURL: URL,
+    audioMix: AVAudioMix? = nil,
     progress: Progress
   ) async throws {
     // Capture AVFoundation export start event
@@ -720,6 +731,10 @@ public struct ForegroundAudioExporter {
 
     exportSession.outputURL = outputURL
     exportSession.outputFileType = .m4a
+
+    // Apply per-clip gain (volumeDb / isMuted) via the audio mix, when one was
+    // built (timeline path). The direct path passes `nil` (unity gain).
+    exportSession.audioMix = audioMix
 
     // OPTIMIZATION: Use fastest audio time pitch algorithm
     exportSession.audioTimePitchAlgorithm = .varispeed
@@ -776,6 +791,44 @@ public struct ForegroundAudioExporter {
     for url in urls {
       try? FileManager.default.removeItem(at: url)
     }
+  }
+
+  // MARK: - Per-Clip Gain (Audio Mix)
+
+  /// Converts a per-clip decibel gain to a linear amplitude scalar.
+  ///
+  /// - `isMuted == true` → `0` (silence), regardless of `volumeDb`.
+  /// - `volumeDb == nil` → `1.0` (unity gain).
+  /// - `volumeDb == 0` → `1.0`.
+  /// - `volumeDb == -∞` (or any negative infinity) → `0`.
+  /// - otherwise → `pow(10, dB / 20)`.
+  ///
+  /// - Parameters:
+  ///   - volumeDb: The clip's gain in decibels, or `nil` for unity.
+  ///   - isMuted: Whether the clip is muted.
+  /// - Returns: A linear amplitude in `[0, ∞)` suitable for
+  ///   `AVMutableAudioMixInputParameters.setVolume(_:at:)`.
+  public nonisolated static func linearAmplitude(volumeDb: Double?, isMuted: Bool) -> Float {
+    if isMuted { return 0 }
+    guard let db = volumeDb else { return 1.0 }
+    if db.isNaN { return 1.0 }
+    if db.isInfinite { return db < 0 ? 0 : Float.greatestFiniteMagnitude }
+    return Float(pow(10.0, db / 20.0))
+  }
+
+  /// Builds an `AVMutableAudioMix` that applies a constant linear volume to each
+  /// supplied track. One `AVMutableAudioMixInputParameters` is produced per
+  /// entry, in order.
+  nonisolated static func makeAudioMix(
+    _ entries: [(track: AVAssetTrack, volume: Float)]
+  ) -> AVMutableAudioMix {
+    let mix = AVMutableAudioMix()
+    mix.inputParameters = entries.map { entry in
+      let params = AVMutableAudioMixInputParameters(track: entry.track)
+      params.setVolume(entry.volume, at: .zero)
+      return params
+    }
+    return mix
   }
 
   /// Returns file extension for MIME type.
