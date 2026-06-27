@@ -260,12 +260,15 @@ public struct ForegroundAudioExporter {
 
     // Step 2: Build composition (35%)
     exportProgress.localizedAdditionalDescription = "Building composition"
-    let (composition, tempFiles, audioMix) = try await buildComposition(
+    let built = try await buildComposition(
       from: timeline,
       audioClips: audioClips,
       modelContext: modelContext,
       progress: exportProgress
     )
+    let composition = built.composition
+    let tempFiles = built.tempFiles
+    let audioMix = built.audioMix
     exportProgress.completedUnitCount = 40
 
     // Check for cancellation
@@ -417,6 +420,14 @@ public struct ForegroundAudioExporter {
     return (composition, tempFiles)
   }
 
+  /// Result of building an audio composition: the composition itself, the
+  /// temporary files backing its tracks, and the audio mix carrying per-clip gain.
+  private struct BuiltComposition {
+    let composition: AVMutableComposition
+    let tempFiles: [URL]
+    let audioMix: AVMutableAudioMix
+  }
+
   /// Builds an AVMutableComposition from timeline clips.
   ///
   /// This uses a two-phase approach optimized for main thread:
@@ -428,7 +439,7 @@ public struct ForegroundAudioExporter {
     audioClips: [TimelineClip],
     modelContext: ModelContext,
     progress: Progress
-  ) async throws -> (composition: AVMutableComposition, tempFiles: [URL], audioMix: AVMutableAudioMix) {
+  ) async throws -> BuiltComposition {
     let sortedClips = audioClips.sorted { $0.offset < $1.offset }
 
     // Phase 1: Load all audio data into memory (15%)
@@ -467,7 +478,7 @@ public struct ForegroundAudioExporter {
       progress: progress
     )
 
-    return (composition, tempFiles, audioMix)
+    return BuiltComposition(composition: composition, tempFiles: tempFiles, audioMix: audioMix)
   }
 
   /// Phase 1: Load all audio data into memory.
