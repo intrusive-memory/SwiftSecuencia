@@ -1,5 +1,6 @@
 ---
 type: reference
+updated: 2026-06-27
 ---
 
 # Claude-Specific Development Instructions
@@ -7,7 +8,7 @@ type: reference
 **⚠️ Read [AGENTS.md](AGENTS.md) first** for universal project documentation.
 
 **Last Updated**: 2026-06-24
-**Version**: 3.4.0
+**Version**: 3.5.0
 
 ---
 

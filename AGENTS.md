@@ -1,11 +1,13 @@
 ---
+updated: 2026-06-27
 type: reference
 ---
+updated: 2026-06-27
 
 # AI Agent Development Guidelines
 
 **Last Updated**: 2026-06-24
-**Version**: 3.4.0
+**Version**: 3.5.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
