@@ -165,11 +165,15 @@ func makeAudioMixReflectsVolumes() throws {
   let mutedVol = ForegroundAudioExporter.linearAmplitude(volumeDb: nil, isMuted: true)
   let quietVol = ForegroundAudioExporter.linearAmplitude(volumeDb: -6.0, isMuted: false)
 
-  let mix = ForegroundAudioExporter.makeAudioMix([
-    (track: trackUnity, volume: unityVol),
-    (track: trackMuted, volume: mutedVol),
-    (track: trackQuiet, volume: quietVol),
-  ])
+  let mix = ForegroundAudioExporter.makeAudioMix(
+    [
+      (track: trackUnity, volume: unityVol),
+      (track: trackMuted, volume: mutedVol),
+      (track: trackQuiet, volume: quietVol),
+    ],
+    compositionDuration: CMTime(seconds: 10, preferredTimescale: 600),
+    masterFadeOut: 0  // No fade for this test
+  )
 
   #expect(mix.inputParameters.count == 3)
 

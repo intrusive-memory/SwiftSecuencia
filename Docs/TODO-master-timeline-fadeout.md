@@ -2,7 +2,8 @@
 type: doc
 name: Master Timeline Fade-Out (export-time)
 description: Add an optional whole-timeline fade-out ramp to the foreground exporter so the final mix smooths out instead of hard-cutting at the end.
-status: incomplete
+status: complete
+completed: 2026-06-27
 ---
 
 # Master Timeline Fade-Out (export-time)
@@ -63,6 +64,20 @@ The infrastructure is already here — this is an **extension, not new plumbing*
 - **Integration:** export a timeline with a lane still playing at `T`; assert the
   tail RMS over the final second is monotonically decreasing to ~silence.
 - **Regression:** existing exporter tests (no `masterFadeOut`) unchanged.
+
+## Implementation (2026-06-27)
+
+Feature implemented as planned:
+
+1. **API:** Added `masterFadeOut: TimeInterval = 0` parameter to:
+   - `ForegroundAudioExporter.exportAudio(timeline:modelContext:to:timingDataFormat:masterFadeOut:progress:)`
+   - `ForegroundAudioExporter.exportAudioDirect(audioElements:modelContext:to:timingDataFormat:masterFadeOut:progress:)`
+2. **Audio mix:** Updated `ForegroundAudioExporter.makeAudioMix` to accept `compositionDuration` and `masterFadeOut`, computing fade window as `[max(0, T - masterFadeOut), T]` and applying `setVolumeRamp` to all tracks
+3. **Tests:** Added `MasterFadeOutTests.swift` with unit tests for:
+   - No fade (backward compatibility)
+   - Fade applied to all tracks
+   - Fade window clamping when duration exceeds timeline
+   - Integration tests for `exportAudio` and `exportAudioDirect`
 
 ## Release
 
