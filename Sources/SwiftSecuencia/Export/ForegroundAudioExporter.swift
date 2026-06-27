@@ -115,7 +115,7 @@ public struct ForegroundAudioExporter {
   ///   - modelContext: SwiftData ModelContext for asset access
   ///   - outputURL: Destination file URL for the M4A file
   ///   - timingDataFormat: Format for timing data export (default: .none)
-  ///   - masterFadeOut: Duration in seconds for a master fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
+  ///   - finalFadeOut: Duration in seconds for a final fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
   ///   - progress: Optional Progress object for tracking
   /// - Returns: URL of the created M4A file
   /// - Throws: AudioExportError if export fails
@@ -124,7 +124,7 @@ public struct ForegroundAudioExporter {
     modelContext: ModelContext,
     to outputURL: URL,
     timingDataFormat: TimingDataFormat = .none,
-    masterFadeOut: TimeInterval = 0,
+    finalFadeOut: TimeInterval = 0,
     progress: Progress? = nil
   ) async throws -> URL {
     // Set up progress tracking
@@ -153,11 +153,14 @@ public struct ForegroundAudioExporter {
 
     // Build composition directly from audio elements (no Timeline)
     exportProgress.localizedAdditionalDescription = "Building composition"
-    let (composition, tempFiles, audioMix) = try await buildCompositionDirect(
+    let built = try await buildCompositionDirect(
       audioElements: audioFiles,
-      masterFadeOut: masterFadeOut,
+      finalFadeOut: finalFadeOut,
       progress: exportProgress
     )
+    let composition = built.composition
+    let tempFiles = built.tempFiles
+    let audioMix = built.audioMix
     exportProgress.completedUnitCount = 40
 
     // Check for cancellation
@@ -226,7 +229,7 @@ public struct ForegroundAudioExporter {
   ///   - modelContext: SwiftData ModelContext (main thread)
   ///   - outputURL: Destination file URL for the M4A file
   ///   - timingDataFormat: Format for timing data export (default: .none)
-  ///   - masterFadeOut: Duration in seconds for a master fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
+  ///   - finalFadeOut: Duration in seconds for a final fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
   ///   - progress: Optional Progress object for tracking
   /// - Returns: URL of the created M4A file
   /// - Throws: AudioExportError if export fails
@@ -235,7 +238,7 @@ public struct ForegroundAudioExporter {
     modelContext: ModelContext,
     to outputURL: URL,
     timingDataFormat: TimingDataFormat = .none,
-    masterFadeOut: TimeInterval = 0,
+    finalFadeOut: TimeInterval = 0,
     progress: Progress? = nil
   ) async throws -> URL {
     // Capture export start event
@@ -270,7 +273,7 @@ public struct ForegroundAudioExporter {
       from: timeline,
       audioClips: audioClips,
       modelContext: modelContext,
-      masterFadeOut: masterFadeOut,
+      finalFadeOut: finalFadeOut,
       progress: exportProgress
     )
     let composition = built.composition
@@ -367,15 +370,15 @@ public struct ForegroundAudioExporter {
   ///
   /// - Parameters:
   ///   - audioElements: Array of TypedDataStorage audio elements
-  ///   - masterFadeOut: Duration in seconds for a master fade-out applied to the final N seconds of the entire mix
+  ///   - finalFadeOut: Duration in seconds for a final fade-out applied to the final N seconds of the entire mix
   ///   - progress: Progress object for tracking
-  /// - Returns: Tuple of (composition, tempFiles, audioMix)
+  /// - Returns: BuiltComposition with composition, tempFiles, and audioMix
   /// - Throws: AudioExportError on failure
   private func buildCompositionDirect(
     audioElements: [TypedDataStorage],
-    masterFadeOut: TimeInterval,
+    finalFadeOut: TimeInterval,
     progress: Progress
-  ) async throws -> (composition: AVMutableComposition, tempFiles: [URL], audioMix: AVMutableAudioMix?) {
+  ) async throws -> BuiltComposition {
     // Phase 1: Load all audio data into memory (15%)
     progress.localizedAdditionalDescription = "Loading audio files"
 
@@ -423,19 +426,19 @@ public struct ForegroundAudioExporter {
     let (composition, audioMix) = try await buildCompositionFromFilesOptimized(
       audioElements: audioElements,
       tempFiles: tempFiles,
-      masterFadeOut: masterFadeOut,
+      finalFadeOut: finalFadeOut,
       progress: progress
     )
 
-    return (composition, tempFiles, audioMix)
+    return BuiltComposition(composition: composition, tempFiles: tempFiles, audioMix: audioMix)
   }
 
   /// Result of building an audio composition: the composition itself, the
-  /// temporary files backing its tracks, and the audio mix carrying per-clip gain.
+  /// temporary files backing its tracks, and the optional audio mix carrying per-clip gain.
   private struct BuiltComposition {
     let composition: AVMutableComposition
     let tempFiles: [URL]
-    let audioMix: AVMutableAudioMix
+    let audioMix: AVMutableAudioMix?
   }
 
   /// Builds an AVMutableComposition from timeline clips.
@@ -448,7 +451,7 @@ public struct ForegroundAudioExporter {
     from timeline: Timeline,
     audioClips: [TimelineClip],
     modelContext: ModelContext,
-    masterFadeOut: TimeInterval,
+    finalFadeOut: TimeInterval,
     progress: Progress
   ) async throws -> BuiltComposition {
     let sortedClips = audioClips.sorted { $0.offset < $1.offset }
@@ -486,7 +489,7 @@ public struct ForegroundAudioExporter {
     let (composition, audioMix) = try await buildCompositionFromFiles(
       clips: sortedClips,
       tempFiles: tempFiles,
-      masterFadeOut: masterFadeOut,
+      finalFadeOut: finalFadeOut,
       progress: progress
     )
 
@@ -596,7 +599,7 @@ public struct ForegroundAudioExporter {
   private func buildCompositionFromFilesOptimized(
     audioElements: [TypedDataStorage],
     tempFiles: [URL],
-    masterFadeOut: TimeInterval,
+    finalFadeOut: TimeInterval,
     progress: Progress
   ) async throws -> (composition: AVMutableComposition, audioMix: AVMutableAudioMix?) {
     let composition = AVMutableComposition()
@@ -657,8 +660,8 @@ public struct ForegroundAudioExporter {
       progress.completedUnitCount = progressUnits
     }
 
-    // Build audio mix with optional master fade-out
-    let audioMix = Self.makeAudioMix(mixEntries, compositionDuration: composition.duration, masterFadeOut: masterFadeOut)
+    // Build audio mix with optional final fade-out
+    let audioMix = Self.makeAudioMix(mixEntries, compositionDuration: composition.duration, finalFadeOut: finalFadeOut)
     return (composition, audioMix)
   }
 
@@ -666,7 +669,7 @@ public struct ForegroundAudioExporter {
   private func buildCompositionFromFiles(
     clips: [TimelineClip],
     tempFiles: [URL],
-    masterFadeOut: TimeInterval,
+    finalFadeOut: TimeInterval,
     progress: Progress
   ) async throws -> (composition: AVMutableComposition, audioMix: AVMutableAudioMix) {
     let composition = AVMutableComposition()
@@ -723,7 +726,7 @@ public struct ForegroundAudioExporter {
       progress.completedUnitCount = progressUnits
     }
 
-    let audioMix = Self.makeAudioMix(mixEntries, compositionDuration: composition.duration, masterFadeOut: masterFadeOut)
+    let audioMix = Self.makeAudioMix(mixEntries, compositionDuration: composition.duration, finalFadeOut: finalFadeOut)
     return (composition, audioMix)
   }
 
@@ -850,23 +853,23 @@ public struct ForegroundAudioExporter {
   }
 
   /// Builds an `AVMutableAudioMix` that applies a constant linear volume to each
-  /// supplied track, optionally with a master fade-out over the final N seconds.
+  /// supplied track, optionally with a final fade-out over the final N seconds.
   ///
   /// - Parameters:
   ///   - entries: Per-track volume settings (from clip volumeDb / isMuted)
   ///   - compositionDuration: Total duration of the composition
-  ///   - masterFadeOut: Duration in seconds for a master fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
-  /// - Returns: An `AVMutableAudioMix` with per-track volumes and optional master fade-out
+  ///   - finalFadeOut: Duration in seconds for a final fade-out applied to the final N seconds of the entire mix (default: 0, no fade)
+  /// - Returns: An `AVMutableAudioMix` with per-track volumes and optional final fade-out
   nonisolated static func makeAudioMix(
     _ entries: [(track: AVAssetTrack, volume: Float)],
     compositionDuration: CMTime,
-    masterFadeOut: TimeInterval = 0
+    finalFadeOut: TimeInterval = 0
   ) -> AVMutableAudioMix {
     let mix = AVMutableAudioMix()
 
-    // Compute fade window: [max(0, T − masterFadeOut), T]
+    // Compute fade window: [max(0, T − finalFadeOut), T]
     let totalDuration = compositionDuration.seconds
-    let fadeStartTime = max(0, totalDuration - masterFadeOut)
+    let fadeStartTime = max(0, totalDuration - finalFadeOut)
     let fadeDuration = totalDuration - fadeStartTime
 
     mix.inputParameters = entries.map { entry in
@@ -875,8 +878,8 @@ public struct ForegroundAudioExporter {
       // Set constant volume from start
       params.setVolume(entry.volume, at: .zero)
 
-      // Apply master fade-out ramp if requested
-      if masterFadeOut > 0 && fadeDuration > 0 {
+      // Apply final fade-out ramp if requested
+      if finalFadeOut > 0 && fadeDuration > 0 {
         let fadeStart = CMTime(seconds: fadeStartTime, preferredTimescale: 600)
         let fadeEnd = CMTime(seconds: totalDuration, preferredTimescale: 600)
         let fadeRange = CMTimeRange(start: fadeStart, end: fadeEnd)

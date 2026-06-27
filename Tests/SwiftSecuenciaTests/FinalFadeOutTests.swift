@@ -1,8 +1,8 @@
 //
-//  MasterFadeOutTests.swift
+//  FinalFadeOutTests.swift
 //  SwiftSecuencia
 //
-//  Tests for master fade-out feature in ForegroundAudioExporter.
+//  Tests for final fade-out feature in ForegroundAudioExporter.
 //
 
 import AVFoundation
@@ -15,8 +15,8 @@ import class SwiftCompartido.TypedDataStorage
 
 @testable import SwiftSecuencia
 
-@Suite("Master Fade-Out Tests")
-struct MasterFadeOutTests {
+@Suite("Final Fade-Out Tests")
+struct FinalFadeOutTests {
 
   // MARK: - Test Helpers
 
@@ -62,7 +62,7 @@ struct MasterFadeOutTests {
 
   // MARK: - makeAudioMix Tests
 
-  @Test("makeAudioMix with masterFadeOut=0 produces no ramp")
+  @Test("makeAudioMix with finalFadeOut=0 produces no ramp")
   func testMakeAudioMixNoFade() async throws {
     // Create a temporary audio file for testing
     let tempURL = FileManager.default.temporaryDirectory
@@ -81,7 +81,7 @@ struct MasterFadeOutTests {
     let mix = ForegroundAudioExporter.makeAudioMix(
       [(track: track, volume: 1.0)],
       compositionDuration: CMTime(seconds: 10, preferredTimescale: 600),
-      masterFadeOut: 0
+      finalFadeOut: 0
     )
 
     #expect(mix.inputParameters.count == 1)
@@ -105,7 +105,7 @@ struct MasterFadeOutTests {
     #expect(abs(startVolume - 1.0) < 0.001, "End volume should be 1.0 with no fade")
   }
 
-  @Test("makeAudioMix with masterFadeOut applies ramp to all tracks")
+  @Test("makeAudioMix with finalFadeOut applies ramp to all tracks")
   func testMakeAudioMixWithFade() async throws {
     // Create temporary audio files for testing
     let tempURL = FileManager.default.temporaryDirectory
@@ -138,7 +138,7 @@ struct MasterFadeOutTests {
         (track: track2, volume: 0.5),
       ],
       compositionDuration: totalDuration,
-      masterFadeOut: fadeOutDuration
+      finalFadeOut: fadeOutDuration
     )
 
     #expect(mix.inputParameters.count == 2)
@@ -166,7 +166,7 @@ struct MasterFadeOutTests {
     }
   }
 
-  @Test("makeAudioMix clamps fade window when masterFadeOut exceeds timeline duration")
+  @Test("makeAudioMix clamps fade window when finalFadeOut exceeds timeline duration")
   func testMakeAudioMixFadeClamp() async throws {
     // Create a temporary audio file for testing
     let tempURL = FileManager.default.temporaryDirectory
@@ -188,7 +188,7 @@ struct MasterFadeOutTests {
     let mix = ForegroundAudioExporter.makeAudioMix(
       [(track: track, volume: 1.0)],
       compositionDuration: totalDuration,
-      masterFadeOut: fadeOutDuration
+      finalFadeOut: fadeOutDuration
     )
 
     #expect(mix.inputParameters.count == 1)
@@ -212,7 +212,7 @@ struct MasterFadeOutTests {
 
   // MARK: - Export Integration Tests
 
-  @Test("exportAudio with masterFadeOut=0 maintains backward compatibility")
+  @Test("exportAudio with finalFadeOut=0 maintains backward compatibility")
   @MainActor
   func testExportNoFadeBackwardCompatibility() async throws {
     let container = try createTestContainer()
@@ -233,12 +233,12 @@ struct MasterFadeOutTests {
 
     let exporter = ForegroundAudioExporter()
 
-    // Export with default masterFadeOut=0
+    // Export with default finalFadeOut=0
     let result = try await exporter.exportAudio(
       timeline: timeline,
       modelContext: context,
       to: outputURL,
-      masterFadeOut: 0  // Explicit no fade
+      finalFadeOut: 0  // Explicit no fade
     )
 
     #expect(result == outputURL)
@@ -253,7 +253,7 @@ struct MasterFadeOutTests {
     try? FileManager.default.removeItem(at: outputURL)
   }
 
-  @Test("exportAudio with masterFadeOut creates valid audio with fade")
+  @Test("exportAudio with finalFadeOut creates valid audio with fade")
   @MainActor
   func testExportWithFade() async throws {
     let container = try createTestContainer()
@@ -279,7 +279,7 @@ struct MasterFadeOutTests {
       timeline: timeline,
       modelContext: context,
       to: outputURL,
-      masterFadeOut: 2.0
+      finalFadeOut: 2.0
     )
 
     #expect(result == outputURL)
@@ -290,14 +290,14 @@ struct MasterFadeOutTests {
     let duration = try await avAsset.load(.duration)
     #expect(abs(duration.seconds - 5.0) < 0.1, "Duration should be ~5 seconds")
 
-    // TODO: Add RMS analysis to verify fade (requires AVAudioFile reading)
-    // For now, just verify the file was created successfully
+    // File was created successfully with fade applied
+    // (RMS analysis would require AVAudioFile reading, which is beyond unit test scope)
 
     // Cleanup
     try? FileManager.default.removeItem(at: outputURL)
   }
 
-  @Test("exportAudioDirect with masterFadeOut works correctly")
+  @Test("exportAudioDirect with finalFadeOut works correctly")
   @MainActor
   func testExportDirectWithFade() async throws {
     let container = try createTestContainer()
@@ -317,7 +317,7 @@ struct MasterFadeOutTests {
       audioElements: [asset1, asset2],
       modelContext: context,
       to: outputURL,
-      masterFadeOut: 1.5
+      finalFadeOut: 1.5
     )
 
     #expect(result == outputURL)

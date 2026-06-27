@@ -8,7 +8,7 @@ completed: 2026-06-27
 
 # Master Timeline Fade-Out (export-time)
 
-**Goal.** Add an optional **master fade-out** over the final *N* seconds of the
+**Goal.** Add an optional **final fade-out** over the final *N* seconds of the
 **entire** exported timeline — one ramp applied across the whole mix, so *any*
 number of lanes still playing at the end (dialogue tail, a background bed that
 overruns, an overlay) fade out together smoothly instead of hard-cutting.
@@ -36,11 +36,11 @@ The infrastructure is already here — this is an **extension, not new plumbing*
 
 ## Proposed change
 
-1. **API.** Add an optional `masterFadeOut: TimeInterval = 0` parameter to the
+1. **API.** Add an optional `finalFadeOut: TimeInterval = 0` parameter to the
    public `exportAudio(timeline:modelContext:to:timingDataFormat:progress:)`
    (and `exportAudioDirect`). `0` ⇒ today's behavior exactly (no ramp).
 2. **Compute the fade window.** Total timeline duration `T` is already known when
-   the composition is built. Fade range = `[max(0, T − masterFadeOut), T]`,
+   the composition is built. Fade range = `[max(0, T − finalFadeOut), T]`,
    clamped so the fade never exceeds the timeline.
 3. **Apply the ramp to every track.** In (or after) `makeAudioMix`, for each
    `AVMutableAudioMixInputParameters`, append
@@ -56,24 +56,24 @@ The infrastructure is already here — this is an **extension, not new plumbing*
 
 ## Test plan
 
-- **Unit (`makeAudioMix`/export):** with `masterFadeOut: 4`, every input-parameter
-  set has a volume ramp ending at `0` over `[T−4, T]`; with `masterFadeOut: 0`
+- **Unit (`makeAudioMix`/export):** with `finalFadeOut: 4`, every input-parameter
+  set has a volume ramp ending at `0` over `[T−4, T]`; with `finalFadeOut: 0`
   the mix is byte-for-byte the pre-change constant-volume mix.
-- **Unit (clamp of fade window):** `masterFadeOut` longer than `T` ramps over the
+- **Unit (clamp of fade window):** `finalFadeOut` longer than `T` ramps over the
   whole `[0, T]` rather than going negative.
 - **Integration:** export a timeline with a lane still playing at `T`; assert the
   tail RMS over the final second is monotonically decreasing to ~silence.
-- **Regression:** existing exporter tests (no `masterFadeOut`) unchanged.
+- **Regression:** existing exporter tests (no `finalFadeOut`) unchanged.
 
 ## Implementation (2026-06-27)
 
 Feature implemented as planned:
 
-1. **API:** Added `masterFadeOut: TimeInterval = 0` parameter to:
-   - `ForegroundAudioExporter.exportAudio(timeline:modelContext:to:timingDataFormat:masterFadeOut:progress:)`
-   - `ForegroundAudioExporter.exportAudioDirect(audioElements:modelContext:to:timingDataFormat:masterFadeOut:progress:)`
-2. **Audio mix:** Updated `ForegroundAudioExporter.makeAudioMix` to accept `compositionDuration` and `masterFadeOut`, computing fade window as `[max(0, T - masterFadeOut), T]` and applying `setVolumeRamp` to all tracks
-3. **Tests:** Added `MasterFadeOutTests.swift` with unit tests for:
+1. **API:** Added `finalFadeOut: TimeInterval = 0` parameter to:
+   - `ForegroundAudioExporter.exportAudio(timeline:modelContext:to:timingDataFormat:finalFadeOut:progress:)`
+   - `ForegroundAudioExporter.exportAudioDirect(audioElements:modelContext:to:timingDataFormat:finalFadeOut:progress:)`
+2. **Audio mix:** Updated `ForegroundAudioExporter.makeAudioMix` to accept `compositionDuration` and `finalFadeOut`, computing fade window as `[max(0, T - finalFadeOut), T]` and applying `setVolumeRamp` to all tracks
+3. **Tests:** Added `FinalFadeOutTests.swift` with unit tests for:
    - No fade (backward compatibility)
    - Fade applied to all tracks
    - Fade window clamping when duration exceeds timeline

@@ -172,7 +172,7 @@ func makeAudioMixReflectsVolumes() throws {
       (track: trackQuiet, volume: quietVol),
     ],
     compositionDuration: CMTime(seconds: 10, preferredTimescale: 600),
-    masterFadeOut: 0  // No fade for this test
+    finalFadeOut: 0  // No fade for this test
   )
 
   #expect(mix.inputParameters.count == 3)
