@@ -5,6 +5,7 @@
 //  SwiftData model for persisting timeline clip data.
 //
 
+import AVFoundation
 import Foundation
 import SwiftCompartido
 import SwiftData
@@ -272,6 +273,120 @@ public final class TimelineClip {
       duration: duration,
       lane: lane
     )
+  }
+}
+
+// MARK: - External Audio File Factory
+
+extension TimelineClip {
+
+  /// Errors thrown when building a `TimelineClip` from an external audio file.
+  public enum AudioFileError: Error, Sendable, Equatable {
+    /// The file at `url` could not be read into memory.
+    case unreadableFile(url: URL, reason: String)
+    /// The file extension is not a recognized audio container.
+    case unsupportedFormat(fileExtension: String)
+    /// The decoded audio reported a non-positive duration.
+    case zeroDuration(url: URL)
+  }
+
+  /// Creates a `TimelineClip` from an external audio file (mp3 / m4a / wav / aiff …).
+  ///
+  /// This loads the file's bytes into a new `TypedDataStorage` record (inserted
+  /// into `context`), derives the clip `duration` from the audio file via
+  /// AVFoundation, and returns a clip referencing that storage record's id.
+  ///
+  /// The caller is responsible for saving `context` and for attaching the
+  /// returned clip to a `Timeline` (e.g. `timeline.clips.append(clip)`).
+  ///
+  /// - Parameters:
+  ///   - url: File URL of the source audio (must have a supported extension).
+  ///   - context: The SwiftData `ModelContext` the `TypedDataStorage` record is
+  ///     inserted into.
+  ///   - name: Optional clip / asset name. Defaults to the file's last path
+  ///     component.
+  ///   - offset: Start position on the timeline (default: `.zero`).
+  ///   - lane: Lane number (default: `0`).
+  /// - Returns: A `TimelineClip` whose `assetStorageId` points at the newly
+  ///   inserted storage record and whose `duration` matches the audio file.
+  /// - Throws: `AudioFileError` if the format is unsupported, the file cannot be
+  ///   read, or the audio reports a zero duration; or any error AVFoundation
+  ///   raises while decoding.
+  public static func fromAudioFile(
+    url: URL,
+    in context: SwiftData.ModelContext,
+    name: String? = nil,
+    offset: Timecode = .zero,
+    lane: Int = 0
+  ) throws -> TimelineClip {
+    // 1. Resolve a MIME type from the file extension (rejects unsupported types).
+    let fileExtension = url.pathExtension.lowercased()
+    guard let mimeType = audioMimeType(forPathExtension: fileExtension) else {
+      throw AudioFileError.unsupportedFormat(fileExtension: fileExtension)
+    }
+
+    // 2. Load the file's bytes.
+    let data: Data
+    do {
+      data = try Data(contentsOf: url)
+    } catch {
+      throw AudioFileError.unreadableFile(url: url, reason: error.localizedDescription)
+    }
+
+    // 3. Derive the duration from the decoded audio.
+    let durationSeconds = try audioDurationSeconds(of: url)
+    guard durationSeconds > 0 else {
+      throw AudioFileError.zeroDuration(url: url)
+    }
+
+    // 4. Persist the bytes into a TypedDataStorage record, following the same
+    //    creation pattern used elsewhere in this package.
+    let resolvedName = name ?? url.lastPathComponent
+    let storage = TypedDataStorage(
+      providerId: "external-file",
+      requestorID: "SwiftSecuencia.TimelineClip.fromAudioFile",
+      mimeType: mimeType,
+      binaryValue: data,
+      prompt: resolvedName,
+      audioFormat: fileExtension,
+      durationSeconds: durationSeconds
+    )
+    context.insert(storage)
+
+    // 5. Build the clip referencing that storage id.
+    return TimelineClip(
+      name: resolvedName,
+      assetStorageId: storage.id,
+      offset: offset,
+      duration: Timecode(seconds: durationSeconds),
+      lane: lane
+    )
+  }
+
+  /// Maps a lowercased file extension to an audio MIME type, or `nil` when the
+  /// extension is not a recognized audio container.
+  ///
+  /// MIME types are chosen to match `ForegroundAudioExporter`'s extension
+  /// mapping so exported temp files round-trip correctly.
+  static func audioMimeType(forPathExtension fileExtension: String) -> String? {
+    switch fileExtension {
+    case "mp3": return "audio/mpeg"
+    case "m4a", "mp4", "aac": return "audio/mp4"
+    case "wav", "wave": return "audio/wav"
+    case "aif", "aiff", "aifc": return "audio/aiff"
+    case "caf": return "audio/x-caf"
+    case "flac": return "audio/flac"
+    default: return nil
+    }
+  }
+
+  /// Reads the duration (in seconds) of an audio file via AVFoundation's
+  /// `AVAudioFile`. Returns `0` when the sample rate is unknown.
+  static func audioDurationSeconds(of url: URL) throws -> Double {
+    let file = try AVAudioFile(forReading: url)
+    let sampleRate = file.fileFormat.sampleRate
+    guard sampleRate > 0 else { return 0 }
+    return Double(file.length) / sampleRate
   }
 }
 
