@@ -134,6 +134,139 @@ SwiftSecuencia/
 
 ---
 
+## FCPXML Export Formats
+
+SwiftSecuencia supports Final Cut Pro XML (FCPXML) export in two formats:
+
+### 1. Standalone FCPXML (`.fcpxml`)
+
+**Single XML file** containing timeline structure and references to external media files.
+
+**Structure**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.14">
+  <resources>
+    <format id="r1" name="FFVideoFormat1080p2398" .../>
+    <asset id="r2" src="file:///path/to/media.mov" .../>
+  </resources>
+  <library>
+    <event name="My Event">
+      <project name="My Project">
+        <sequence format="r1">
+          <spine>
+            <asset-clip ref="r2" offset="0s" duration="30s" .../>
+          </spine>
+        </sequence>
+      </project>
+    </event>
+  </library>
+</fcpxml>
+```
+
+**Use Cases**:
+- Media files already in FCP library
+- Network/shared storage workflows
+- Simple XML interchange
+
+**Export API**:
+```swift
+let exporter = FCPXMLExporter(version: .v1_14)
+let xmlString = try await exporter.export(
+    timeline: timeline,
+    assetProvider: assetProvider,
+    libraryName: "Exported Library",
+    eventName: "Exported Event"
+)
+try xmlString.write(to: outputURL, atomically: true, encoding: .utf8)
+```
+
+### 2. FCPXML Bundle (`.fcpxmld`) - Recommended
+
+**Bundle format** (macOS directory presented as single file) containing FCPXML + embedded media.
+
+**Official Apple Format**: Introduced in **DTD 1.10** (documented in [Apple Developer: FCPXML Bundle Reference](https://developer.apple.com/documentation/professional-video-applications/fcpxml-bundle-reference))
+
+**Bundle Structure**:
+```
+Timeline.fcpxmld/
+├── Info.plist        # Bundle metadata
+├── Info.fcpxml       # Main FCPXML document
+└── Media/            # Embedded media assets
+    ├── asset1.mov
+    ├── asset2.wav
+    └── ...
+```
+
+**Use Cases**:
+- Self-contained projects (no external dependencies)
+- Archiving/distribution
+- Cross-system workflows (avoids broken file paths)
+- App Intents / Shortcuts integration
+
+**Export API**:
+```swift
+var exporter = FCPXMLBundleExporter(
+    version: .v1_14,
+    includeMedia: true
+)
+
+let bundleURL = try await exporter.exportBundle(
+    timeline: timeline,
+    assetProvider: assetProvider,
+    to: outputDirectory,
+    bundleName: "MyProject",  // Creates MyProject.fcpxmld
+    libraryName: "Exported Library",
+    eventName: "Exported Event",
+    projectName: "My Project",
+    progress: progress  // Optional: Foundation.Progress for UI
+)
+```
+
+### Supported FCPXML Versions
+
+| Version | Status | Features | Final Cut Pro |
+|---------|--------|----------|---------------|
+| **1.14** | ✅ **Default** | Spatial video support | FCP 12.0+ |
+| 1.13 | ✅ Supported | Enhanced metadata | FCP 11.0+ |
+| 1.12 | ✅ Supported | Additional elements | FCP 10.6+ |
+| 1.11 | ✅ Supported | Improved effects | FCP 10.5+ |
+| **1.10** | ✅ Supported | **Bundle support introduced** | FCP 10.4+ |
+| 1.9 | ✅ Legacy | Enhanced metadata | FCP 10.3+ |
+| 1.8 | ✅ Legacy | Basic FCPXML | FCP 10.2+ |
+
+**DTD Files**: All versions have DTD validation files in `Tests/*/Fixtures/FCPXMLv*.dtd`
+
+### Why Use .fcpxmld Bundles?
+
+1. **Self-Contained** - No broken file paths when moving projects
+2. **Official Apple Format** - Documented since DTD 1.10
+3. **FCP Native** - FCP exports/imports `.fcpxmld` by default
+4. **Archive-Ready** - Single file contains everything
+5. **Cross-Platform** - Works across different macOS systems
+
+### PipelineNeo Dependency
+
+SwiftSecuencia uses **[PipelineNeo](https://github.com/TheAcharya/pipeline-neo)** (v2.0.0+) for FCPXML generation:
+
+**What PipelineNeo Provides**:
+- Low-level FCPXML element construction (`format`, `asset`, `sequence`, `clip`)
+- DTD file management and validation (v1.8-v1.14)
+- XML namespace handling and attribute marshaling
+- Battle-tested implementation from production use
+
+**SwiftSecuencia's Role**:
+- High-level Timeline → FCPXML conversion
+- SwiftData integration
+- AssetProvider abstraction
+- Bundle creation (`.fcpxmld` structure)
+- Progress tracking and cancellation
+
+**License**: MIT License (Reuel Kim)
+
+---
+
 ## CLI Tool (secuencia)
 
 ### Three Subcommands
