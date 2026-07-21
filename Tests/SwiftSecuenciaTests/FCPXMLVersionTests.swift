@@ -8,7 +8,9 @@
 #if os(macOS)
 
   import Foundation
+  import SwiftCompartido
   import SwiftData
+  import SwiftTimecode
   import Testing
   @testable import SwiftSecuencia
 
@@ -42,15 +44,15 @@
         name: "Version Test Timeline",
         videoFormat: .hd1080p(frameRate: .fps23_98),
         audioLayout: .stereo,
-        audioRate: .rate48k
+        audioRate: .rate48kHz
       )
 
       let clip = TimelineClip(
         name: "Test Clip",
         assetStorageId: assetID,
-        startTime: 0.0,
-        duration: 10.0,
-        offset: 0.0,
+        offset: Timecode(seconds: 0.0),
+        duration: Timecode(seconds: 10.0),
+        sourceStart: Timecode(seconds: 0.0),
         lane: 0
       )
 
@@ -64,7 +66,15 @@
     private func createMockAssetProvider(assetID: UUID) -> FileAssetProvider {
       // Create a mock provider with a placeholder URL
       let mockURL = URL(fileURLWithPath: "/tmp/test.wav")
-      return FileAssetProvider(assets: [assetID: mockURL])
+      let entry = FileAssetEntry(
+        fileURL: mockURL,
+        name: "Test Audio",
+        mimeType: "audio/wav",
+        durationSeconds: 10.0,
+        hasVideo: false,
+        hasAudio: true
+      )
+      return FileAssetProvider(registry: [assetID: entry])
     }
 
     // MARK: - Version String Tests

@@ -8,7 +8,9 @@
 #if os(macOS)
 
   import Foundation
+  import SwiftCompartido
   import SwiftData
+  import SwiftTimecode
   import Testing
   @testable import SwiftSecuencia
 
@@ -45,15 +47,15 @@
         name: name,
         videoFormat: .hd1080p(frameRate: .fps23_98),
         audioLayout: .stereo,
-        audioRate: .rate48k
+        audioRate: .rate48kHz
       )
 
       let clip = TimelineClip(
         name: "Test Clip",
         assetStorageId: assetID,
-        startTime: 0.0,
-        duration: 5.0,
-        offset: 0.0,
+        offset: Timecode(seconds: 0.0),
+        duration: Timecode(seconds: 5.0),
+        sourceStart: Timecode(seconds: 0.0),
         lane: 0
       )
 
@@ -66,15 +68,22 @@
 
     /// Creates a test asset provider with mock media files.
     private func createTestAssetProvider(assetID: UUID, tempDir: URL) throws
-      -> FileAssetProvider
-    {
+      -> FileAssetProvider {
       // Create a test audio file (silent WAV)
       let audioData = createSilentWAVData(duration: 5.0, sampleRate: 48000)
       let audioURL = tempDir.appendingPathComponent("\(assetID.uuidString).wav")
       try audioData.write(to: audioURL)
 
       // Create FileAssetProvider with the test file
-      let provider = FileAssetProvider(assets: [assetID: audioURL])
+      let entry = FileAssetEntry(
+        fileURL: audioURL,
+        name: "Test Audio",
+        mimeType: "audio/wav",
+        durationSeconds: 5.0,
+        hasVideo: false,
+        hasAudio: true
+      )
+      let provider = FileAssetProvider(registry: [assetID: entry])
       return provider
     }
 
@@ -418,7 +427,7 @@
       defer { try? FileManager.default.removeItem(at: tempDir) }
 
       // Create provider with no assets (will cause missing asset error)
-      let provider = FileAssetProvider(assets: [:])
+      let provider = FileAssetProvider(registry: [:])
 
       var exporter = FCPXMLBundleExporter(version: .v1_14, includeMedia: true)
 
