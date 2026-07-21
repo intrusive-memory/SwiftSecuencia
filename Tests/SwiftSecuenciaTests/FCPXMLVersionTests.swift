@@ -302,7 +302,7 @@
 
     @Test("Invalid version string returns nil")
     func testInvalidVersionString() {
-      let invalidVersions = ["1.15", "2.0", "invalid", "", "1.7"]
+      let invalidVersions = ["1.15", "2.0", "invalid", "", "1.4", "0.9"]
 
       for versionString in invalidVersions {
         let parsed = FCPXMLVersion(string: versionString)
