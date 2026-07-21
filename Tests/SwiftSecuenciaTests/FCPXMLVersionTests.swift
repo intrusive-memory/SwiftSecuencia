@@ -150,17 +150,18 @@
       FCPXMLVersion.v1_14,
     ])
     func testDTDAvailability(version: FCPXMLVersion) throws {
-      let dtdFilename = version.dtdFilenameWithExtension
+      // DTD filename format: FCPXMLv1_14.dtd (with underscore)
+      let dtdFilename = "Fixtures/FCPXMLv\(version.stringValue.replacingOccurrences(of: ".", with: "_"))"
 
       // Check if DTD file exists in test fixtures
       let bundle = Bundle.module
-      let dtdURL = bundle.url(forResource: dtdFilename.replacingOccurrences(of: ".dtd", with: ""), withExtension: "dtd")
+      let dtdURL = bundle.url(forResource: dtdFilename, withExtension: "dtd")
 
-      #expect(dtdURL != nil, "DTD file \(dtdFilename) should exist in test fixtures")
+      #expect(dtdURL != nil, "DTD file \(dtdFilename).dtd should exist in test fixtures")
 
       if let url = dtdURL {
         let dtdData = try Data(contentsOf: url)
-        #expect(dtdData.count > 0, "DTD file \(dtdFilename) should not be empty")
+        #expect(dtdData.count > 0, "DTD file \(dtdFilename).dtd should not be empty")
       }
     }
 
@@ -177,7 +178,7 @@
     ])
     func testBundleSupportAvailability(version: FCPXMLVersion, shouldSupport: Bool) {
       // v1.10 introduced bundle support
-      let supportsBundles = version.rawValue >= FCPXMLVersion.v1_10.rawValue
+      let supportsBundles = version.supportsBundleFormat
 
       #expect(
         supportsBundles == shouldSupport,
@@ -186,13 +187,17 @@
 
     @Test("Version numbering is sequential")
     func testVersionSequence() {
-      // Ensure version enum raw values are in order
-      #expect(FCPXMLVersion.v1_8.rawValue < FCPXMLVersion.v1_9.rawValue)
-      #expect(FCPXMLVersion.v1_9.rawValue < FCPXMLVersion.v1_10.rawValue)
-      #expect(FCPXMLVersion.v1_10.rawValue < FCPXMLVersion.v1_11.rawValue)
-      #expect(FCPXMLVersion.v1_11.rawValue < FCPXMLVersion.v1_12.rawValue)
-      #expect(FCPXMLVersion.v1_12.rawValue < FCPXMLVersion.v1_13.rawValue)
-      #expect(FCPXMLVersion.v1_13.rawValue < FCPXMLVersion.v1_14.rawValue)
+      // Ensure version enum cases are in order using isAtLeast
+      #expect(FCPXMLVersion.v1_9.isAtLeast(.v1_8))
+      #expect(FCPXMLVersion.v1_10.isAtLeast(.v1_9))
+      #expect(FCPXMLVersion.v1_11.isAtLeast(.v1_10))
+      #expect(FCPXMLVersion.v1_12.isAtLeast(.v1_11))
+      #expect(FCPXMLVersion.v1_13.isAtLeast(.v1_12))
+      #expect(FCPXMLVersion.v1_14.isAtLeast(.v1_13))
+
+      // Also verify that older versions are NOT >= newer versions
+      #expect(!FCPXMLVersion.v1_8.isAtLeast(.v1_9))
+      #expect(!FCPXMLVersion.v1_9.isAtLeast(.v1_10))
     }
 
     // MARK: - XML Structure Validation
@@ -295,15 +300,15 @@
       #expect(parsedVersion == expectedVersion)
     }
 
-    @Test("Invalid version string returns default")
+    @Test("Invalid version string returns nil")
     func testInvalidVersionString() {
       let invalidVersions = ["1.15", "2.0", "invalid", "", "1.7"]
 
       for versionString in invalidVersions {
         let parsed = FCPXMLVersion(string: versionString)
         #expect(
-          parsed == .default,
-          "Invalid version '\(versionString)' should return default (.v1_14)")
+          parsed == nil,
+          "Invalid version '\(versionString)' should return nil")
       }
     }
 
