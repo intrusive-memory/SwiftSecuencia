@@ -1,0 +1,713 @@
+{
+  "nodes": [
+    {
+      "id": "SwiftDataBootstrapTests",
+      "label": "SwiftDataBootstrapTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SecuenciaCLITests/SwiftDataBootstrapTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests SwiftData container and context setup"
+      }
+    },
+    {
+      "id": "TimeStringParserTests",
+      "label": "TimeStringParserTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SecuenciaCLITests/TimeStringParserTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests TimeStringParser for time format parsing"
+      }
+    },
+    {
+      "id": "TimelineBuilderTests",
+      "label": "TimelineBuilderTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SecuenciaCLITests/TimelineBuilderTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests TimelineBuilder for converting definitions to Timeline objects"
+      }
+    },
+    {
+      "id": "TimelineDefinitionTests",
+      "label": "TimelineDefinitionTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SecuenciaCLITests/TimelineDefinitionTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests JSON decoding/encoding of TimelineDefinition"
+      }
+    },
+    {
+      "id": "ValidateCommandTests",
+      "label": "ValidateCommandTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SecuenciaCLITests/ValidateCommandTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests ValidateCommand CLI command"
+      }
+    },
+    {
+      "id": "AssetIntegrationTests",
+      "label": "AssetIntegrationTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/AssetIntegrationTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests asset validation and query operations"
+      }
+    },
+    {
+      "id": "AssetProviderTests",
+      "label": "AssetProviderTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/AssetProviderTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FileAssetProvider and SwiftDataAssetProvider"
+      }
+    },
+    {
+      "id": "DualDialogIntegrationTests",
+      "label": "DualDialogIntegrationTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/DualDialogIntegrationTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests dual dialogue support in Timeline generation"
+      }
+    },
+    {
+      "id": "ExportTelemetryTests",
+      "label": "ExportTelemetryTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/ExportTelemetryTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests telemetry instrumentation in ForegroundAudioExporter"
+      }
+    },
+    {
+      "id": "ExternalAudioFileTests",
+      "label": "ExternalAudioFileTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/ExternalAudioFileTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests TimelineClip.fromAudioFile and per-clip gain"
+      }
+    },
+    {
+      "id": "FCPXMLBundleExportTests",
+      "label": "FCPXMLBundleExportTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FCPXMLBundleExportTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FCPXML bundle export structure and content"
+      }
+    },
+    {
+      "id": "FCPXMLBundleExporterTests",
+      "label": "FCPXMLBundleExporterTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FCPXMLBundleExporterTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FCPXMLBundleExporter functionality"
+      }
+    },
+    {
+      "id": "FCPXMLDTDValidationTests",
+      "label": "FCPXMLDTDValidationTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FCPXMLDTDValidationTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FCPXML DTD validation against official DTD files"
+      }
+    },
+    {
+      "id": "FCPXMLExportTests",
+      "label": "FCPXMLExportTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FCPXMLExportTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FCPXML export basic structure and attributes"
+      }
+    },
+    {
+      "id": "FCPXMLVersionTests",
+      "label": "FCPXMLVersionTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FCPXMLVersionTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FCPXML version compatibility"
+      }
+    },
+    {
+      "id": "FinalFadeOutTests",
+      "label": "FinalFadeOutTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FinalFadeOutTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests final fade-out feature in ForegroundAudioExporter"
+      }
+    },
+    {
+      "id": "ForegroundExporterTimingDataTests",
+      "label": "ForegroundExporterTimingDataTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/ForegroundExporterTimingDataTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests timing data export (WebVTT and JSON)"
+      }
+    },
+    {
+      "id": "FrameRateTests",
+      "label": "FrameRateTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/FrameRateTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests FrameRate enum and conversions"
+      }
+    },
+    {
+      "id": "GenerateFCPXMLBundleIntentTests",
+      "label": "GenerateFCPXMLBundleIntentTests",
+      "type": "test_suite",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/GenerateFCPXMLBundleIntentTests.swift",
+        "framework": "Testing",
+        "purpose": "Tests AppIntent structure and metadata"
+      }
+    },
+    {
+      "id": "DualDialogFixtures",
+      "label": "DualDialogFixtures",
+      "type": "test_helper",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/Helpers/DualDialogFixtures.swift",
+        "purpose": "Test fixtures for dual dialogue scenarios"
+      }
+    },
+    {
+      "id": "FileAssetProvider_TestHelper",
+      "label": "FileAssetProvider (Test Helper)",
+      "type": "test_helper",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/Helpers/FileAssetProvider.swift",
+        "purpose": "In-memory asset provider for testing PipelineNeo export"
+      }
+    },
+    {
+      "id": "PipelineNeoTypeAliases",
+      "label": "PipelineNeoTypeAliases",
+      "type": "test_helper",
+      "attributes": {
+        "path": "Tests/SwiftSecuenciaTests/Helpers/PipelineNeoTypeAliases.swift",
+        "purpose": "Type aliases for PipelineNeo types that collide with SwiftSecuencia"
+      }
+    },
+    {
+      "id": "SwiftDataBootstrap",
+      "label": "SwiftDataBootstrap",
+      "type": "utility_class",
+      "attributes": {
+        "module": "SecuenciaCLICore",
+        "purpose": "Creates in-memory SwiftData containers for testing"
+      }
+    },
+    {
+      "id": "TimeStringParser",
+      "label": "TimeStringParser",
+      "type": "parser",
+      "attributes": {
+        "module": "SecuenciaCLICore",
+        "purpose": "Parses time strings in various formats (integer, decimal, rational)"
+      }
+    },
+    {
+      "id": "TimelineBuilder",
+      "label": "TimelineBuilder",
+      "type": "builder",
+      "attributes": {
+        "module": "SecuenciaCLICore",
+        "purpose": "Converts TimelineDefinition to Timeline objects"
+      }
+    },
+    {
+      "id": "TimelineDefinition",
+      "label": "TimelineDefinition",
+      "type": "model",
+      "attributes": {
+        "module": "SecuenciaCLICore",
+        "purpose": "JSON schema for timeline configuration"
+      }
+    },
+    {
+      "id": "ValidateCommand",
+      "label": "ValidateCommand",
+      "type": "cli_command",
+      "attributes": {
+        "module": "SecuenciaCLICore",
+        "purpose": "CLI command to validate timeline JSON files"
+      }
+    },
+    {
+      "id": "TimelineClip.fromAudioFile",
+      "label": "TimelineClip.fromAudioFile",
+      "type": "factory_method",
+      "attributes": {
+        "purpose": "Creates TimelineClip from audio file URL"
+      }
+    },
+    {
+      "id": "FileAssetProvider",
+      "label": "FileAssetProvider",
+      "type": "asset_provider",
+      "attributes": {
+        "purpose": "Provides asset metadata from file system"
+      }
+    },
+    {
+      "id": "SwiftDataAssetProvider",
+      "label": "SwiftDataAssetProvider",
+      "type": "asset_provider",
+      "attributes": {
+        "purpose": "Provides asset metadata from SwiftData"
+      }
+    },
+    {
+      "id": "ScreenplayToTimelineConverter",
+      "label": "ScreenplayToTimelineConverter",
+      "type": "converter",
+      "attributes": {
+        "purpose": "Converts screenplay audio elements to Timeline with dual dialogue support"
+      }
+    },
+    {
+      "id": "ForegroundAudioExporter",
+      "label": "ForegroundAudioExporter",
+      "type": "exporter",
+      "attributes": {
+        "purpose": "Exports audio from Timeline with telemetry, fade-out, and timing data"
+      }
+    },
+    {
+      "id": "FCPXMLBundleExporter",
+      "label": "FCPXMLBundleExporter",
+      "type": "exporter",
+      "attributes": {
+        "purpose": "Exports FCPXML bundle (.fcpxmld) with Info.plist and media"
+      }
+    },
+    {
+      "id": "FCPXMLExporter",
+      "label": "FCPXMLExporter",
+      "type": "exporter",
+      "attributes": {
+        "purpose": "Exports FCPXML document with version support"
+      }
+    },
+    {
+      "id": "FCPXMLDTDValidator",
+      "label": "FCPXMLDTDValidator",
+      "type": "validator",
+      "attributes": {
+        "purpose": "Validates FCPXML against official DTD files"
+      }
+    },
+    {
+      "id": "FCPXMLVersion",
+      "label": "FCPXMLVersion",
+      "type": "enum",
+      "attributes": {
+        "values": [
+          "v1_8",
+          "v1_9",
+          "v1_10",
+          "v1_11",
+          "v1_12",
+          "v1_13",
+          "v1_14"
+        ],
+        "default": "v1_14"
+      }
+    },
+    {
+      "id": "FrameRate",
+      "label": "FrameRate",
+      "type": "enum",
+      "attributes": {
+        "values": [
+          "fps23_98",
+          "fps24",
+          "fps25",
+          "fps29_97",
+          "fps30",
+          "fps50",
+          "fps59_94",
+          "fps60",
+          "custom"
+        ],
+        "purpose": "Video frame rate with drop-frame and FCPXML support"
+      }
+    },
+    {
+      "id": "GenerateFCPXMLBundleIntent",
+      "label": "GenerateFCPXMLBundleIntent",
+      "type": "app_intent",
+      "attributes": {
+        "purpose": "AppIntent for generating FCPXML bundles from Shortcuts"
+      }
+    },
+    {
+      "id": "TimingDataFormat",
+      "label": "TimingDataFormat",
+      "type": "enum",
+      "attributes": {
+        "values": [
+          "none",
+          "webvtt",
+          "json",
+          "both"
+        ],
+        "purpose": "Format for timing data export"
+      }
+    },
+    {
+      "id": "TestUtilities.generateAudioData",
+      "label": "TestUtilities.generateAudioData",
+      "type": "test_utility",
+      "attributes": {
+        "purpose": "Generates test audio data for unit tests"
+      }
+    },
+    {
+      "id": "MockTelemetryReporter",
+      "label": "MockTelemetryReporter",
+      "type": "test_mock",
+      "attributes": {
+        "purpose": "Mock telemetry reporter for testing"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "SwiftDataBootstrapTests",
+      "target": "SwiftDataBootstrap",
+      "type": "tests"
+    },
+    {
+      "source": "TimeStringParserTests",
+      "target": "TimeStringParser",
+      "type": "tests"
+    },
+    {
+      "source": "TimelineBuilderTests",
+      "target": "TimelineBuilder",
+      "type": "tests"
+    },
+    {
+      "source": "TimelineDefinitionTests",
+      "target": "TimelineDefinition",
+      "type": "tests"
+    },
+    {
+      "source": "ValidateCommandTests",
+      "target": "ValidateCommand",
+      "type": "tests"
+    },
+    {
+      "source": "AssetIntegrationTests",
+      "target": "TimelineClip",
+      "type": "tests"
+    },
+    {
+      "source": "AssetProviderTests",
+      "target": "FileAssetProvider",
+      "type": "tests"
+    },
+    {
+      "source": "AssetProviderTests",
+      "target": "SwiftDataAssetProvider",
+      "type": "tests"
+    },
+    {
+      "source": "DualDialogIntegrationTests",
+      "target": "ScreenplayToTimelineConverter",
+      "type": "tests"
+    },
+    {
+      "source": "DualDialogIntegrationTests",
+      "target": "DualDialogFixtures",
+      "type": "uses"
+    },
+    {
+      "source": "ExportTelemetryTests",
+      "target": "ForegroundAudioExporter",
+      "type": "tests"
+    },
+    {
+      "source": "ExportTelemetryTests",
+      "target": "MockTelemetryReporter",
+      "type": "uses"
+    },
+    {
+      "source": "ExternalAudioFileTests",
+      "target": "TimelineClip.fromAudioFile",
+      "type": "tests"
+    },
+    {
+      "source": "ExternalAudioFileTests",
+      "target": "ForegroundAudioExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLBundleExportTests",
+      "target": "FCPXMLBundleExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLBundleExporterTests",
+      "target": "FCPXMLBundleExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLBundleExporterTests",
+      "target": "FileAssetProvider_TestHelper",
+      "type": "uses"
+    },
+    {
+      "source": "FCPXMLDTDValidationTests",
+      "target": "FCPXMLDTDValidator",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLDTDValidationTests",
+      "target": "FCPXMLExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLExportTests",
+      "target": "FCPXMLExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLVersionTests",
+      "target": "FCPXMLVersion",
+      "type": "tests"
+    },
+    {
+      "source": "FCPXMLVersionTests",
+      "target": "FCPXMLExporter",
+      "type": "tests"
+    },
+    {
+      "source": "FinalFadeOutTests",
+      "target": "ForegroundAudioExporter",
+      "type": "tests"
+    },
+    {
+      "source": "ForegroundExporterTimingDataTests",
+      "target": "ForegroundAudioExporter",
+      "type": "tests"
+    },
+    {
+      "source": "ForegroundExporterTimingDataTests",
+      "target": "TimingDataFormat",
+      "type": "tests"
+    },
+    {
+      "source": "FrameRateTests",
+      "target": "FrameRate",
+      "type": "tests"
+    },
+    {
+      "source": "GenerateFCPXMLBundleIntentTests",
+      "target": "GenerateFCPXMLBundleIntent",
+      "type": "tests"
+    },
+    {
+      "source": "TimelineBuilder",
+      "target": "TimelineDefinition",
+      "type": "uses"
+    },
+    {
+      "source": "TimelineBuilder",
+      "target": "FileAssetProvider",
+      "type": "creates"
+    },
+    {
+      "source": "TimelineBuilder",
+      "target": "Timeline",
+      "type": "creates"
+    },
+    {
+      "source": "ValidateCommand",
+      "target": "TimelineDefinition",
+      "type": "validates"
+    },
+    {
+      "source": "TimeStringParser",
+      "target": "Timecode",
+      "type": "produces"
+    },
+    {
+      "source": "FileAssetProvider",
+      "target": "AssetMetadata",
+      "type": "produces"
+    },
+    {
+      "source": "SwiftDataAssetProvider",
+      "target": "AssetMetadata",
+      "type": "produces"
+    },
+    {
+      "source": "SwiftDataAssetProvider",
+      "target": "TypedDataStorage",
+      "type": "queries"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "Timeline",
+      "type": "creates"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "ScreenplayMetadata",
+      "type": "uses"
+    },
+    {
+      "source": "ForegroundAudioExporter",
+      "target": "Timeline",
+      "type": "exports"
+    },
+    {
+      "source": "ForegroundAudioExporter",
+      "target": "TimingDataFormat",
+      "type": "uses"
+    },
+    {
+      "source": "FCPXMLBundleExporter",
+      "target": "Timeline",
+      "type": "exports"
+    },
+    {
+      "source": "FCPXMLBundleExporter",
+      "target": "FCPXMLExporter",
+      "type": "uses"
+    },
+    {
+      "source": "FCPXMLBundleExporter",
+      "target": "FCPXMLVersion",
+      "type": "uses"
+    },
+    {
+      "source": "FCPXMLExporter",
+      "target": "FCPXMLVersion",
+      "type": "uses"
+    },
+    {
+      "source": "FCPXMLExporter",
+      "target": "Timeline",
+      "type": "exports"
+    },
+    {
+      "source": "FCPXMLDTDValidator",
+      "target": "FCPXMLVersion",
+      "type": "validates"
+    },
+    {
+      "source": "DualDialogFixtures",
+      "target": "TypedDataStorage",
+      "type": "creates"
+    },
+    {
+      "source": "DualDialogFixtures",
+      "target": "ScreenplayMetadata",
+      "type": "creates"
+    },
+    {
+      "source": "TimelineClip.fromAudioFile",
+      "target": "TypedDataStorage",
+      "type": "creates"
+    },
+    {
+      "source": "ExportTelemetryTests",
+      "target": "TestUtilities.generateAudioData",
+      "type": "uses"
+    },
+    {
+      "source": "ExternalAudioFileTests",
+      "target": "AVAudioFile",
+      "type": "uses"
+    },
+    {
+      "source": "FinalFadeOutTests",
+      "target": "TestUtilities.generateAudioData",
+      "type": "uses"
+    },
+    {
+      "source": "ForegroundExporterTimingDataTests",
+      "target": "TestUtilities.generateAudioData",
+      "type": "uses"
+    },
+    {
+      "source": "FrameRate",
+      "target": "Timecode",
+      "type": "produces"
+    },
+    {
+      "source": "GenerateFCPXMLBundleIntent",
+      "target": "FCPXMLBundleExporter",
+      "type": "uses"
+    },
+    {
+      "source": "SwiftDataBootstrap",
+      "target": "Timeline",
+      "type": "manages"
+    },
+    {
+      "source": "SwiftDataBootstrap",
+      "target": "TimelineClip",
+      "type": "manages"
+    },
+    {
+      "source": "SwiftDataBootstrap",
+      "target": "TypedDataStorage",
+      "type": "manages"
+    },
+    {
+      "source": "TimelineClip",
+      "target": "TypedDataStorage",
+      "type": "references"
+    },
+    {
+      "source": "Timeline",
+      "target": "VideoFormat",
+      "type": "has"
+    },
+    {
+      "source": "VideoFormat",
+      "target": "FrameRate",
+      "type": "has"
+    },
+    {
+      "source": "PipelineNeoTypeAliases",
+      "target": "PipelineNeo",
+      "type": "aliases"
+    }
+  ],
+  "input_tokens": 108565,
+  "output_tokens": 0
+}
