@@ -1,0 +1,616 @@
+{
+  "nodes": [
+    {
+      "id": "FCPXMLDTDValidator",
+      "labels": [
+        "Swift:Struct",
+        "Validator"
+      ],
+      "properties": {
+        "name": "FCPXMLDTDValidator",
+        "summary": "Validates FCPXML documents against DTD specifications using xmllint",
+        "platform": "macOS",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/FCPXMLDTDValidator.swift",
+        "visibility": "public"
+      }
+    },
+    {
+      "id": "FCPXMLDTDValidator.DTDValidationResult",
+      "labels": [
+        "Swift:Struct"
+      ],
+      "properties": {
+        "name": "DTDValidationResult",
+        "summary": "Result of DTD validation",
+        "conformances": "Sendable, Equatable",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/FCPXMLDTDValidator.swift"
+      }
+    },
+    {
+      "id": "DTDValidationError",
+      "labels": [
+        "Swift:Enum",
+        "Error"
+      ],
+      "properties": {
+        "name": "DTDValidationError",
+        "summary": "Errors that can occur during FCPXML DTD validation",
+        "conformances": "Error, LocalizedError",
+        "cases": "dtdNotFound, xmllintNotFound, fileNotReadable",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/FCPXMLDTDValidator.swift"
+      }
+    },
+    {
+      "id": "FCPXMLValidator",
+      "labels": [
+        "Swift:Struct",
+        "Validator"
+      ],
+      "properties": {
+        "name": "FCPXMLValidator",
+        "summary": "Validates FCPXML documents and timelines before export",
+        "platform": "macOS",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/FCPXMLValidator.swift",
+        "visibility": "public"
+      }
+    },
+    {
+      "id": "ValidationError",
+      "labels": [
+        "Swift:Struct"
+      ],
+      "properties": {
+        "name": "ValidationError",
+        "summary": "Validation error for FCPXML documents",
+        "conformances": "Sendable, Equatable, Hashable",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/ValidationError.swift",
+        "visibility": "public"
+      }
+    },
+    {
+      "id": "ValidationError.ErrorType",
+      "labels": [
+        "Swift:Enum"
+      ],
+      "properties": {
+        "name": "ErrorType",
+        "conformances": "String, Sendable, Equatable, Hashable",
+        "cases": "missing_asset_reference, invalid_time_value, invalid_duration, invalid_lane, missing_required_element, invalid_attribute_value, empty_timeline, invalid_format",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/ValidationError.swift"
+      }
+    },
+    {
+      "id": "ValidationWarning",
+      "labels": [
+        "Swift:Struct"
+      ],
+      "properties": {
+        "name": "ValidationWarning",
+        "summary": "Validation warning for FCPXML documents",
+        "conformances": "Sendable, Equatable, Hashable",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/ValidationError.swift",
+        "visibility": "public"
+      }
+    },
+    {
+      "id": "ValidationWarning.WarningType",
+      "labels": [
+        "Swift:Enum"
+      ],
+      "properties": {
+        "name": "WarningType",
+        "conformances": "String, Sendable, Equatable, Hashable",
+        "cases": "overlapping_clips_same_lane, unused_asset, large_timeline, missing_metadata",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/ValidationError.swift"
+      }
+    },
+    {
+      "id": "ValidationResult",
+      "labels": [
+        "Swift:Struct"
+      ],
+      "properties": {
+        "name": "ValidationResult",
+        "summary": "Result of validating an FCPXML document or timeline",
+        "conformances": "Sendable, Equatable",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Validation/ValidationResult.swift",
+        "visibility": "public"
+      }
+    },
+    {
+      "id": "BuildCommandTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "BuildCommandTests",
+        "summary": "Tests for the BuildCommand end-to-end pipeline",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/BuildCommandTests.swift"
+      }
+    },
+    {
+      "id": "BuildCommandUnitTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "BuildCommandUnitTests",
+        "summary": "Unit tests for BuildCommand CLI entry point",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/BuildCommandUnitTests.swift"
+      }
+    },
+    {
+      "id": "DTDValidationTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "DTDValidationTests",
+        "summary": "Tests for DTD validation of generated FCPXML",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/DTDValidationTests.swift"
+      }
+    },
+    {
+      "id": "EndToEndTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "EndToEndTests",
+        "summary": "End-to-end tests for the complete CLI pipeline",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/EndToEndTests.swift"
+      }
+    },
+    {
+      "id": "FileResolverPathResolutionTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "FileResolverPathResolutionTests",
+        "summary": "Tests for FileResolver path resolution",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/FileResolverTests.swift"
+      }
+    },
+    {
+      "id": "FileResolverDeduplicationTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "FileResolverDeduplicationTests",
+        "summary": "Tests for FileResolver asset deduplication",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/FileResolverTests.swift"
+      }
+    },
+    {
+      "id": "FrameRateParserTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "FrameRateParserTests",
+        "summary": "Tests for frame rate parser",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/FrameRateParserTests.swift"
+      }
+    },
+    {
+      "id": "JSONTimelineParserTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "JSONTimelineParserTests",
+        "summary": "Tests for JSON timeline parser",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/JSONTimelineParserTests.swift"
+      }
+    },
+    {
+      "id": "MediaProbeMIMETypeTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "MediaProbeMIMETypeTests",
+        "summary": "Tests for MediaProbe MIME type detection",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/MediaProbeTests.swift"
+      }
+    },
+    {
+      "id": "MediaProbeDurationAPITests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "MediaProbeDurationAPITests",
+        "summary": "Tests for MediaProbe duration API",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/MediaProbeTests.swift"
+      }
+    },
+    {
+      "id": "SchemaCommandTests",
+      "labels": [
+        "Swift:Struct",
+        "Test:Suite"
+      ],
+      "properties": {
+        "name": "SchemaCommandTests",
+        "summary": "Tests for SchemaCommand",
+        "test_framework": "Swift Testing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/SchemaCommandTests.swift"
+      }
+    },
+    {
+      "id": "simple-timeline.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "simple-timeline.json",
+        "summary": "Simple timeline with image, video, and audio clips",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/simple-timeline.json"
+      }
+    },
+    {
+      "id": "markers-timeline.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "markers-timeline.json",
+        "summary": "Timeline with chapter markers",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/markers-timeline.json"
+      }
+    },
+    {
+      "id": "multi-lane-timeline.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "multi-lane-timeline.json",
+        "summary": "Timeline with clips on multiple lanes",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/multi-lane-timeline.json"
+      }
+    },
+    {
+      "id": "auto-duration.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "auto-duration.json",
+        "summary": "Timeline with clips that need duration probing",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/auto-duration.json"
+      }
+    },
+    {
+      "id": "valid-timeline.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "valid-timeline.json",
+        "summary": "Valid timeline with all fields",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/valid-timeline.json"
+      }
+    },
+    {
+      "id": "invalid-clip-type.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "invalid-clip-type.json",
+        "summary": "Timeline with invalid clip type",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/invalid-clip-type.json"
+      }
+    },
+    {
+      "id": "marker-missing-type.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "marker-missing-type.json",
+        "summary": "Timeline with marker missing markerType",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/marker-missing-type.json"
+      }
+    },
+    {
+      "id": "missing-file.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "missing-file.json",
+        "summary": "Timeline referencing nonexistent file",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/missing-file.json"
+      }
+    },
+    {
+      "id": "resolution-test.json",
+      "labels": [
+        "Test:Fixture",
+        "JSON"
+      ],
+      "properties": {
+        "name": "resolution-test.json",
+        "summary": "Timeline for testing file path resolution",
+        "file_path": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Tests/SecuenciaCLITests/Fixtures/resolution-test.json"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "FCPXMLDTDValidator",
+      "to": "FCPXMLDTDValidator.DTDValidationResult",
+      "label": "RETURNS"
+    },
+    {
+      "from": "FCPXMLDTDValidator",
+      "to": "DTDValidationError",
+      "label": "THROWS"
+    },
+    {
+      "from": "FCPXMLDTDValidator",
+      "to": "FCPXMLVersion",
+      "label": "USES"
+    },
+    {
+      "from": "FCPXMLValidator",
+      "to": "ValidationResult",
+      "label": "RETURNS"
+    },
+    {
+      "from": "FCPXMLValidator",
+      "to": "ValidationError",
+      "label": "USES"
+    },
+    {
+      "from": "FCPXMLValidator",
+      "to": "ValidationWarning",
+      "label": "USES"
+    },
+    {
+      "from": "FCPXMLValidator",
+      "to": "Timeline",
+      "label": "VALIDATES"
+    },
+    {
+      "from": "ValidationResult",
+      "to": "ValidationError",
+      "label": "CONTAINS"
+    },
+    {
+      "from": "ValidationResult",
+      "to": "ValidationWarning",
+      "label": "CONTAINS"
+    },
+    {
+      "from": "ValidationError",
+      "to": "ValidationError.ErrorType",
+      "label": "HAS_TYPE"
+    },
+    {
+      "from": "ValidationWarning",
+      "to": "ValidationWarning.WarningType",
+      "label": "HAS_TYPE"
+    },
+    {
+      "from": "BuildCommandTests",
+      "to": "FCPXMLExporter",
+      "label": "TESTS"
+    },
+    {
+      "from": "BuildCommandTests",
+      "to": "FCPXMLBundleExporter",
+      "label": "TESTS"
+    },
+    {
+      "from": "BuildCommandTests",
+      "to": "JSONTimelineParser",
+      "label": "USES"
+    },
+    {
+      "from": "BuildCommandTests",
+      "to": "FileResolver",
+      "label": "USES"
+    },
+    {
+      "from": "BuildCommandTests",
+      "to": "TimelineBuilder",
+      "label": "USES"
+    },
+    {
+      "from": "BuildCommandUnitTests",
+      "to": "Build",
+      "label": "TESTS"
+    },
+    {
+      "from": "BuildCommandUnitTests",
+      "to": "FCPXMLVersion",
+      "label": "USES"
+    },
+    {
+      "from": "BuildCommandUnitTests",
+      "to": "FileResolver",
+      "label": "TESTS"
+    },
+    {
+      "from": "DTDValidationTests",
+      "to": "FCPXMLDTDValidator",
+      "label": "TESTS"
+    },
+    {
+      "from": "DTDValidationTests",
+      "to": "simple-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "DTDValidationTests",
+      "to": "multi-lane-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "DTDValidationTests",
+      "to": "markers-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "JSONTimelineParser",
+      "label": "TESTS"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "FileResolver",
+      "label": "TESTS"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "MediaProbe",
+      "label": "TESTS"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "TimelineBuilder",
+      "label": "TESTS"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "FCPXMLExporter",
+      "label": "TESTS"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "simple-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "multi-lane-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "markers-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "EndToEndTests",
+      "to": "auto-duration.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "FileResolverPathResolutionTests",
+      "to": "FileResolver",
+      "label": "TESTS"
+    },
+    {
+      "from": "FileResolverPathResolutionTests",
+      "to": "resolution-test.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "FileResolverPathResolutionTests",
+      "to": "missing-file.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "FileResolverDeduplicationTests",
+      "to": "FileResolver",
+      "label": "TESTS"
+    },
+    {
+      "from": "FrameRateParserTests",
+      "to": "FrameRateParser",
+      "label": "TESTS"
+    },
+    {
+      "from": "JSONTimelineParserTests",
+      "to": "JSONTimelineParser",
+      "label": "TESTS"
+    },
+    {
+      "from": "JSONTimelineParserTests",
+      "to": "valid-timeline.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "JSONTimelineParserTests",
+      "to": "invalid-clip-type.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "JSONTimelineParserTests",
+      "to": "marker-missing-type.json",
+      "label": "USES_FIXTURE"
+    },
+    {
+      "from": "MediaProbeMIMETypeTests",
+      "to": "MediaProbe",
+      "label": "TESTS"
+    },
+    {
+      "from": "MediaProbeDurationAPITests",
+      "to": "MediaProbe",
+      "label": "TESTS"
+    },
+    {
+      "from": "SchemaCommandTests",
+      "to": "Schema",
+      "label": "TESTS"
+    },
+    {
+      "from": "SchemaCommandTests",
+      "to": "simple-timeline.json",
+      "label": "VALIDATES_FIXTURE"
+    },
+    {
+      "from": "SchemaCommandTests",
+      "to": "markers-timeline.json",
+      "label": "VALIDATES_FIXTURE"
+    },
+    {
+      "from": "SchemaCommandTests",
+      "to": "multi-lane-timeline.json",
+      "label": "VALIDATES_FIXTURE"
+    },
+    {
+      "from": "SchemaCommandTests",
+      "to": "auto-duration.json",
+      "label": "VALIDATES_FIXTURE"
+    }
+  ],
+  "input_tokens": 62557,
+  "output_tokens": 0
+}

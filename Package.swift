@@ -24,7 +24,7 @@ let package = Package(
     ),
   ],
   dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", .upToNextMajor(from: "7.2.1")),
+    .package(url: "https://github.com/intrusive-memory/SwiftCompartido.git", .upToNextMajor(from: "7.2.4")),
     .package(url: "https://github.com/intrusive-memory/SwiftFijos.git", .upToNextMajor(from: "1.4.1")),
     .package(url: "https://github.com/orchetect/swift-timecode", from: "3.0.0"),
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),

@@ -1,0 +1,553 @@
+{
+  "nodes": [
+    {
+      "id": "SwiftSecuenciaExporter",
+      "label": "SwiftSecuenciaExporter",
+      "type": "struct",
+      "description": "Exports SwiftSecuencia.Timeline to FCPXML document string using PipelineNeo's FCPXMLExporter",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/SwiftSecuenciaExporter.swift"
+    },
+    {
+      "id": "FCPXMLVersion",
+      "label": "FCPXMLVersion",
+      "type": "typealias",
+      "description": "Re-exports PipelineNeo.FCPXMLVersion for SwiftSecuencia consumers",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/SwiftSecuenciaExporter.swift"
+    },
+    {
+      "id": "TimelineAudioExporter",
+      "label": "TimelineAudioExporter",
+      "type": "struct",
+      "description": "Exports Timeline objects to M4A stereo audio files using AVMutableComposition",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimelineAudioExporter.swift"
+    },
+    {
+      "id": "AudioExportFormat",
+      "label": "AudioExportFormat",
+      "type": "enum",
+      "description": "Audio export format options (currently M4A only)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimelineAudioExporter.swift"
+    },
+    {
+      "id": "AudioExportError",
+      "label": "AudioExportError",
+      "type": "enum",
+      "description": "Errors that can occur during audio export",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimelineAudioExporter.swift"
+    },
+    {
+      "id": "TimingData",
+      "label": "TimingData",
+      "type": "struct",
+      "description": "Timing data for audio segments, enabling synchronized transcript display",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimingData.swift"
+    },
+    {
+      "id": "TimingSegment",
+      "label": "TimingSegment",
+      "type": "struct",
+      "description": "A single timed segment (dialogue line or audio clip)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimingData.swift"
+    },
+    {
+      "id": "TimingMetadata",
+      "label": "TimingMetadata",
+      "type": "struct",
+      "description": "Optional metadata for timing segments (character, lane, clipId)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimingData.swift"
+    },
+    {
+      "id": "TimingDataFormat",
+      "label": "TimingDataFormat",
+      "type": "enum",
+      "description": "Format options for timing data export (none, webvtt, json, both)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/TimingDataFormat.swift"
+    },
+    {
+      "id": "AudioLayout",
+      "label": "AudioLayout",
+      "type": "enum",
+      "description": "Audio channel layout for FCPXML sequences (mono, stereo, surround, 7.1)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Format/AudioLayout.swift"
+    },
+    {
+      "id": "AudioRate",
+      "label": "AudioRate",
+      "type": "enum",
+      "description": "Audio sample rate for FCPXML assets (44.1kHz, 48kHz, 88.2kHz, 96kHz)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Format/AudioRate.swift"
+    },
+    {
+      "id": "ColorSpace",
+      "label": "ColorSpace",
+      "type": "enum",
+      "description": "Video color space specification (rec709, rec2020, rec2020HLG, rec2020PQ, sRGB)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Format/ColorSpace.swift"
+    },
+    {
+      "id": "VideoFormat",
+      "label": "VideoFormat",
+      "type": "struct",
+      "description": "Video format configuration for FCPXML sequences and clips (resolution, frame rate, color space)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Format/VideoFormat.swift"
+    },
+    {
+      "id": "ChapterMarker",
+      "label": "ChapterMarker",
+      "type": "struct",
+      "description": "Chapter marker for defining video chapters and navigation",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Metadata/ChapterMarker.swift"
+    },
+    {
+      "id": "Keyword",
+      "label": "Keyword",
+      "type": "struct",
+      "description": "Keyword for tagging clips and ranges in the timeline",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Metadata/Keyword.swift"
+    },
+    {
+      "id": "Marker",
+      "label": "Marker",
+      "type": "struct",
+      "description": "Standard marker that annotates a specific point or range in the timeline",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Metadata/Marker.swift"
+    },
+    {
+      "id": "Metadata",
+      "label": "Metadata",
+      "type": "struct",
+      "description": "Container for custom metadata key-value pairs",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Metadata/Metadata.swift"
+    },
+    {
+      "id": "Rating",
+      "label": "Rating",
+      "type": "struct",
+      "description": "Rating for marking clips as favorites or rejected",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Metadata/Rating.swift"
+    },
+    {
+      "id": "ScreenplayMetadata",
+      "label": "ScreenplayMetadata",
+      "type": "struct",
+      "description": "Screenplay-specific metadata for timeline clips generated from screenplay elements",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Models/ScreenplayMetadata.swift"
+    },
+    {
+      "id": "SwiftSecuencia",
+      "label": "SwiftSecuencia",
+      "type": "struct",
+      "description": "Main library namespace and version information",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/SwiftSecuencia.swift"
+    },
+    {
+      "id": "SecuenciaTelemetryEvent",
+      "label": "SecuenciaTelemetryEvent",
+      "type": "enum",
+      "description": "Telemetry events emitted by SwiftSecuencia to diagnose memory retention and resource cleanup",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Telemetry/SecuenciaTelemetryEvent.swift"
+    },
+    {
+      "id": "SecuenciaTelemetryReporter",
+      "label": "SecuenciaTelemetryReporter",
+      "type": "protocol",
+      "description": "Protocol for capturing and reporting telemetry events from SwiftSecuencia",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Telemetry/SecuenciaTelemetryReporter.swift"
+    },
+    {
+      "id": "Timeline",
+      "label": "Timeline",
+      "type": "class",
+      "description": "SwiftData model for persisting timeline data with clips, format settings, and metadata",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/Timeline.swift"
+    },
+    {
+      "id": "TimelineClip",
+      "label": "TimelineClip",
+      "type": "class",
+      "description": "SwiftData model for persisting timeline clip data, linked to TypedDataStorage content",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/TimelineClip.swift"
+    },
+    {
+      "id": "FrameRate",
+      "label": "FrameRate",
+      "type": "enum",
+      "description": "Video frame rate with precise frame duration (23.98, 24, 25, 29.97, 30, 50, 59.94, 60, custom)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timing/FrameRate.swift"
+    },
+    {
+      "id": "Timecode",
+      "label": "Timecode",
+      "type": "struct",
+      "description": "Rational time representation for FCPXML using TimecodeKit's Fraction",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timing/Timecode.swift"
+    },
+    {
+      "id": "ExportableDocument",
+      "label": "ExportableDocument",
+      "type": "protocol",
+      "description": "Protocol for documents that can be exported to FCP and M4A via ExportMenuView",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/UI/ExportableDocument.swift"
+    },
+    {
+      "id": "ClipPlacement",
+      "label": "ClipPlacement",
+      "type": "struct",
+      "description": "Information about a clip's placement on the timeline (offset, duration, lane)",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/Timeline.swift"
+    },
+    {
+      "id": "RippleLaneOption",
+      "label": "RippleLaneOption",
+      "type": "enum",
+      "description": "Options for which lanes to affect during a ripple insert",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/Timeline.swift"
+    },
+    {
+      "id": "RippleInsertResult",
+      "label": "RippleInsertResult",
+      "type": "struct",
+      "description": "Result of a ripple insert operation",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/Timeline.swift"
+    },
+    {
+      "id": "ClipShift",
+      "label": "ClipShift",
+      "type": "struct",
+      "description": "Information about a clip that was shifted during ripple",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/Timeline.swift"
+    },
+    {
+      "id": "PipelineNeo",
+      "label": "PipelineNeo",
+      "type": "dependency",
+      "description": "External FCPXML export library used by SwiftSecuenciaExporter",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Export/SwiftSecuenciaExporter.swift"
+    },
+    {
+      "id": "SwiftCompartido",
+      "label": "SwiftCompartido",
+      "type": "dependency",
+      "description": "Shared library providing TypedDataStorage for media content",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/TimelineClip.swift"
+    },
+    {
+      "id": "TypedDataStorage",
+      "label": "TypedDataStorage",
+      "type": "class",
+      "description": "SwiftData model from SwiftCompartido that stores actual media content",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timeline/TimelineClip.swift"
+    },
+    {
+      "id": "SwiftTimecode",
+      "label": "SwiftTimecode",
+      "type": "dependency",
+      "description": "Provides Fraction type for rational time representation",
+      "file": "/Users/stovak/Projects/package-collection/pkg/SwiftSecuencia/Sources/SwiftSecuencia/Timing/Timecode.swift"
+    }
+  ],
+  "edges": [
+    {
+      "from": "SwiftSecuenciaExporter",
+      "to": "FCPXMLVersion",
+      "label": "reexports",
+      "type": "typealias"
+    },
+    {
+      "from": "SwiftSecuenciaExporter",
+      "to": "Timeline",
+      "label": "exports",
+      "type": "dependency"
+    },
+    {
+      "from": "SwiftSecuenciaExporter",
+      "to": "PipelineNeo",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "SwiftSecuenciaExporter",
+      "to": "VideoFormat",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineAudioExporter",
+      "to": "Timeline",
+      "label": "exports",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineAudioExporter",
+      "to": "TimelineClip",
+      "label": "processes",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineAudioExporter",
+      "to": "AudioExportFormat",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineAudioExporter",
+      "to": "AudioExportError",
+      "label": "throws",
+      "type": "error"
+    },
+    {
+      "from": "TimingData",
+      "to": "TimingSegment",
+      "label": "contains",
+      "type": "composition"
+    },
+    {
+      "from": "TimingSegment",
+      "to": "TimingMetadata",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "VideoFormat",
+      "to": "FrameRate",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "VideoFormat",
+      "to": "ColorSpace",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "VideoFormat",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "ChapterMarker",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "Keyword",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "Marker",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "Rating",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "ScreenplayMetadata",
+      "to": "Metadata",
+      "label": "converts_to",
+      "type": "conversion"
+    },
+    {
+      "from": "Timeline",
+      "to": "TimelineClip",
+      "label": "contains",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "VideoFormat",
+      "label": "has",
+      "type": "property"
+    },
+    {
+      "from": "Timeline",
+      "to": "AudioLayout",
+      "label": "has",
+      "type": "property"
+    },
+    {
+      "from": "Timeline",
+      "to": "AudioRate",
+      "label": "has",
+      "type": "property"
+    },
+    {
+      "from": "Timeline",
+      "to": "Marker",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "ChapterMarker",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "Keyword",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "Rating",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "Metadata",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "Timeline",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "Timeline",
+      "to": "ClipPlacement",
+      "label": "returns",
+      "type": "query_result"
+    },
+    {
+      "from": "Timeline",
+      "to": "TypedDataStorage",
+      "label": "queries",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "TypedDataStorage",
+      "label": "references",
+      "type": "relationship"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Timeline",
+      "label": "belongs_to",
+      "type": "relationship"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Marker",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "ChapterMarker",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Keyword",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Rating",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "Metadata",
+      "label": "has",
+      "type": "composition"
+    },
+    {
+      "from": "FrameRate",
+      "to": "Timecode",
+      "label": "produces",
+      "type": "dependency"
+    },
+    {
+      "from": "Timecode",
+      "to": "SwiftTimecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "ExportableDocument",
+      "to": "TypedDataStorage",
+      "label": "provides",
+      "type": "protocol_requirement"
+    },
+    {
+      "from": "Timeline",
+      "to": "RippleLaneOption",
+      "label": "uses",
+      "type": "parameter"
+    },
+    {
+      "from": "Timeline",
+      "to": "RippleInsertResult",
+      "label": "returns",
+      "type": "result"
+    },
+    {
+      "from": "RippleInsertResult",
+      "to": "ClipPlacement",
+      "label": "contains",
+      "type": "composition"
+    },
+    {
+      "from": "RippleInsertResult",
+      "to": "ClipShift",
+      "label": "contains",
+      "type": "composition"
+    },
+    {
+      "from": "ClipPlacement",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "ClipShift",
+      "to": "Timecode",
+      "label": "uses",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineClip",
+      "to": "SwiftCompartido",
+      "label": "depends_on",
+      "type": "dependency"
+    },
+    {
+      "from": "Timeline",
+      "to": "SwiftCompartido",
+      "label": "depends_on",
+      "type": "dependency"
+    },
+    {
+      "from": "TimelineAudioExporter",
+      "to": "SwiftCompartido",
+      "label": "depends_on",
+      "type": "dependency"
+    }
+  ],
+  "input_tokens": 70745,
+  "output_tokens": 0
+}
