@@ -19,7 +19,7 @@ permissions:
 jobs:
   build-and-upload:
     name: Build and Upload Binary
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
