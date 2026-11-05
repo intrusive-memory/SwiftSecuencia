@@ -42,9 +42,14 @@
 
     // MARK: - Build Command Initialization Tests
 
+    // NOTE: Commands are built with `Build.parse(_:)`, not the bare initializer.
+    // Reading an `@Argument`/`@Option`/`@Flag` default on a command that was never
+    // parsed is a fatal error in swift-argument-parser ("Can't read a value from a
+    // parsable argument definition"), which crashes the whole test process.
+
     @Test("Build command initializes with defaults")
-    func testCommandInitialization() {
-      let command = Build()
+    func testCommandInitialization() throws {
+      let command = try Build.parse(["/path/to/timeline.json"])
 
       #expect(command.bundle == false)
       #expect(command.formatVersion == "1.14")
@@ -61,19 +66,21 @@
       try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
       defer { try? FileManager.default.removeItem(at: tempDir) }
 
-      // Create a minimal valid JSON timeline
+      // Create a minimal valid JSON timeline (schema: { "timeline": {...}, "clips": [...] })
       let json = """
         {
-          "name": "Test Timeline",
-          "format": {
-            "width": 1920,
-            "height": 1080,
-            "frameRate": "23.98",
-            "colorSpace": "Rec. 709"
-          },
-          "audio": {
-            "layout": "stereo",
-            "rate": "48000"
+          "timeline": {
+            "name": "Test Timeline",
+            "format": {
+              "width": 1920,
+              "height": 1080,
+              "frameRate": "23.98",
+              "colorSpace": "Rec. 709"
+            },
+            "audio": {
+              "layout": "stereo",
+              "rate": "48000"
+            }
           },
           "clips": []
         }
@@ -287,10 +294,10 @@
     }
 
     @Test("Build command uses custom output path when provided")
-    func testCustomOutputPath() {
-      var command = Build()
-      command.inputFile = "/path/to/input.json"
-      command.output = "/custom/path/output.fcpxml"
+    func testCustomOutputPath() throws {
+      let command = try Build.parse([
+        "/path/to/input.json", "--output", "/custom/path/output.fcpxml",
+      ])
 
       let outputPath = command.output ?? command.inputFile.replacingOccurrences(
         of: ".json", with: ".fcpxml")
@@ -300,9 +307,8 @@
     // MARK: - Bundle vs Standalone Tests
 
     @Test("Build command selects bundle output when flag is set")
-    func testBundleOutputSelection() {
-      var command = Build()
-      command.bundle = true
+    func testBundleOutputSelection() throws {
+      let command = try Build.parse(["/path/to/timeline.json", "--bundle"])
 
       // When bundle is true, output should be .fcpxmld
       #expect(command.bundle == true)
@@ -316,8 +322,8 @@
     }
 
     @Test("Build command selects standalone output by default")
-    func testStandaloneOutputByDefault() {
-      let command = Build()
+    func testStandaloneOutputByDefault() throws {
+      let command = try Build.parse(["/path/to/timeline.json"])
 
       #expect(command.bundle == false)
 
@@ -331,19 +337,19 @@
     // MARK: - Strict Mode Tests
 
     @Test("Build command respects strict flag")
-    func testStrictModeFlag() {
-      var command = Build()
+    func testStrictModeFlag() throws {
+      let command = try Build.parse(["/path/to/timeline.json"])
       #expect(command.strict == false)
 
-      command.strict = true
-      #expect(command.strict == true)
+      let strictCommand = try Build.parse(["/path/to/timeline.json", "--strict"])
+      #expect(strictCommand.strict == true)
     }
 
     // MARK: - Format Version Tests
 
     @Test("Build command uses v1.14 by default")
-    func testDefaultFormatVersion() {
-      let command = Build()
+    func testDefaultFormatVersion() throws {
+      let command = try Build.parse(["/path/to/timeline.json"])
       #expect(command.formatVersion == "1.14")
 
       let version = FCPXMLVersion.from(string: command.formatVersion)
@@ -351,9 +357,8 @@
     }
 
     @Test("Build command accepts custom format version")
-    func testCustomFormatVersion() {
-      var command = Build()
-      command.formatVersion = "1.11"
+    func testCustomFormatVersion() throws {
+      let command = try Build.parse(["/path/to/timeline.json", "--format-version", "1.11"])
 
       let version = FCPXMLVersion.from(string: command.formatVersion)
       #expect(version == .v1_11)

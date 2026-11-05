@@ -345,11 +345,17 @@
 
       let progress = Progress(totalUnitCount: 100)
 
-      // Cancel after a short delay
-      Task {
-        try? await Task.sleep(for: .milliseconds(10))
-        progress.cancel()
+      // Cancel deterministically once the export is underway. A timer-based cancel
+      // (e.g. a Task that sleeps 10ms) races the export: under a loaded full-suite run
+      // the main actor is busy and the export finishes before the cancel lands.
+      // KVO fires synchronously when the exporter sets completedUnitCount, so the
+      // cancel is in place before the exporter's next cancellation check.
+      let observation = progress.observe(\.completedUnitCount) { prog, _ in
+        if prog.completedUnitCount > 0 && !prog.isCancelled {
+          prog.cancel()
+        }
       }
+      defer { observation.invalidate() }
 
       var exporter = FCPXMLBundleExporter(version: .v1_14, includeMedia: true)
 
@@ -365,6 +371,10 @@
         // Verify it throws a cancellation-related error
         return error is CancellationError || "\(error)".contains("cancel")
       })
+
+      // The export stopped early: Info.fcpxml was never written.
+      let fcpxmlURL = tempDir.appendingPathComponent("TestBundle.fcpxmld/Info.fcpxml")
+      #expect(!FileManager.default.fileExists(atPath: fcpxmlURL.path))
     }
 
     // MARK: - Version Tests

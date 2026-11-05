@@ -63,9 +63,17 @@
       return (timeline, assetID)
     }
 
-    private func createMockAssetProvider(assetID: UUID) -> FileAssetProvider {
-      // Create a mock provider with a placeholder URL
-      let mockURL = URL(fileURLWithPath: "/tmp/test.wav")
+    /// Creates a provider backed by a real placeholder file.
+    ///
+    /// `FileAssetProvider.assetFileURL(for:)` verifies that the file exists, so the
+    /// fixture must be on disk. The exporter only writes the URL into `media-rep`,
+    /// so the file's contents don't matter. Callers delete `fileURL` when done.
+    private func createMockAssetProvider(assetID: UUID) throws -> (
+      provider: FileAssetProvider, fileURL: URL
+    ) {
+      let mockURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent("fcpxml-version-\(assetID.uuidString).wav")
+      try Data().write(to: mockURL)
       let entry = FileAssetEntry(
         fileURL: mockURL,
         name: "Test Audio",
@@ -74,7 +82,7 @@
         hasVideo: false,
         hasAudio: true
       )
-      return FileAssetProvider(registry: [assetID: entry])
+      return (FileAssetProvider(registry: [assetID: entry]), mockURL)
     }
 
     // MARK: - Version String Tests
@@ -114,7 +122,8 @@
       let context = container.mainContext
 
       let (timeline, assetID) = try createSimpleTimeline(context: context)
-      let provider = createMockAssetProvider(assetID: assetID)
+      let (provider, fixtureURL) = try createMockAssetProvider(assetID: assetID)
+      defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
       var exporter = FCPXMLExporter(version: version)
 
@@ -215,7 +224,8 @@
       let context = container.mainContext
 
       let (timeline, assetID) = try createSimpleTimeline(context: context)
-      let provider = createMockAssetProvider(assetID: assetID)
+      let (provider, fixtureURL) = try createMockAssetProvider(assetID: assetID)
+      defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
       var exporter = FCPXMLExporter(version: version)
 
@@ -267,7 +277,8 @@
       let context = container.mainContext
 
       let (timeline, assetID) = try createSimpleTimeline(context: context)
-      let provider = createMockAssetProvider(assetID: assetID)
+      let (provider, fixtureURL) = try createMockAssetProvider(assetID: assetID)
+      defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
       // Export with v1.13
       var exporter1 = FCPXMLExporter(version: .v1_13)
@@ -321,7 +332,8 @@
       let context = container.mainContext
 
       let (timeline, assetID) = try createSimpleTimeline(context: context)
-      let provider = createMockAssetProvider(assetID: assetID)
+      let (provider, fixtureURL) = try createMockAssetProvider(assetID: assetID)
+      defer { try? FileManager.default.removeItem(at: fixtureURL) }
 
       let allVersions: [FCPXMLVersion] = [
         .v1_8, .v1_9, .v1_10, .v1_11, .v1_12, .v1_13, .v1_14,
