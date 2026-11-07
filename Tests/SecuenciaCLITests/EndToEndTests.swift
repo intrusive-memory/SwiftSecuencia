@@ -5,7 +5,7 @@ import Testing
 
 #if os(macOS)
   import SwiftSecuencia
-  // PipelineNeo types are accessed via SwiftSecuencia re-exports
+  // OpenFCPXMLKit types are accessed via SwiftSecuencia re-exports
 
   /// End-to-end tests for the complete CLI pipeline.
   ///

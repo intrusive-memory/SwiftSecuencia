@@ -215,6 +215,19 @@ extension Timecode {
   ///
   /// - Parameter frameRate: The frame rate to align to.
   /// - Returns: A frame-aligned timecode.
+  /// Frame-aligns a duration in seconds, rounding UP to the next whole frame.
+  ///
+  /// Use for durations that must not come out shorter than the media (for example
+  /// an asset's duration). A value within one millionth of a frame of a whole frame
+  /// counts as that frame, so floating-point noise does not add a frame.
+  public static func frameAlignedUp(seconds: Double, frameRate: FrameRate) -> Timecode {
+    let frames = seconds * frameRate.framesPerSecond
+    let nearest = frames.rounded()
+    let frameCount = Int64(abs(frames - nearest) < 1e-6 ? nearest : frames.rounded(.up))
+    let frameDuration = frameRate.frameDuration
+    return Timecode(value: frameCount * frameDuration.value, timescale: frameDuration.timescale)
+  }
+
   public func aligned(to frameRate: FrameRate) -> Timecode {
     Timecode.frameAligned(seconds: self.seconds, frameRate: frameRate)
   }

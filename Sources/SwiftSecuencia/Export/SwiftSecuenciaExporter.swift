@@ -3,19 +3,19 @@
 //  SwiftSecuencia
 //
 //  Core bridge that converts SwiftSecuencia's SwiftData-persisted Timeline models
-//  into FCPXML document strings using PipelineNeo's FCPXMLExporter.
+//  into FCPXML document strings using OpenFCPXMLKit's FCPXMLExporter.
 //
 //  ## Architecture
 //
 //  ```
 //  SwiftSecuencia.Timeline (SwiftData)
 //      |
-//      v  toPipelineNeoTimeline(resourceMap:)     (TimelineAdapters.swift)
-//  PipelineNeo.Timeline (value type)
+//      v  toOpenFCPXMLTimeline(resourceMap:)     (TimelineAdapters.swift)
+//  OpenFCPXMLKit.Timeline (value type)
 //      |
-//      +-- assets via PipelineNeoAssetProvider    (PipelineNeoAssetProvider.swift)
+//      +-- assets via OpenFCPXMLAssetProvider    (OpenFCPXMLAssetProvider.swift)
 //      |
-//      v  PipelineNeo.FCPXMLExporter.export()
+//      v  OpenFCPXMLKit.FCPXMLExporter.export()
 //  FCPXML String
 //      |
 //      v  XMLDocument post-processing (remove library name attribute)
@@ -24,52 +24,52 @@
 //
 //  ## Empty Timeline Guard
 //
-//  PipelineNeo throws `FCPXMLExportError.invalidTimeline` for empty timelines.
-//  This exporter detects empty timelines before calling PipelineNeo and returns
+//  OpenFCPXMLKit throws `FCPXMLExportError.invalidTimeline` for empty timelines.
+//  This exporter detects empty timelines before calling OpenFCPXMLKit and returns
 //  a hand-crafted minimal FCPXML string that is valid per the DTD.
 //
 //  ## Library Name Bug Fix
 //
-//  PipelineNeo adds a `name` attribute to `<library>` elements, but the FCPXML DTD
+//  OpenFCPXMLKit adds a `name` attribute to `<library>` elements, but the FCPXML DTD
 //  does not permit this attribute. After export, the FCPXML is parsed as XMLDocument
 //  and the invalid attribute is removed. This uses Foundation's XMLDocument API, NOT
 //  regex, for correctness.
 //
 //  ## Error Mapping
 //
-//  All PipelineNeo errors are caught and remapped to SwiftSecuencia error types via
+//  All OpenFCPXMLKit errors are caught and remapped to SwiftSecuencia error types via
 //  `remappingExportErrors(_:)` (see ExportErrorMapping.swift). Callers never see
-//  PipelineNeo error types.
+//  OpenFCPXMLKit error types.
 //
 
 #if os(macOS)
 
   import Foundation
   import SwiftData
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   // MARK: - FCPXMLVersion Public Re-export
 
-  /// Re-exports `PipelineNeo.FCPXMLVersion` under the unqualified name so that
-  /// SwiftSecuencia consumers do not need to import PipelineNeo directly.
+  /// Re-exports `OpenFCPXMLKit.FCPXMLVersion` under the unqualified name so that
+  /// SwiftSecuencia consumers do not need to import OpenFCPXMLKit directly.
   ///
   /// This typealias replaces the FCPXMLVersion that was previously provided by the
   /// embedded Pipeline module. All existing code that references `FCPXMLVersion`
   /// continues to work without changes.
-  public typealias FCPXMLVersion = PipelineNeo.FCPXMLVersion
+  public typealias FCPXMLVersion = OpenFCPXMLKit.FCPXMLVersion
 
   // MARK: - SwiftSecuenciaExporter
 
   /// Exports a `SwiftSecuencia.Timeline` to an FCPXML document string using
-  /// PipelineNeo's `FCPXMLExporter`.
+  /// OpenFCPXMLKit's `FCPXMLExporter`.
   ///
   /// This struct is the primary bridge between SwiftSecuencia's SwiftData models
-  /// and PipelineNeo's value-type export pipeline. It handles:
+  /// and OpenFCPXMLKit's value-type export pipeline. It handles:
   ///
   /// 1. **ResourceMap construction** -- Assigns DTD-compliant r-prefixed IDs to assets.
   /// 2. **Timeline conversion** -- Uses adapters from `TimelineAdapters.swift`.
-  /// 3. **Asset conversion** -- Uses `PipelineNeoAssetProvider` for asset metadata.
-  /// 4. **FCPXML generation** -- Delegates to `PipelineNeo.FCPXMLExporter`.
+  /// 3. **Asset conversion** -- Uses `OpenFCPXMLAssetProvider` for asset metadata.
+  /// 4. **FCPXML generation** -- Delegates to `OpenFCPXMLKit.FCPXMLExporter`.
   /// 5. **Post-processing** -- Removes invalid `<library name="...">` attribute via XMLDocument.
   ///
   /// ## Usage with AssetProvider
@@ -125,7 +125,7 @@
     /// Exports a timeline to an FCPXML document string using an `AssetProvider`.
     ///
     /// This is the primary export method. It builds a ResourceMap, converts the
-    /// timeline and assets to PipelineNeo types, generates FCPXML, and post-processes
+    /// timeline and assets to OpenFCPXMLKit types, generates FCPXML, and post-processes
     /// the output to remove the invalid library name attribute.
     ///
     /// - Parameters:
@@ -144,7 +144,7 @@
       eventName: String = "Exported Event",
       projectName: String? = nil
     ) throws -> String {
-      // Empty timeline guard: PipelineNeo throws on empty timelines, so we
+      // Empty timeline guard: OpenFCPXMLKit throws on empty timelines, so we
       // bypass it entirely and return a hand-crafted minimal FCPXML.
       if timeline.clips.isEmpty {
         return generateMinimalFCPXML(
@@ -158,24 +158,24 @@
       // Format is always "r1"; assets get "r2", "r3", ... in sorted UUID order.
       let resourceMap = buildResourceMap(for: timeline)
 
-      // Step 2: Convert SwiftSecuencia.Timeline to PipelineNeo.Timeline.
+      // Step 2: Convert SwiftSecuencia.Timeline to OpenFCPXMLKit.Timeline.
       // ResourceMap is passed to all adapter calls so asset UUIDs become
       // r-prefixed resource IDs.
-      let pipelineNeoTimeline = try timeline.toPipelineNeoTimeline(resourceMap: resourceMap)
+      let openFCPXMLTimeline = try timeline.toOpenFCPXMLTimeline(resourceMap: resourceMap)
 
-      // Step 3: Convert assets using PipelineNeoAssetProvider.
-      let assetAdapter = PipelineNeoAssetProvider(
+      // Step 3: Convert assets using OpenFCPXMLAssetProvider.
+      let assetAdapter = OpenFCPXMLAssetProvider(
         assetProvider: assetProvider,
         resourceMap: resourceMap
       )
-      let pipelineNeoAssets = try assetAdapter.exportAssets(for: timeline)
+      let openFCPXMLAssets = try assetAdapter.exportAssets(for: timeline)
 
-      // Step 4: Export via PipelineNeo's FCPXMLExporter, remapping errors.
-      let pipelineNeoExporter = PipelineNeo.FCPXMLExporter(version: version)
+      // Step 4: Export via OpenFCPXMLKit's FCPXMLExporter, remapping errors.
+      let openFCPXMLExporter = OpenFCPXMLKit.FCPXMLExporter(version: version)
       let rawXML = try remappingExportErrors {
-        try pipelineNeoExporter.export(
-          timeline: pipelineNeoTimeline,
-          assets: pipelineNeoAssets,
+        try openFCPXMLExporter.export(
+          timeline: openFCPXMLTimeline,
+          assets: openFCPXMLAssets,
           libraryName: libraryName,
           eventName: eventName,
           projectName: projectName
@@ -235,7 +235,7 @@
     /// Builds a `ResourceMap` that assigns DTD-compliant r-prefixed IDs to the
     /// format resource and each unique asset referenced by the timeline's clips.
     ///
-    /// - Format always gets `"r1"` (reserved by PipelineNeo convention).
+    /// - Format always gets `"r1"` (reserved by OpenFCPXMLKit convention).
     /// - Assets get `"r2"`, `"r3"`, etc. in sorted UUID order for determinism.
     ///
     /// - Parameter timeline: The timeline whose clips reference assets.
@@ -257,7 +257,7 @@
 
     /// Removes the invalid `name` attribute from `<library>` elements in FCPXML.
     ///
-    /// PipelineNeo adds `name="..."` to `<library>` elements, but the FCPXML DTD
+    /// OpenFCPXMLKit adds `name="..."` to `<library>` elements, but the FCPXML DTD
     /// only allows `location` and `colorProcessing` attributes on `<library>`.
     /// This method parses the FCPXML as an XMLDocument, finds the `<library>` element,
     /// removes the `name` attribute, and re-serializes.
@@ -265,7 +265,7 @@
     /// Uses Foundation's `XMLDocument` API for correctness. Regex is NOT used because
     /// it cannot reliably handle XML attribute quoting, entities, or edge cases.
     ///
-    /// - Parameter xmlString: The raw FCPXML string from PipelineNeo.
+    /// - Parameter xmlString: The raw FCPXML string from OpenFCPXMLKit.
     /// - Returns: The FCPXML string with the library name attribute removed.
     /// - Throws: `FCPXMLExportError.xmlGenerationFailed` if the XML cannot be parsed.
     private func removeLibraryNameAttribute(from xmlString: String) throws -> String {
@@ -292,7 +292,7 @@
 
     /// Generates a minimal valid FCPXML document for an empty timeline.
     ///
-    /// When a timeline has no clips, PipelineNeo cannot generate FCPXML (it throws
+    /// When a timeline has no clips, OpenFCPXMLKit cannot generate FCPXML (it throws
     /// `invalidTimeline`). This method provides a valid fallback that includes:
     /// - A format resource (using the timeline's video format or 1080p@23.98 default)
     /// - A library with an event and project containing an empty spine

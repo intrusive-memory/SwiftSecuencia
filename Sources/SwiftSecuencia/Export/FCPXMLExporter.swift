@@ -10,7 +10,7 @@
   import Foundation
   import SwiftData
   import SwiftCompartido
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   /// Exports Timeline objects to FCPXML XML documents.
   ///
@@ -85,8 +85,9 @@
       eventName: String = "Exported Event",
       projectName: String? = nil
     ) throws -> String {
-      // Task 5.2: Collect unique asset IDs from timeline clips
-      let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+      // Task 5.2: Collect unique asset IDs from timeline clips, in a stable order
+      // so resource IDs are the same on every run.
+      let uniqueAssetIDs = FCPXMLBundleExporter.sortedUniqueAssetIDs(in: timeline)
 
       // Task 5.3: Fetch metadata for each asset and generate format
       var resourceMap = LegacyResourceMap()
@@ -126,7 +127,7 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      // Create FCPXML document manually (OpenFCPXMLKit initializer has a bug that doesn't create <resources> and <library> elements)
       let doc = XMLDocument()
       doc.documentContentKind = XMLDocument.ContentKind.xml
       doc.characterEncoding = "UTF-8"
@@ -160,7 +161,7 @@
         throw FCPXMLExportError.xmlGenerationFailed
       }
 
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      // Remove standalone="yes" from XML declaration if present (matches OpenFCPXMLKit's fcpxmlString)
       if formattedString.hasPrefix("<?xml") {
         formattedString = formattedString.replacingOccurrences(
           of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
@@ -278,8 +279,11 @@
 
       // Task 5.4: Get file URL from provider
       let fileURL = try assetProvider.assetFileURL(for: assetID)
+      // Percent-encoded file URL (a path with a space must survive).
       let srcURL =
-        fileURL.path.hasPrefix("/") ? "file://\(fileURL.path)" : "file:///\(fileURL.path)"
+        fileURL.isFileURL
+        ? fileURL.absoluteString
+        : URL(fileURLWithPath: fileURL.path).absoluteString
 
       // Add required media-rep child element
       let mediaRep = XMLElement(name: "media-rep")
@@ -542,6 +546,11 @@
     /// - Parameter rate: The audio rate to format.
     /// - Returns: FCPXML-formatted audio rate string.
     private func formatAudioRateForFCPXML(_ rate: AudioRate) -> String {
+      Self.fcpxmlAudioRate(rate)
+    }
+
+    /// FCPXML `audioRate` value for a sample rate, e.g. `48k`, `44.1k`.
+    static func fcpxmlAudioRate(_ rate: AudioRate) -> String {
       let kHz = Double(rate.sampleRate) / 1000.0
       if kHz.truncatingRemainder(dividingBy: 1) == 0 {
         return "\(Int(kHz))k"
@@ -554,7 +563,7 @@
   // MARK: - Supporting Types
 
   /// Maps Timeline objects to FCPXML resource IDs (legacy embedded Pipeline implementation).
-  /// Note: The Adapters/ResourceMap.swift public struct is the replacement for pipeline-neo migration.
+  /// Note: The Adapters/ResourceMap.swift public struct is the replacement for OpenFCPXMLKit migration.
   struct LegacyResourceMap {
     var formatID: String?
     var assetIDs: [UUID: String] = [:]
@@ -570,7 +579,7 @@
     case cancelled
 
     /// An asset referenced by a clip was not found in the export asset list.
-    /// This case maps from `PipelineNeo.FCPXMLExportError.missingAsset(assetId: String)`,
+    /// This case maps from `OpenFCPXMLKit.FCPXMLExportError.missingAsset(assetId: String)`,
     /// where the asset ID is a string (r-prefixed resource ID) rather than a UUID.
     case missingAssetRef(assetRef: String)
 

@@ -2,7 +2,7 @@ import Foundation
 
 /// Maps SwiftSecuencia asset UUIDs to FCPXML-compliant resource IDs (`r1`, `r2`, `r3`, ...).
 ///
-/// FCPXML requires resources to have IDs that match an `IDREF` pattern. Pipeline Neo
+/// FCPXML requires resources to have IDs that match an `IDREF` pattern. OpenFCPXMLKit
 /// hardcodes the format resource as `"r1"`, and expects asset IDs to be assigned by the
 /// caller as `"r2"`, `"r3"`, etc. ResourceMap manages this mapping so that adapters
 /// (Sortie 3+) can convert SwiftSecuencia UUIDs to r-prefixed IDs consistently.
@@ -23,13 +23,13 @@ import Foundation
 /// instance, so concurrent mutation of a single instance is not expected. If that
 /// assumption changes, this should be converted to an `actor`.
 ///
-/// ## No Pipeline Neo Dependencies
+/// ## No OpenFCPXMLKit Dependencies
 ///
-/// This file intentionally does NOT import PipelineNeo. ResourceMap is a pure
+/// This file intentionally does NOT import OpenFCPXMLKit. ResourceMap is a pure
 /// SwiftSecuencia data structure that maps UUIDs to string IDs.
 public struct ResourceMap: Sendable {
 
-  /// The format resource ID, always `"r1"` per Pipeline Neo convention.
+  /// The format resource ID, always `"r1"` per OpenFCPXMLKit convention.
   private let formatID: String = "r1"
 
   /// Maps asset UUIDs to their assigned r-prefixed resource IDs.
@@ -100,7 +100,7 @@ public struct ResourceMap: Sendable {
 
   /// Looks up the UUID for a previously assigned resource ID.
   ///
-  /// This reverse lookup is used by `PipelineNeoAssetProvider` to convert incoming
+  /// This reverse lookup is used by `OpenFCPXMLAssetProvider` to convert incoming
   /// resource ID strings (e.g., `"r2"`, `"r3"`) back to asset UUIDs for SwiftData
   /// fetch operations. The lookup is O(n) over registered assets, which is acceptable
   /// because timelines typically contain a small number of unique assets (< 100).

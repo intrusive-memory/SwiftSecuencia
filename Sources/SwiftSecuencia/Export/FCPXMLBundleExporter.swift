@@ -11,7 +11,7 @@
   import SwiftData
   import SwiftCompartido
   import AVFoundation
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
   ///
@@ -96,14 +96,42 @@
     /// Whether to copy media files into the bundle.
     public let includeMedia: Bool
 
+    /// How audio media is written into the bundle's `Media/` folder.
+    public enum AudioMediaMode: Sendable, Equatable {
+      /// Transcode every non-M4A audio asset to AAC M4A (lossy). The 3.x behaviour.
+      case transcodeToM4A
+      /// Write audio bytes exactly as stored (WAV, CAF, M4A, ...). Lossless; no
+      /// conversion, no silence detection.
+      case passThrough
+    }
+
+    /// How audio media is written. Default `.transcodeToM4A`.
+    public let audioMediaMode: AudioMediaMode
+
+    /// Whether to trim leading/trailing digital silence from transcoded audio
+    /// clips. Default `false`. When `true`, a trimmed clip's `offset` moves later by
+    /// the trimmed lead-in, so the audible audio stays where the timeline put it.
+    /// Ignored for `.passThrough`.
+    public let trimsSilence: Bool
+
     /// Creates an FCPXML bundle exporter.
     ///
     /// - Parameters:
     ///   - version: FCPXML version (default: .default, which is the latest version).
     ///   - includeMedia: Whether to copy media files into the bundle (default: true).
-    public init(version: FCPXMLVersion = .default, includeMedia: Bool = true) {
+    ///   - audioMediaMode: How audio is written into `Media/` (default: `.transcodeToM4A`).
+    ///   - trimsSilence: Trim leading/trailing digital silence from transcoded audio
+    ///     (default: false).
+    public init(
+      version: FCPXMLVersion = .default,
+      includeMedia: Bool = true,
+      audioMediaMode: AudioMediaMode = .transcodeToM4A,
+      trimsSilence: Bool = false
+    ) {
       self.version = version
       self.includeMedia = includeMedia
+      self.audioMediaMode = audioMediaMode
+      self.trimsSilence = trimsSilence
     }
 
     /// Exports a timeline to an FCPXML bundle (.fcpxmld) using an AssetProvider.
@@ -286,8 +314,8 @@
       to bundleURL: URL,
       progress: Progress? = nil
     ) async throws -> MediaExportResult {
-      // Collect unique asset IDs
-      let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+      // Collect unique asset IDs in a stable order (deterministic output)
+      let uniqueAssetIDs = Self.sortedUniqueAssetIDs(in: timeline)
       var assetURLMap: [UUID: String] = [:]
       var measuredDurations: [UUID: Double] = [:]
       var audioTiming: [UUID: AudioTiming] = [:]
@@ -319,9 +347,9 @@
           // Task 5.12: Audio conversion integration
           let inputExt = fileExtension(for: metadata.mimeType)
 
-          // Check if already M4A - if so, copy directly (Task 5.11)
-          if inputExt == "m4a" {
-            let filename = "\(assetID.uuidString).m4a"
+          // Already M4A, or pass-through mode: copy the bytes as stored (Task 5.11)
+          if inputExt == "m4a" || audioMediaMode == .passThrough {
+            let filename = "\(assetID.uuidString).\(inputExt)"
             let fileURL = mediaURL.appendingPathComponent(filename)
             try assetData.write(to: fileURL, options: .atomic)
             assetURLMap[assetID] = "Media/\(filename)"
@@ -351,6 +379,7 @@
                 audioData: assetData,
                 inputExtension: inputExt,
                 outputURL: fileURL,
+                detectsSilence: trimsSilence,
                 progress: audioProgress
               )
 
@@ -389,121 +418,6 @@
               if let duration = metadata.durationSeconds {
                 measuredDurations[assetID] = duration
               }
-            }
-          }
-        }
-
-        // Update progress after processing each asset
-        mediaProgress.completedUnitCount = Int64(index + 1)
-      }
-
-      return MediaExportResult(
-        assetURLMap: assetURLMap,
-        measuredDurations: measuredDurations,
-        audioTiming: audioTiming
-      )
-    }
-
-    /// Exports media files from TypedDataStorage to the Media folder (legacy with ModelContext).
-    ///
-    /// - Parameters:
-    ///   - timeline: The timeline containing clips.
-    ///   - modelContext: The model context to fetch assets from.
-    ///   - bundleURL: The bundle URL.
-    ///   - progress: Optional Progress object for tracking media export progress.
-    /// - Returns: Media export result containing asset URL map, measured durations, and audio timing.
-    @MainActor
-    private func exportMedia(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext,
-      to bundleURL: URL,
-      progress: Progress? = nil
-    ) async throws -> MediaExportResult {
-      let assets = timeline.allAssets(in: modelContext)
-      var assetURLMap: [UUID: String] = [:]
-      var measuredDurations: [UUID: Double] = [:]
-      var audioTiming: [UUID: AudioTiming] = [:]
-
-      // Set up progress tracking for individual assets
-      let mediaProgress = progress ?? Progress(totalUnitCount: Int64(assets.count))
-      mediaProgress.localizedDescription = "Exporting media files"
-
-      let mediaURL = bundleURL.appendingPathComponent("Media")
-
-      for (index, asset) in assets.enumerated() {
-        // Update progress description with current asset
-        mediaProgress.localizedAdditionalDescription =
-          "Processing asset \(index + 1) of \(assets.count)"
-
-        // Check for cancellation before processing each asset
-        if mediaProgress.isCancelled {
-          throw FCPXMLExportError.cancelled
-        }
-        guard let binaryValue = asset.binaryValue else {
-          throw FCPXMLExportError.invalidTimeline(reason: "Asset \(asset.id) has no binary data")
-        }
-
-        // Check if this is an audio file that needs conversion
-        let isAudio = asset.mimeType.hasPrefix("audio/")
-
-        if isAudio {
-          // Try to convert audio to m4a format
-          // If conversion fails (e.g., for test data or invalid audio), fall back to original format
-          let inputExt = fileExtension(for: asset.mimeType)
-
-          do {
-            let filename = "\(asset.id.uuidString).m4a"
-            let fileURL = mediaURL.appendingPathComponent(filename)
-
-            // Create child progress for this audio conversion
-            let audioProgress = Progress(totalUnitCount: 100)
-            audioProgress.localizedDescription =
-              "Converting \(asset.prompt.isEmpty ? "audio" : asset.prompt)"
-
-            let timing = try await Self.convertAudioToM4A(
-              audioData: binaryValue,
-              inputExtension: inputExt,
-              outputURL: fileURL,
-              progress: audioProgress
-            )
-
-            assetURLMap[asset.id] = "Media/\(filename)"
-            measuredDurations[asset.id] = timing.duration
-            audioTiming[asset.id] = timing
-          } catch {
-            // Conversion failed - write original audio file instead
-            let filename = "\(asset.id.uuidString).\(inputExt)"
-            let fileURL = mediaURL.appendingPathComponent(filename)
-            try binaryValue.write(to: fileURL, options: .atomic)
-            assetURLMap[asset.id] = "Media/\(filename)"
-
-            // Measure duration from the fallback audio file
-            do {
-              let fallbackAsset = AVURLAsset(url: fileURL)
-              let fallbackDuration = try await fallbackAsset.load(.duration).seconds
-              measuredDurations[asset.id] = fallbackDuration
-            } catch {
-              // If we can't measure duration, fall back to metadata (asset.durationSeconds)
-              // This will be used in generateAssetElement
-            }
-          }
-        } else {
-          // For video and images, write directly without conversion
-          let ext = fileExtension(for: asset.mimeType)
-          let filename = "\(asset.id.uuidString).\(ext)"
-          let fileURL = mediaURL.appendingPathComponent(filename)
-
-          try binaryValue.write(to: fileURL, options: .atomic)
-          assetURLMap[asset.id] = "Media/\(filename)"
-
-          // Measure duration for video files to ensure accuracy
-          if asset.mimeType.hasPrefix("video/") {
-            do {
-              let videoAsset = AVURLAsset(url: fileURL)
-              let videoDuration = try await videoAsset.load(.duration).seconds
-              measuredDurations[asset.id] = videoDuration
-            } catch {
-              // If we can't measure duration, fall back to metadata
             }
           }
         }
@@ -677,6 +591,7 @@
       audioData: Data,
       inputExtension: String,
       outputURL: URL,
+      detectsSilence: Bool,
       progress: Progress? = nil
     ) async throws -> AudioTiming {
       // Create temporary input file
@@ -735,6 +650,10 @@
         // Detect silence at beginning and end (20% of total)
         let silenceProgress = Progress(
           totalUnitCount: 1, parent: parentProgress, pendingUnitCount: 20)
+        guard detectsSilence else {
+          silenceProgress.completedUnitCount = 1
+          return AudioTiming(duration: actualDuration, trimStart: 0, trimEnd: 0)
+        }
         silenceProgress.localizedAdditionalDescription = "Detecting silence"
         let (trimStart, trimEnd) = try await detectSilence(
           in: convertedAsset, progress: silenceProgress)
@@ -745,6 +664,9 @@
         // No progress tracking - just measure and detect
         let convertedAsset = AVURLAsset(url: outputURL)
         let actualDuration = try await convertedAsset.load(.duration).seconds
+        guard detectsSilence else {
+          return AudioTiming(duration: actualDuration, trimStart: 0, trimEnd: 0)
+        }
         let (trimStart, trimEnd) = try await detectSilence(in: convertedAsset)
         return AudioTiming(duration: actualDuration, trimStart: trimStart, trimEnd: trimEnd)
       }
@@ -800,8 +722,8 @@
       eventName: String,
       projectName: String?
     ) throws -> String {
-      // Collect all unique asset IDs
-      let uniqueAssetIDs = Set(timeline.clips.map { $0.assetStorageId })
+      // Collect all unique asset IDs in a stable order (deterministic resource IDs)
+      let uniqueAssetIDs = Self.sortedUniqueAssetIDs(in: timeline)
 
       var resourceMap = LegacyResourceMap()
       resourceMap.audioTiming = audioTiming
@@ -845,7 +767,7 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      // Create FCPXML document manually (OpenFCPXMLKit initializer has a bug that doesn't create <resources> and <library> elements)
       let doc = XMLDocument()
       doc.documentContentKind = XMLDocument.ContentKind.xml
       doc.characterEncoding = "UTF-8"
@@ -879,148 +801,7 @@
         throw FCPXMLExportError.xmlGenerationFailed
       }
 
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
-      if formattedString.hasPrefix("<?xml") {
-        formattedString = formattedString.replacingOccurrences(
-          of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
-          with: #"<?xml version="1.0" encoding="UTF-8"?>"#
-        )
-      }
-
-      return formattedString
-    }
-
-    /// Generates FCPXML string with asset references (legacy with ModelContext).
-    @MainActor
-    private mutating func generateFCPXML(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext,
-      assetURLMap: [UUID: String],
-      measuredDurations: [UUID: Double],
-      audioTiming: [UUID: AudioTiming],
-      libraryName: String,
-      eventName: String,
-      projectName: String?
-    ) throws -> String {
-      var exporter = FCPXMLExporter(version: version)
-
-      // If we have asset URLs, we need to use a modified exporter
-      if !assetURLMap.isEmpty {
-        return try generateBundleFCPXML(
-          timeline: timeline,
-          modelContext: modelContext,
-          assetURLMap: assetURLMap,
-          measuredDurations: measuredDurations,
-          audioTiming: audioTiming,
-          libraryName: libraryName,
-          eventName: eventName,
-          projectName: projectName,
-          exporter: &exporter
-        )
-      } else {
-        // Use standard exporter with absolute paths
-        return try exporter.export(
-          timeline: timeline,
-          modelContext: modelContext,
-          libraryName: libraryName,
-          eventName: eventName,
-          projectName: projectName
-        )
-      }
-    }
-
-    /// Generates FCPXML with relative media paths for bundle.
-    @MainActor
-    private mutating func generateBundleFCPXML(
-      timeline: Timeline,
-      modelContext: SwiftData.ModelContext,
-      assetURLMap: [UUID: String],
-      measuredDurations: [UUID: Double],
-      audioTiming: [UUID: AudioTiming],
-      libraryName: String,
-      eventName: String,
-      projectName: String?,
-      exporter: inout FCPXMLExporter
-    ) throws -> String {
-      // Collect all assets and formats
-      var resourceMap = LegacyResourceMap()
-      resourceMap.audioTiming = audioTiming  // Store audio timing for clip generation
-      let assets = timeline.allAssets(in: modelContext)
-
-      // Generate resources
-      var resourceElements: [XMLElement] = []
-
-      // Add format resource
-      let format = timeline.videoFormat ?? VideoFormat.hd1080p(frameRate: .fps23_98)
-      let formatElement = try generateFormatElement(format: format, resourceMap: &resourceMap)
-      resourceElements.append(formatElement)
-
-      // Add asset resources with relative paths (using frame rate from format)
-      for asset in assets {
-        let assetElement = try generateAssetElement(
-          asset: asset,
-          relativePath: assetURLMap[asset.id],
-          measuredDuration: measuredDurations[asset.id],
-          resourceMap: &resourceMap,
-          frameRate: format.frameRate
-        )
-        resourceElements.append(assetElement)
-      }
-
-      // Generate library > event > project > sequence > spine structure
-      let event = XMLElement(name: "event")
-      event.addAttribute(XMLNode.attribute(withName: "name", stringValue: eventName) as! XMLNode)
-
-      let project = XMLElement(name: "project")
-      let pName = projectName ?? timeline.name
-      project.addAttribute(XMLNode.attribute(withName: "name", stringValue: pName) as! XMLNode)
-
-      // Create sequence (using frame rate from format)
-      let sequence = try generateSequenceElement(
-        timeline: timeline,
-        modelContext: modelContext,
-        resourceMap: resourceMap,
-        frameRate: format.frameRate
-      )
-
-      project.addChild(sequence)
-      event.addChild(project)
-
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
-      let doc = XMLDocument()
-      doc.documentContentKind = XMLDocument.ContentKind.xml
-      doc.characterEncoding = "UTF-8"
-      doc.version = "1.0"
-
-      doc.dtd = XMLDTD()
-      doc.dtd!.name = "fcpxml"
-      doc.isStandalone = false
-
-      // Create root <fcpxml> element
-      let fcpxmlRoot = XMLElement(name: "fcpxml")
-      fcpxmlRoot.addAttribute(XMLNode.attribute(withName: "version", stringValue: version.stringValue) as! XMLNode)
-
-      // Create <resources> element and add resource children
-      let resourcesElement = XMLElement(name: "resources")
-      for resource in resourceElements {
-        resourcesElement.addChild(resource)
-      }
-      fcpxmlRoot.addChild(resourcesElement)
-
-      // Create <library> element and add events
-      let libraryElement = XMLElement(name: "library")
-      libraryElement.addChild(event)
-      fcpxmlRoot.addChild(libraryElement)
-
-      doc.setRootElement(fcpxmlRoot)
-
-      // Return formatted XML string (manually process to match fcpxmlString behavior)
-      let formattedData = doc.xmlData(options: [.nodePreserveWhitespace, .nodePrettyPrint, .nodeCompactEmptyElement])
-      guard var formattedString = String(data: formattedData, encoding: .utf8) else {
-        throw FCPXMLExportError.xmlGenerationFailed
-      }
-
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      // Remove standalone="yes" from XML declaration if present (matches OpenFCPXMLKit's fcpxmlString)
       if formattedString.hasPrefix("<?xml") {
         formattedString = formattedString.replacingOccurrences(
           of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
@@ -1092,7 +873,9 @@
       // Add duration - prefer measured duration from audio conversion, fall back to asset metadata
       let durationSeconds = measuredDuration ?? metadata.durationSeconds
       if let duration = durationSeconds {
-        let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
+        // Round UP to whole frames: rounding to nearest could declare the asset
+        // shorter than its file and cut the tail.
+        let timecode = Timecode.frameAlignedUp(seconds: duration, frameRate: frameRate)
         element.addAttribute(
           XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
       }
@@ -1107,56 +890,6 @@
 
       // Add media-rep child element with relative or placeholder path
       let srcURL = relativePath ?? "file:///placeholder/\(assetID.uuidString)"
-      let mediaRep = XMLElement(name: "media-rep")
-      mediaRep.addAttribute(
-        XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
-      mediaRep.addAttribute(XMLNode.attribute(withName: "src", stringValue: srcURL) as! XMLNode)
-      element.addChild(mediaRep)
-
-      return element
-    }
-
-    /// Generates an asset XML element from TypedDataStorage (legacy method).
-    private mutating func generateAssetElement(
-      asset: TypedDataStorage,
-      relativePath: String?,
-      measuredDuration: Double?,
-      resourceMap: inout LegacyResourceMap,
-      frameRate: FrameRate
-    ) throws -> XMLElement {
-      let assetID = nextResourceID()
-      resourceMap.assetIDs[asset.id] = assetID
-
-      let element = XMLElement(name: "asset")
-      element.addAttribute(XMLNode.attribute(withName: "id", stringValue: assetID) as! XMLNode)
-
-      // Use prompt as name if available
-      let prompt = asset.prompt
-      if !prompt.isEmpty {
-        element.addAttribute(XMLNode.attribute(withName: "name", stringValue: prompt) as! XMLNode)
-      }
-
-      // Add duration - prefer measured duration from audio conversion, fall back to asset metadata (frame-aligned)
-      let durationSeconds = measuredDuration ?? asset.durationSeconds
-      if let duration = durationSeconds {
-        let timecode = Timecode.frameAligned(seconds: duration, frameRate: frameRate)
-        element.addAttribute(
-          XMLNode.attribute(withName: "duration", stringValue: timecode.fcpxmlString) as! XMLNode)
-      }
-
-      // Set hasVideo/hasAudio based on MIME type
-      let mimeType = asset.mimeType
-      if mimeType.hasPrefix("video/") {
-        element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
-        element.addAttribute(XMLNode.attribute(withName: "hasAudio", stringValue: "1") as! XMLNode)
-      } else if mimeType.hasPrefix("audio/") {
-        element.addAttribute(XMLNode.attribute(withName: "hasAudio", stringValue: "1") as! XMLNode)
-      } else if mimeType.hasPrefix("image/") {
-        element.addAttribute(XMLNode.attribute(withName: "hasVideo", stringValue: "1") as! XMLNode)
-      }
-
-      // Add required media-rep child element
-      let srcURL = relativePath ?? "file:///placeholder/\(asset.id.uuidString)"
       let mediaRep = XMLElement(name: "media-rep")
       mediaRep.addAttribute(
         XMLNode.attribute(withName: "kind", stringValue: "original-media") as! XMLNode)
@@ -1185,32 +918,29 @@
         XMLNode.attribute(withName: "duration", stringValue: alignedDuration.fcpxmlString)
           as! XMLNode)
       element.addAttribute(XMLNode.attribute(withName: "tcStart", stringValue: "0s") as! XMLNode)
+      element.addAttribute(
+        XMLNode.attribute(withName: "tcFormat", stringValue: frameRate.isDropFrame ? "DF" : "NDF")
+          as! XMLNode)
+      element.addAttribute(
+        XMLNode.attribute(withName: "audioLayout", stringValue: timeline.audioLayout.fcpxmlValue)
+          as! XMLNode)
+      element.addAttribute(
+        XMLNode.attribute(
+          withName: "audioRate", stringValue: FCPXMLExporter.fcpxmlAudioRate(timeline.audioRate))
+          as! XMLNode)
 
-      // Add timeline-level metadata
-      if let metadata = timeline.metadata, !metadata.isEmpty {
-        element.addChild(metadata.xmlElement())
-      }
-
-      for marker in timeline.markers {
-        element.addChild(marker.xmlElement())
-      }
-
-      for chapterMarker in timeline.chapterMarkers {
-        element.addChild(chapterMarker.xmlElement())
-      }
-
-      for keyword in timeline.keywords {
-        element.addChild(keyword.xmlElement())
-      }
-
-      for rating in timeline.ratings {
-        element.addChild(rating.xmlElement())
-      }
-
+      // DTD: <!ELEMENT sequence (note?, spine, metadata?)>. Spine first, metadata
+      // last. Timeline-level markers, chapter markers, keywords and ratings are not
+      // allowed on <sequence> and are not exported (they need anchoring to a
+      // spine item; FCPXMLExporter does not export them either).
       let spine = try generateSpineElement(
         timeline: timeline, modelContext: modelContext, resourceMap: resourceMap,
         frameRate: frameRate)
       element.addChild(spine)
+
+      if let metadata = timeline.metadata, !metadata.isEmpty {
+        element.addChild(metadata.xmlElement())
+      }
 
       return element
     }
@@ -1226,9 +956,12 @@
       let allClips = timeline.sortedClips
 
       for clip in allClips {
+        // A clip trimmed to nothing is left out (never a placeholder element).
         let clipElement = try generateAssetClipElement(
           clip: clip, resourceMap: resourceMap, frameRate: frameRate)
-        element.addChild(clipElement)
+        if let clipElement {
+          element.addChild(clipElement)
+        }
       }
 
       return element
@@ -1238,7 +971,7 @@
       clip: TimelineClip,
       resourceMap: LegacyResourceMap,
       frameRate: FrameRate
-    ) throws -> XMLElement {
+    ) throws -> XMLElement? {
       guard let assetID = resourceMap.assetIDs[clip.assetStorageId] else {
         throw FCPXMLExportError.missingAsset(assetId: clip.assetStorageId)
       }
@@ -1250,20 +983,22 @@
         element.addAttribute(XMLNode.attribute(withName: "name", stringValue: name) as! XMLNode)
       }
 
-      // Apply audio trimming if available
+      // Apply audio trimming if available (only when silence trimming is on)
       let timing = resourceMap.audioTiming[clip.assetStorageId]
-      let adjustedStart = clip.sourceStart.seconds + (timing?.trimStart ?? 0)
-      let adjustedDuration =
-        clip.duration.seconds - (timing?.trimStart ?? 0) - (timing?.trimEnd ?? 0)
+      let trimStart = timing?.trimStart ?? 0
+      let trimEnd = timing?.trimEnd ?? 0
+      let adjustedStart = clip.sourceStart.seconds + trimStart
+      let adjustedDuration = clip.duration.seconds - trimStart - trimEnd
 
-      // Skip clips that have been trimmed to zero or negative duration
+      // A clip trimmed to zero or negative duration is left out of the spine.
       guard adjustedDuration > 0 else {
-        // Return an empty element that won't be added to the spine
-        return XMLElement(name: "comment")
+        return nil
       }
 
-      // Use frame-aligned timecodes
-      let alignedOffset = clip.offset.aligned(to: frameRate)
+      // The trimmed lead-in is skipped in the source, so the clip must start that
+      // much later on the timeline; otherwise the audible audio would move earlier.
+      let alignedOffset = Timecode.frameAligned(
+        seconds: clip.offset.seconds + trimStart, frameRate: frameRate)
       element.addAttribute(
         XMLNode.attribute(withName: "offset", stringValue: alignedOffset.fcpxmlString) as! XMLNode)
 
@@ -1283,36 +1018,53 @@
           XMLNode.attribute(withName: "lane", stringValue: "\(clip.lane)") as! XMLNode)
       }
 
-      if clip.isVideoDisabled {
+      if clip.isVideoDisabled || clip.isMuted {
         element.addAttribute(XMLNode.attribute(withName: "enabled", stringValue: "0") as! XMLNode)
       }
 
-      // Add metadata child elements
-      if let metadata = clip.metadata, !metadata.isEmpty {
-        element.addChild(metadata.xmlElement())
+      // Children in DTD order: (note?, timing-params, intrinsic-params (adjust-volume),
+      // anchor items, marker items, ..., metadata?)
+      if let amount = Self.adjustVolumeAmount(clip.volumeDb) {
+        let adjust = XMLElement(name: "adjust-volume")
+        adjust.addAttribute(XMLNode.attribute(withName: "amount", stringValue: amount) as! XMLNode)
+        element.addChild(adjust)
       }
 
-      // Add markers
       for marker in clip.markers {
         element.addChild(marker.xmlElement())
       }
-
-      // Add chapter markers
       for chapterMarker in clip.chapterMarkers {
         element.addChild(chapterMarker.xmlElement())
       }
-
-      // Add keywords
       for keyword in clip.keywords {
         element.addChild(keyword.xmlElement())
       }
-
-      // Add ratings
       for rating in clip.ratings {
         element.addChild(rating.xmlElement())
       }
 
+      if let metadata = clip.metadata, !metadata.isEmpty {
+        element.addChild(metadata.xmlElement())
+      }
+
       return element
+    }
+
+    // MARK: - Helpers
+
+    /// Unique asset IDs referenced by the timeline's clips, sorted by UUID string,
+    /// so resource IDs and `Media/` processing order are the same on every run.
+    static func sortedUniqueAssetIDs(in timeline: Timeline) -> [UUID] {
+      Set(timeline.clips.map { $0.assetStorageId }).sorted { $0.uuidString < $1.uuidString }
+    }
+
+    /// The `adjust-volume` `amount` for a clip gain, e.g. `-6.00dB`, or `nil` when
+    /// there is no gain to write (nil, or 0.00 dB after rounding).
+    static func adjustVolumeAmount(_ volumeDb: Double?) -> String? {
+      guard let db = volumeDb, db.isFinite else { return nil }
+      let rounded = (db * 100).rounded() / 100
+      guard rounded != 0 else { return nil }
+      return String(format: "%.2fdB", locale: Locale(identifier: "en_US_POSIX"), rounded)
     }
 
     // MARK: - Info.plist Generation
