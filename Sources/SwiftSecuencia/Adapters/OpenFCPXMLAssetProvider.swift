@@ -260,7 +260,7 @@
       for timeline: Timeline,
       includeMedia: Bool = false
     ) throws -> [OpenFCPXMLKit.FCPXMLExportAsset] {
-      let uniqueAssetIDs = Array(Set(timeline.clips.map { $0.assetStorageId }))
+      let uniqueAssetIDs = FCPXMLBundleExporter.sortedUniqueAssetIDs(in: timeline)
       return try exportAssets(for: uniqueAssetIDs, includeMedia: includeMedia)
     }
 
