@@ -7,7 +7,7 @@ updated: 2026-06-27
 # AI Agent Development Guidelines
 
 **Last Updated**: 2026-07-21
-**Version**: 3.6.0
+**Version**: 4.0.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -209,7 +209,9 @@ Timeline.fcpxmld/
 ```swift
 var exporter = FCPXMLBundleExporter(
     version: .v1_14,
-    includeMedia: true
+    includeMedia: true,
+    audioMediaMode: .transcodeToM4A,  // or .passThrough (lossless, bytes as stored)
+    trimsSilence: false               // opt-in; when on, offset moves by the trimmed lead-in
 )
 
 let bundleURL = try await exporter.exportBundle(
