@@ -2,10 +2,10 @@
 //  FileAssetProvider.swift
 //  SwiftSecuenciaTests
 //
-//  In-memory asset provider for testing PipelineNeo export workflows.
+//  In-memory asset provider for testing OpenFCPXMLKit export workflows.
 //
 //  This provider has NO SwiftData dependency — it uses only Foundation and
-//  PipelineNeo types. Assets are registered manually via `register(assetID:...)`,
+//  OpenFCPXMLKit types. Assets are registered manually via `register(assetID:...)`,
 //  making tests fast, lightweight, and isolated from the persistence layer.
 //
 //  ## Usage
@@ -28,8 +28,8 @@
 //
 //  The production `FileAssetProvider` in `Sources/SwiftSecuencia/Export/` conforms
 //  to the `AssetProvider` protocol, which uses UUIDs and `AssetMetadata`. For testing
-//  PipelineNeo export paths, we need a provider that works directly with resource IDs
-//  (e.g., "r2", "r3") and returns `PipelineNeo.FCPXMLExportAsset` values. This test
+//  OpenFCPXMLKit export paths, we need a provider that works directly with resource IDs
+//  (e.g., "r2", "r3") and returns `OpenFCPXMLKit.FCPXMLExportAsset` values. This test
 //  helper avoids the UUID-to-resourceID conversion layer entirely, making tests more
 //  direct and readable.
 
@@ -37,7 +37,7 @@ import CoreMedia
 import Foundation
 
 #if os(macOS)
-  import PipelineNeo
+  import OpenFCPXMLKit
 #endif
 
 // MARK: - Test File Asset Entry
@@ -45,7 +45,7 @@ import Foundation
 /// A single registered test asset entry.
 ///
 /// This lightweight struct holds all the information needed to create a
-/// `PipelineNeo.FCPXMLExportAsset` for testing. No SwiftData types involved.
+/// `OpenFCPXMLKit.FCPXMLExportAsset` for testing. No SwiftData types involved.
 public struct TestFileAssetEntry: Sendable {
   /// The file URL where the asset is located (can be a dummy path for tests).
   public let url: URL
@@ -84,13 +84,13 @@ public struct TestFileAssetEntry: Sendable {
 
 // MARK: - Test File Asset Provider
 
-/// In-memory asset provider for testing PipelineNeo export workflows.
+/// In-memory asset provider for testing OpenFCPXMLKit export workflows.
 ///
 /// Assets are registered by their resource ID (e.g., `"r2"`, `"r3"`), which matches
-/// the IDs used in `PipelineNeo.FCPXMLExportAsset` and `PipelineNeo.TimelineClip.assetRef`.
+/// the IDs used in `OpenFCPXMLKit.FCPXMLExportAsset` and `OpenFCPXMLKit.TimelineClip.assetRef`.
 ///
 /// This provider has NO SwiftData dependency and NO `AssetProvider` protocol conformance.
-/// It works directly with PipelineNeo types for maximum test simplicity.
+/// It works directly with OpenFCPXMLKit types for maximum test simplicity.
 public final class TestFileAssetProvider: @unchecked Sendable {
   private var registry: [String: TestFileAssetEntry] = [:]
 
@@ -137,20 +137,20 @@ public final class TestFileAssetProvider: @unchecked Sendable {
 
   #if os(macOS)
 
-    /// Retrieves a `PipelineNeo.FCPXMLExportAsset` for the given resource ID.
+    /// Retrieves a `OpenFCPXMLKit.FCPXMLExportAsset` for the given resource ID.
     ///
     /// Returns `nil` if the resource ID has not been registered. This matches the
     /// graceful error handling pattern used in production (missing assets return nil,
     /// not throw).
     ///
     /// - Parameter assetID: The resource ID to look up (e.g., `"r2"`).
-    /// - Returns: A `PipelineNeo.FCPXMLExportAsset`, or `nil` if not found.
-    public func asset(for assetID: String) -> PipelineNeo.FCPXMLExportAsset? {
+    /// - Returns: A `OpenFCPXMLKit.FCPXMLExportAsset`, or `nil` if not found.
+    public func asset(for assetID: String) -> OpenFCPXMLKit.FCPXMLExportAsset? {
       guard let entry = registry[assetID] else {
         return nil
       }
 
-      return PipelineNeo.FCPXMLExportAsset(
+      return OpenFCPXMLKit.FCPXMLExportAsset(
         id: assetID,
         name: entry.name,
         src: entry.url,
@@ -161,12 +161,12 @@ public final class TestFileAssetProvider: @unchecked Sendable {
       )
     }
 
-    /// Retrieves all registered assets as `PipelineNeo.FCPXMLExportAsset` instances.
+    /// Retrieves all registered assets as `OpenFCPXMLKit.FCPXMLExportAsset` instances.
     ///
     /// Assets are returned sorted by resource ID for deterministic test output.
     ///
-    /// - Returns: An array of `PipelineNeo.FCPXMLExportAsset` structs.
-    public func allAssets() -> [PipelineNeo.FCPXMLExportAsset] {
+    /// - Returns: An array of `OpenFCPXMLKit.FCPXMLExportAsset` structs.
+    public func allAssets() -> [OpenFCPXMLKit.FCPXMLExportAsset] {
       registry.keys.sorted().compactMap { asset(for: $0) }
     }
 

@@ -11,7 +11,7 @@
   import SwiftData
   import SwiftCompartido
   import AVFoundation
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   /// Exports Timeline objects to FCPXML bundle format (.fcpxmld).
   ///
@@ -845,7 +845,7 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      // Create FCPXML document manually (OpenFCPXMLKit initializer has a bug that doesn't create <resources> and <library> elements)
       let doc = XMLDocument()
       doc.documentContentKind = XMLDocument.ContentKind.xml
       doc.characterEncoding = "UTF-8"
@@ -879,7 +879,7 @@
         throw FCPXMLExportError.xmlGenerationFailed
       }
 
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      // Remove standalone="yes" from XML declaration if present (matches OpenFCPXMLKit's fcpxmlString)
       if formattedString.hasPrefix("<?xml") {
         formattedString = formattedString.replacingOccurrences(
           of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
@@ -986,7 +986,7 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      // Create FCPXML document manually (OpenFCPXMLKit initializer has a bug that doesn't create <resources> and <library> elements)
       let doc = XMLDocument()
       doc.documentContentKind = XMLDocument.ContentKind.xml
       doc.characterEncoding = "UTF-8"
@@ -1020,7 +1020,7 @@
         throw FCPXMLExportError.xmlGenerationFailed
       }
 
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      // Remove standalone="yes" from XML declaration if present (matches OpenFCPXMLKit's fcpxmlString)
       if formattedString.hasPrefix("<?xml") {
         formattedString = formattedString.replacingOccurrences(
           of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,

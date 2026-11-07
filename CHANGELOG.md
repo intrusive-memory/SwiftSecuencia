@@ -5,6 +5,26 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 4.0.0
+
+### Breaking
+- **Pipeline Neo → OpenFCPXMLKit.** The FCPXML dependency is now
+  `TheAcharya/OpenFCPXMLKit` 3.3.15 (Pipeline Neo was renamed at 3.0.0). Module
+  `PipelineNeo` → `OpenFCPXMLKit`; the `FCPXMLVersion` typealias now points at
+  `OpenFCPXMLKit.FCPXMLVersion`. Requires a Swift 6.3+ toolchain to build (the
+  dependency's tools-version); this package's own tools-version is unchanged.
+- `PipelineNeoAssetProvider` → `OpenFCPXMLAssetProvider`.
+- `toPipelineNeo*` adapters → `toOpenFCPXML*` (`toOpenFCPXMLTimeline`,
+  `toOpenFCPXMLTimelineClip`, `toOpenFCPXMLTimelineFormat`, `toOpenFCPXMLMarker`,
+  `toOpenFCPXMLChapterMarker`, `toOpenFCPXMLKeyword`, `toOpenFCPXMLRating`,
+  `toOpenFCPXMLMetadata`).
+- `SwiftSecuenciaBundleExporter` (`.fcpbundle`) removed; use
+  `FCPXMLBundleExporter` (`.fcpxmld`). `secuencia build` now writes `.fcpxmld`.
+
+### Changed
+- Dependency floors: SwiftCompartido 7.4.0, swift-timecode 3.1.4,
+  swift-argument-parser 1.8.2.
+
 ## [3.1.0] - 2026-03-15
 
 ### Added - Release Automation & Homebrew Distribution

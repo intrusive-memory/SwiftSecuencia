@@ -246,11 +246,11 @@ let bundleURL = try await exporter.exportBundle(
 4. **Archive-Ready** - Single file contains everything
 5. **Cross-Platform** - Works across different macOS systems
 
-### PipelineNeo Dependency
+### OpenFCPXMLKit Dependency
 
-SwiftSecuencia uses **[PipelineNeo](https://github.com/TheAcharya/pipeline-neo)** (v2.0.0+) for FCPXML generation:
+SwiftSecuencia uses **[OpenFCPXMLKit](https://github.com/TheAcharya/OpenFCPXMLKit)** (3.3.15+; formerly Pipeline Neo, renamed at 3.0.0) for FCPXML generation:
 
-**What PipelineNeo Provides**:
+**What OpenFCPXMLKit Provides**:
 - Low-level FCPXML element construction (`format`, `asset`, `sequence`, `clip`)
 - DTD file management and validation (v1.8-v1.14)
 - XML namespace handling and attribute marshaling
@@ -361,7 +361,7 @@ let outputURL = try await Task.detached(priority: .high) {
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| pipeline-neo | 2.4.1+ | FCPXML generation and DTD validation |
+| OpenFCPXMLKit (formerly pipeline-neo) | 3.3.15+ | FCPXML generation and DTD validation |
 | SwiftCompartido | development | TypedDataStorage (asset storage) |
 | SwiftFijos | development | Test fixture management |
 | swift-argument-parser | 1.7.0 | CLI argument parsing |
@@ -369,9 +369,9 @@ let outputURL = try await Task.detached(priority: .high) {
 | WebVTT | 1.0.0+ | Timing data export |
 | ZIPFoundation | 0.9.20 | Bundle compression |
 
-### Why pipeline-neo?
+### Why OpenFCPXMLKit?
 
-**Purpose**: pipeline-neo provides battle-tested FCPXML element construction and DTD validation.
+**Purpose**: OpenFCPXMLKit provides battle-tested FCPXML element construction and DTD validation.
 
 **What it provides**:
 - Low-level FCPXML element generation (format, asset, sequence, clip elements)

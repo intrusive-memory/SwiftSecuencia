@@ -30,14 +30,14 @@ let package = Package(
     .package(url: "https://github.com/mattt/WebVTT.git", from: "1.0.0"),
     .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.8.2"),
     .package(url: "https://github.com/marcprux/universal.git", from: "5.3.0"),
-    .package(url: "https://github.com/TheAcharya/pipeline-neo.git", from: "2.5.2"),
+    .package(url: "https://github.com/TheAcharya/OpenFCPXMLKit.git", from: "3.3.15"),
   ],
   targets: [
     .target(
       name: "SwiftSecuencia",
       dependencies: [
         .product(
-          name: "PipelineNeo", package: "pipeline-neo", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
+          name: "OpenFCPXMLKit", package: "OpenFCPXMLKit", condition: .when(platforms: [.macOS])),  // FCPXML only on macOS
         .product(name: "SwiftCompartido", package: "SwiftCompartido"),
         .product(name: "SwiftFijos", package: "SwiftFijos"),  // DTD validation macOS-only
         .product(name: "SwiftTimecode", package: "swift-timecode"),

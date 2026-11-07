@@ -10,7 +10,7 @@
   import Foundation
   import SwiftData
   import SwiftCompartido
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   /// Exports Timeline objects to FCPXML XML documents.
   ///
@@ -126,7 +126,7 @@
       project.addChild(sequence)
       event.addChild(project)
 
-      // Create FCPXML document manually (pipeline-neo initializer has a bug that doesn't create <resources> and <library> elements)
+      // Create FCPXML document manually (OpenFCPXMLKit initializer has a bug that doesn't create <resources> and <library> elements)
       let doc = XMLDocument()
       doc.documentContentKind = XMLDocument.ContentKind.xml
       doc.characterEncoding = "UTF-8"
@@ -160,7 +160,7 @@
         throw FCPXMLExportError.xmlGenerationFailed
       }
 
-      // Remove standalone="yes" from XML declaration if present (matches pipeline-neo's fcpxmlString)
+      // Remove standalone="yes" from XML declaration if present (matches OpenFCPXMLKit's fcpxmlString)
       if formattedString.hasPrefix("<?xml") {
         formattedString = formattedString.replacingOccurrences(
           of: #"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#,
@@ -554,7 +554,7 @@
   // MARK: - Supporting Types
 
   /// Maps Timeline objects to FCPXML resource IDs (legacy embedded Pipeline implementation).
-  /// Note: The Adapters/ResourceMap.swift public struct is the replacement for pipeline-neo migration.
+  /// Note: The Adapters/ResourceMap.swift public struct is the replacement for OpenFCPXMLKit migration.
   struct LegacyResourceMap {
     var formatID: String?
     var assetIDs: [UUID: String] = [:]
@@ -570,7 +570,7 @@
     case cancelled
 
     /// An asset referenced by a clip was not found in the export asset list.
-    /// This case maps from `PipelineNeo.FCPXMLExportError.missingAsset(assetId: String)`,
+    /// This case maps from `OpenFCPXMLKit.FCPXMLExportError.missingAsset(assetId: String)`,
     /// where the asset ID is a string (r-prefixed resource ID) rather than a UUID.
     case missingAssetRef(assetRef: String)
 

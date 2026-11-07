@@ -2,58 +2,58 @@
 //  ExportErrorMapping.swift
 //  SwiftSecuencia
 //
-//  Maps PipelineNeo error types to SwiftSecuencia error types to prevent
-//  PipelineNeo errors from leaking to callers of SwiftSecuenciaExporter.
+//  Maps OpenFCPXMLKit error types to SwiftSecuencia error types to prevent
+//  OpenFCPXMLKit errors from leaking to callers of SwiftSecuenciaExporter.
 //
 //  ## Error Taxonomy
 //
 //  SwiftSecuencia export errors are organized into three tiers:
 //
 //  1. **`FCPXMLExportError`** -- errors during FCPXML document generation.
-//     Maps from `PipelineNeo.FCPXMLExportError`.
+//     Maps from `OpenFCPXMLKit.FCPXMLExportError`.
 //
 //  2. **`FCPXMLBundleExportError`** -- errors during `.fcpxmld` bundle creation.
-//     Maps from `PipelineNeo.FCPXMLBundleExportError`.
+//     Maps from `OpenFCPXMLKit.FCPXMLBundleExportError`.
 //
 //  3. **`FCPXMLValidationError`** -- errors during FCPXML structure validation.
-//     Maps from `PipelineNeo.FCPXMLError` and `PipelineNeo.ValidationError`.
+//     Maps from `OpenFCPXMLKit.FCPXMLError` and `OpenFCPXMLKit.ValidationError`.
 //
 //  ## Usage
 //
 //  The primary entry point is `remappingExportErrors(_:)`, which wraps any
-//  throwing closure and translates PipelineNeo errors at the boundary:
+//  throwing closure and translates OpenFCPXMLKit errors at the boundary:
 //
 //  ```swift
 //  let xml = try remappingExportErrors {
-//      try pipelineNeoExporter.export(timeline: t, assets: a)
+//      try openFCPXMLExporter.export(timeline: t, assets: a)
 //  }
 //  ```
 //
-//  Callers of `SwiftSecuenciaExporter` never need to import PipelineNeo
-//  and never see PipelineNeo error types.
+//  Callers of `SwiftSecuenciaExporter` never need to import OpenFCPXMLKit
+//  and never see OpenFCPXMLKit error types.
 //
 
 #if os(macOS)
 
   import Foundation
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   // MARK: - FCPXMLExportError Mapping
 
   extension FCPXMLExportError {
 
-    /// Creates a `FCPXMLExportError` by mapping a `PipelineNeo.FCPXMLExportError`.
+    /// Creates a `FCPXMLExportError` by mapping a `OpenFCPXMLKit.FCPXMLExportError`.
     ///
-    /// | PipelineNeo case                     | SwiftSecuencia case                  |
+    /// | OpenFCPXMLKit case                     | SwiftSecuencia case                  |
     /// |--------------------------------------|--------------------------------------|
     /// | `.missingFormat`                     | `.missingFormat`                     |
     /// | `.missingAsset(assetId: String)`     | `.missingAssetRef(assetRef: String)` |
     /// | `.invalidTimeline(reason: String)`   | `.invalidTimeline(reason: String)`   |
     /// | `.cancelled`                         | `.cancelled`                         |
     ///
-    /// - Parameter pipelineNeoError: The PipelineNeo error to map.
-    public init(mappingFrom pipelineNeoError: PipelineNeo.FCPXMLExportError) {
-      switch pipelineNeoError {
+    /// - Parameter openFCPXMLError: The OpenFCPXMLKit error to map.
+    public init(mappingFrom openFCPXMLError: OpenFCPXMLKit.FCPXMLExportError) {
+      switch openFCPXMLError {
       case .missingFormat:
         self = .missingFormat
       case .missingAsset(let assetId):
@@ -65,13 +65,13 @@
       }
     }
 
-    /// Maps a `PipelineNeo.FCPXMLExportError` to a `FCPXMLExportError`.
+    /// Maps a `OpenFCPXMLKit.FCPXMLExportError` to a `FCPXMLExportError`.
     ///
-    /// - Parameter pipelineNeoError: The PipelineNeo error to map.
+    /// - Parameter openFCPXMLError: The OpenFCPXMLKit error to map.
     /// - Returns: The mapped `FCPXMLExportError`.
-    public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLExportError)
+    public static func mapped(from openFCPXMLError: OpenFCPXMLKit.FCPXMLExportError)
       -> FCPXMLExportError {
-      FCPXMLExportError(mappingFrom: pipelineNeoError)
+      FCPXMLExportError(mappingFrom: openFCPXMLError)
     }
   }
 
@@ -79,7 +79,7 @@
 
   /// Errors that can occur during FCPXML bundle (.fcpxmld) creation.
   ///
-  /// Maps from `PipelineNeo.FCPXMLBundleExportError` to provide user-friendly
+  /// Maps from `OpenFCPXMLKit.FCPXMLBundleExportError` to provide user-friendly
   /// error messages suitable for UI or CLI display.
   public enum FCPXMLBundleExportError: Error, LocalizedError {
 
@@ -116,11 +116,11 @@
       }
     }
 
-    // MARK: Mapping from PipelineNeo
+    // MARK: Mapping from OpenFCPXMLKit
 
-    /// Creates a `FCPXMLBundleExportError` by mapping a `PipelineNeo.FCPXMLBundleExportError`.
-    public init(mappingFrom pipelineNeoError: PipelineNeo.FCPXMLBundleExportError) {
-      switch pipelineNeoError {
+    /// Creates a `FCPXMLBundleExportError` by mapping a `OpenFCPXMLKit.FCPXMLBundleExportError`.
+    public init(mappingFrom openFCPXMLError: OpenFCPXMLKit.FCPXMLBundleExportError) {
+      switch openFCPXMLError {
       case .bundleCreationFailed(let reason):
         self = .bundleCreationFailed(reason: reason)
       case .mediaCopyFailed(let assetId, let underlying):
@@ -132,10 +132,10 @@
       }
     }
 
-    /// Maps a `PipelineNeo.FCPXMLBundleExportError` to a `FCPXMLBundleExportError`.
-    public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLBundleExportError)
+    /// Maps a `OpenFCPXMLKit.FCPXMLBundleExportError` to a `FCPXMLBundleExportError`.
+    public static func mapped(from openFCPXMLError: OpenFCPXMLKit.FCPXMLBundleExportError)
       -> FCPXMLBundleExportError {
-      FCPXMLBundleExportError(mappingFrom: pipelineNeoError)
+      FCPXMLBundleExportError(mappingFrom: openFCPXMLError)
     }
   }
 
@@ -143,7 +143,7 @@
 
   /// Errors that can occur during FCPXML structure validation.
   ///
-  /// Maps from `PipelineNeo.FCPXMLError` and `PipelineNeo.ValidationError` to
+  /// Maps from `OpenFCPXMLKit.FCPXMLError` and `OpenFCPXMLKit.ValidationError` to
   /// provide user-friendly error messages.
   public enum FCPXMLValidationError: Error, LocalizedError {
 
@@ -166,7 +166,7 @@
     case documentOperationFailed(details: String)
 
     /// One or more timeline clips or assets failed semantic validation.
-    case timelineValidationFailed(errors: [PipelineNeo.ValidationError])
+    case timelineValidationFailed(errors: [OpenFCPXMLKit.ValidationError])
 
     // MARK: LocalizedError
 
@@ -190,11 +190,11 @@
       }
     }
 
-    // MARK: Mapping from PipelineNeo.FCPXMLError
+    // MARK: Mapping from OpenFCPXMLKit.FCPXMLError
 
-    /// Creates a `FCPXMLValidationError` by mapping a `PipelineNeo.FCPXMLError`.
-    public init(mappingFrom pipelineNeoError: PipelineNeo.FCPXMLError) {
-      switch pipelineNeoError {
+    /// Creates a `FCPXMLValidationError` by mapping a `OpenFCPXMLKit.FCPXMLError`.
+    public init(mappingFrom openFCPXMLError: OpenFCPXMLKit.FCPXMLError) {
+      switch openFCPXMLError {
       case .parsingFailed(let underlying):
         self = .parsingFailed(details: underlying.localizedDescription)
       case .invalidFormat:
@@ -210,14 +210,14 @@
       }
     }
 
-    /// Maps a `PipelineNeo.FCPXMLError` to a `FCPXMLValidationError`.
-    public static func mapped(from pipelineNeoError: PipelineNeo.FCPXMLError)
+    /// Maps a `OpenFCPXMLKit.FCPXMLError` to a `FCPXMLValidationError`.
+    public static func mapped(from openFCPXMLError: OpenFCPXMLKit.FCPXMLError)
       -> FCPXMLValidationError {
-      FCPXMLValidationError(mappingFrom: pipelineNeoError)
+      FCPXMLValidationError(mappingFrom: openFCPXMLError)
     }
 
-    /// Creates a `FCPXMLValidationError` from a list of `PipelineNeo.ValidationError` values.
-    public init(mappingFrom validationErrors: [PipelineNeo.ValidationError]) {
+    /// Creates a `FCPXMLValidationError` from a list of `OpenFCPXMLKit.ValidationError` values.
+    public init(mappingFrom validationErrors: [OpenFCPXMLKit.ValidationError]) {
       self = .timelineValidationFailed(errors: validationErrors)
     }
   }
@@ -226,71 +226,71 @@
 
   extension Error {
 
-    /// Converts this error to `FCPXMLExportError` if it is a PipelineNeo export error.
+    /// Converts this error to `FCPXMLExportError` if it is a OpenFCPXMLKit export error.
     public var asFCPXMLExportError: FCPXMLExportError? {
-      (self as? PipelineNeo.FCPXMLExportError).map { FCPXMLExportError(mappingFrom: $0) }
+      (self as? OpenFCPXMLKit.FCPXMLExportError).map { FCPXMLExportError(mappingFrom: $0) }
     }
 
-    /// Converts this error to `FCPXMLBundleExportError` if it is a PipelineNeo bundle error.
+    /// Converts this error to `FCPXMLBundleExportError` if it is a OpenFCPXMLKit bundle error.
     public var asFCPXMLBundleExportError: FCPXMLBundleExportError? {
-      (self as? PipelineNeo.FCPXMLBundleExportError).map {
+      (self as? OpenFCPXMLKit.FCPXMLBundleExportError).map {
         FCPXMLBundleExportError(mappingFrom: $0)
       }
     }
 
-    /// Converts this error to `FCPXMLValidationError` if it is a PipelineNeo FCPXML error.
+    /// Converts this error to `FCPXMLValidationError` if it is a OpenFCPXMLKit FCPXML error.
     public var asFCPXMLValidationError: FCPXMLValidationError? {
-      (self as? PipelineNeo.FCPXMLError).map { FCPXMLValidationError(mappingFrom: $0) }
+      (self as? OpenFCPXMLKit.FCPXMLError).map { FCPXMLValidationError(mappingFrom: $0) }
     }
   }
 
   // MARK: - Mapped Error Throwing Helper
 
-  /// Executes a throwing closure and remaps any PipelineNeo export errors to their
+  /// Executes a throwing closure and remaps any OpenFCPXMLKit export errors to their
   /// SwiftSecuencia equivalents before rethrowing.
   ///
   /// This is the primary error-translation boundary. By wrapping calls inside
   /// `remappingExportErrors`, callers only need to handle SwiftSecuencia error types
-  /// and never need to import PipelineNeo directly.
+  /// and never need to import OpenFCPXMLKit directly.
   ///
   /// ```swift
   /// let xml = try remappingExportErrors {
-  ///     try pipelineNeoExporter.export(timeline: t, assets: a)
+  ///     try openFCPXMLExporter.export(timeline: t, assets: a)
   /// }
   /// ```
   ///
-  /// - Parameter body: A throwing closure that may throw PipelineNeo export errors.
+  /// - Parameter body: A throwing closure that may throw OpenFCPXMLKit export errors.
   /// - Returns: The value returned by `body`.
-  /// - Throws: The SwiftSecuencia-mapped error if `body` throws a PipelineNeo error;
+  /// - Throws: The SwiftSecuencia-mapped error if `body` throws a OpenFCPXMLKit error;
   ///           otherwise rethrows `body`'s original error unchanged.
   @discardableResult
   public func remappingExportErrors<T>(_ body: () throws -> T) throws -> T {
     do {
       return try body()
-    } catch let error as PipelineNeo.FCPXMLExportError {
+    } catch let error as OpenFCPXMLKit.FCPXMLExportError {
       throw FCPXMLExportError(mappingFrom: error)
-    } catch let error as PipelineNeo.FCPXMLBundleExportError {
+    } catch let error as OpenFCPXMLKit.FCPXMLBundleExportError {
       throw FCPXMLBundleExportError(mappingFrom: error)
-    } catch let error as PipelineNeo.FCPXMLError {
+    } catch let error as OpenFCPXMLKit.FCPXMLError {
       throw FCPXMLValidationError(mappingFrom: error)
     }
   }
 
   /// Async variant of `remappingExportErrors(_:)`.
   ///
-  /// - Parameter body: An async throwing closure that may throw PipelineNeo export errors.
+  /// - Parameter body: An async throwing closure that may throw OpenFCPXMLKit export errors.
   /// - Returns: The value returned by `body`.
-  /// - Throws: The SwiftSecuencia-mapped error if `body` throws a PipelineNeo error;
+  /// - Throws: The SwiftSecuencia-mapped error if `body` throws a OpenFCPXMLKit error;
   ///           otherwise rethrows `body`'s original error unchanged.
   @discardableResult
   public func remappingExportErrors<T>(_ body: () async throws -> T) async throws -> T {
     do {
       return try await body()
-    } catch let error as PipelineNeo.FCPXMLExportError {
+    } catch let error as OpenFCPXMLKit.FCPXMLExportError {
       throw FCPXMLExportError(mappingFrom: error)
-    } catch let error as PipelineNeo.FCPXMLBundleExportError {
+    } catch let error as OpenFCPXMLKit.FCPXMLBundleExportError {
       throw FCPXMLBundleExportError(mappingFrom: error)
-    } catch let error as PipelineNeo.FCPXMLError {
+    } catch let error as OpenFCPXMLKit.FCPXMLError {
       throw FCPXMLValidationError(mappingFrom: error)
     }
   }

@@ -2,16 +2,16 @@
 //  TimelineAdapters.swift
 //  SwiftSecuencia
 //
-//  Adapters for converting SwiftSecuencia timeline models to PipelineNeo equivalents.
+//  Adapters for converting SwiftSecuencia timeline models to OpenFCPXMLKit equivalents.
 //
 //  These adapters form the bridge layer between SwiftSecuencia's SwiftData-persisted
-//  models and PipelineNeo's value types, which are used for FCPXML export.
+//  models and OpenFCPXMLKit's value types, which are used for FCPXML export.
 //
 //  ## Architecture
 //
-//  SwiftSecuencia models (SwiftData) → Adapter layer → PipelineNeo types → FCPXML
+//  SwiftSecuencia models (SwiftData) → Adapter layer → OpenFCPXMLKit types → FCPXML
 //
-//  Adapters are macOS-only because PipelineNeo is a macOS-only dependency.
+//  Adapters are macOS-only because OpenFCPXMLKit is a macOS-only dependency.
 //  On iOS, only audio export and timeline persistence are available; FCPXML export
 //  requires macOS.
 //
@@ -19,11 +19,11 @@
 //
 //  ResourceMap is required for any adapter that converts asset references. All
 //  clip-level conversions accept a `resourceMap:` parameter. Raw UUIDs are NEVER
-//  passed to PipelineNeo — all resource IDs flow through ResourceMap.
+//  passed to OpenFCPXMLKit — all resource IDs flow through ResourceMap.
 //
 //  ## Timescale Convention
 //
-//  PipelineNeo uses timescale 600 for general CMTime calculations (confirmed in
+//  OpenFCPXMLKit uses timescale 600 for general CMTime calculations (confirmed in
 //  Sortie 0 research, TimecodeConverter.swift line 71). When constructing CMTime
 //  values that are NOT derived directly from a SwiftSecuencia Timecode (e.g.,
 //  defaults and fallbacks), use CMTimeMakeWithSeconds with preferredTimescale 600.
@@ -32,7 +32,7 @@
 //
 //  ## Sequence-Level Metadata (Bug B)
 //
-//  Sortie 0 confirmed that Pipeline Neo adds markers, keywords, chapter-markers, and
+//  Sortie 0 confirmed that OpenFCPXMLKit adds markers, keywords, chapter-markers, and
 //  ratings as direct children of <sequence>. The FCPXML DTD v1.11 does NOT permit
 //  these elements as sequence children:
 //
@@ -42,7 +42,7 @@
 //  chapter-markers, and ratings are only valid inside <asset-clip> elements.
 //
 //  Decision: Timeline-level markers, keywords, chapter-markers, and ratings stored in
-//  the SwiftSecuencia Timeline model are silently dropped during Timeline → PipelineNeo
+//  the SwiftSecuencia Timeline model are silently dropped during Timeline → OpenFCPXMLKit
 //  conversion. The Timeline's <metadata> element IS preserved (it IS valid per DTD).
 //
 //  Rationale: Attaching them to the first clip is semantically incorrect (they annotate
@@ -52,19 +52,19 @@
 //  preserved — only the Timeline-level marker/keyword/rating arrays are dropped.
 //
 //  If sequence-level annotation support is required in a future release, the recommended
-//  approach is to file an upstream bug with TheAcharya/pipeline-neo to fix the DTD
+//  approach is to file an upstream bug with TheAcharya/OpenFCPXMLKit to fix the DTD
 //  non-compliance, and then re-enable the conversion here.
 
 #if os(macOS)
   import Foundation
   import CoreMedia
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   // MARK: - Timecode → CMTime
 
   extension Timecode {
 
-    /// Converts this `Timecode` to a `CMTime` for use with PipelineNeo.
+    /// Converts this `Timecode` to a `CMTime` for use with OpenFCPXMLKit.
     ///
     /// The conversion preserves the rational time representation exactly:
     /// `CMTime(value: self.value, timescale: self.timescale)`.
@@ -83,7 +83,7 @@
 
   extension Marker {
 
-    /// Converts this `SwiftSecuencia.Marker` to a `PipelineNeo.Marker`.
+    /// Converts this `SwiftSecuencia.Marker` to a `OpenFCPXMLKit.Marker`.
     ///
     /// All fields are preserved:
     /// - `start` → converted from `Timecode` to `CMTime` (verbatim rational value)
@@ -91,11 +91,11 @@
     /// - `value`, `note`, `completed` → copied directly
     ///
     /// These adapters are used for CLIP-level markers only. See the file-level comment
-    /// for the decision to drop Timeline-level markers (DTD violation in PipelineNeo).
+    /// for the decision to drop Timeline-level markers (DTD violation in OpenFCPXMLKit).
     ///
-    /// - Returns: A `PipelineNeo.Marker` with equivalent values.
-    func toPipelineNeoMarker() -> PipelineNeo.Marker {
-      PipelineNeo.Marker(
+    /// - Returns: A `OpenFCPXMLKit.Marker` with equivalent values.
+    func toOpenFCPXMLMarker() -> OpenFCPXMLKit.Marker {
+      OpenFCPXMLKit.Marker(
         start: start.toCMTime(),
         duration: duration.toCMTime(),
         value: value,
@@ -107,16 +107,16 @@
 
   extension ChapterMarker {
 
-    /// Converts this `SwiftSecuencia.ChapterMarker` to a `PipelineNeo.ChapterMarker`.
+    /// Converts this `SwiftSecuencia.ChapterMarker` to a `OpenFCPXMLKit.ChapterMarker`.
     ///
     /// All fields are preserved:
     /// - `start` → converted from `Timecode` to `CMTime`
     /// - `posterOffset` → converted from `Timecode?` to `CMTime?`
     /// - `value`, `note` → copied directly
     ///
-    /// - Returns: A `PipelineNeo.ChapterMarker` with equivalent values.
-    func toPipelineNeoChapterMarker() -> PipelineNeo.ChapterMarker {
-      PipelineNeo.ChapterMarker(
+    /// - Returns: A `OpenFCPXMLKit.ChapterMarker` with equivalent values.
+    func toOpenFCPXMLChapterMarker() -> OpenFCPXMLKit.ChapterMarker {
+      OpenFCPXMLKit.ChapterMarker(
         start: start.toCMTime(),
         value: value,
         posterOffset: posterOffset?.toCMTime(),
@@ -127,15 +127,15 @@
 
   extension Keyword {
 
-    /// Converts this `SwiftSecuencia.Keyword` to a `PipelineNeo.Keyword`.
+    /// Converts this `SwiftSecuencia.Keyword` to a `OpenFCPXMLKit.Keyword`.
     ///
     /// All fields are preserved:
     /// - `start`, `duration` → converted from `Timecode` to `CMTime`
     /// - `value`, `note` → copied directly
     ///
-    /// - Returns: A `PipelineNeo.Keyword` with equivalent values.
-    func toPipelineNeoKeyword() -> PipelineNeo.Keyword {
-      PipelineNeo.Keyword(
+    /// - Returns: A `OpenFCPXMLKit.Keyword` with equivalent values.
+    func toOpenFCPXMLKeyword() -> OpenFCPXMLKit.Keyword {
+      OpenFCPXMLKit.Keyword(
         start: start.toCMTime(),
         duration: duration.toCMTime(),
         value: value,
@@ -146,7 +146,7 @@
 
   extension Rating {
 
-    /// Converts this `SwiftSecuencia.Rating` to a `PipelineNeo.Rating`.
+    /// Converts this `SwiftSecuencia.Rating` to a `OpenFCPXMLKit.Rating`.
     ///
     /// All fields are preserved:
     /// - `start`, `duration` → converted from `Timecode` to `CMTime`
@@ -157,20 +157,20 @@
     /// The switch is intentional (not a raw-value bridge) so that the compiler
     /// enforces exhaustiveness if either enum gains new cases in the future.
     ///
-    /// - Returns: A `PipelineNeo.Rating` with equivalent values.
-    func toPipelineNeoRating() -> PipelineNeo.Rating {
-      let pipelineNeoRatingValue: PipelineNeo.Rating.RatingValue
+    /// - Returns: A `OpenFCPXMLKit.Rating` with equivalent values.
+    func toOpenFCPXMLRating() -> OpenFCPXMLKit.Rating {
+      let openFCPXMLRatingValue: OpenFCPXMLKit.Rating.RatingValue
       switch value {
       case .favorite:
-        pipelineNeoRatingValue = .favorite
+        openFCPXMLRatingValue = .favorite
       case .rejected:
-        pipelineNeoRatingValue = .rejected
+        openFCPXMLRatingValue = .rejected
       }
 
-      return PipelineNeo.Rating(
+      return OpenFCPXMLKit.Rating(
         start: start.toCMTime(),
         duration: duration.toCMTime(),
-        value: pipelineNeoRatingValue,
+        value: openFCPXMLRatingValue,
         note: note
       )
     }
@@ -178,7 +178,7 @@
 
   extension Metadata {
 
-    /// Converts this `SwiftSecuencia.Metadata` to a `PipelineNeo.Metadata`.
+    /// Converts this `SwiftSecuencia.Metadata` to a `OpenFCPXMLKit.Metadata`.
     ///
     /// The `entries` dictionary is copied directly; both types use `[String: String]`.
     /// This adapter is used for both clip-level and sequence-level metadata.
@@ -186,15 +186,15 @@
     ///
     ///     DTD: sequence = (note?, spine, metadata?)
     ///
-    /// - Returns: A `PipelineNeo.Metadata` with the same key-value entries.
-    func toPipelineNeoMetadata() -> PipelineNeo.Metadata {
-      PipelineNeo.Metadata(entries: entries)
+    /// - Returns: A `OpenFCPXMLKit.Metadata` with the same key-value entries.
+    func toOpenFCPXMLMetadata() -> OpenFCPXMLKit.Metadata {
+      OpenFCPXMLKit.Metadata(entries: entries)
     }
   }
 
   // MARK: - VideoFormat Adapter
 
-  /// Conversion errors for `VideoFormat → PipelineNeo.TimelineFormat`.
+  /// Conversion errors for `VideoFormat → OpenFCPXMLKit.TimelineFormat`.
   enum VideoFormatConversionError: Error, LocalizedError {
 
     /// The frame dimensions are invalid (width or height ≤ 0).
@@ -211,11 +211,11 @@
 
   extension VideoFormat {
 
-    /// Converts this `VideoFormat` to a `PipelineNeo.TimelineFormat`.
+    /// Converts this `VideoFormat` to a `OpenFCPXMLKit.TimelineFormat`.
     ///
     /// ## Property Mapping
     ///
-    /// | SwiftSecuencia   | PipelineNeo       | Notes                              |
+    /// | SwiftSecuencia   | OpenFCPXMLKit       | Notes                              |
     /// |------------------|-------------------|------------------------------------|
     /// | `width`          | `width`           | Copied directly                    |
     /// | `height`         | `height`          | Copied directly                    |
@@ -230,42 +230,42 @@
     ///
     /// ## ColorSpace Mapping
     ///
-    /// Both `SwiftSecuencia.ColorSpace` and `PipelineNeo.ColorSpace` share the same 5 cases,
+    /// Both `SwiftSecuencia.ColorSpace` and `OpenFCPXMLKit.ColorSpace` share the same 5 cases,
     /// all mapping 1:1:
-    /// - `.rec709`     → `PipelineNeo.ColorSpace.rec709`
-    /// - `.rec2020`    → `PipelineNeo.ColorSpace.rec2020`
-    /// - `.rec2020HLG` → `PipelineNeo.ColorSpace.rec2020HLG`
-    /// - `.rec2020PQ`  → `PipelineNeo.ColorSpace.rec2020PQ`
-    /// - `.sRGB`       → `PipelineNeo.ColorSpace.sRGB`
+    /// - `.rec709`     → `OpenFCPXMLKit.ColorSpace.rec709`
+    /// - `.rec2020`    → `OpenFCPXMLKit.ColorSpace.rec2020`
+    /// - `.rec2020HLG` → `OpenFCPXMLKit.ColorSpace.rec2020HLG`
+    /// - `.rec2020PQ`  → `OpenFCPXMLKit.ColorSpace.rec2020PQ`
+    /// - `.sRGB`       → `OpenFCPXMLKit.ColorSpace.sRGB`
     ///
-    /// - Returns: A `PipelineNeo.TimelineFormat` with equivalent properties.
+    /// - Returns: A `OpenFCPXMLKit.TimelineFormat` with equivalent properties.
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if dimensions are ≤ 0.
-    func toPipelineNeoTimelineFormat() throws -> PipelineNeo.TimelineFormat {
+    func toOpenFCPXMLTimelineFormat() throws -> OpenFCPXMLKit.TimelineFormat {
       guard width > 0, height > 0 else {
         throw VideoFormatConversionError.invalidDimensions(width: width, height: height)
       }
 
       // Explicit switch enforces exhaustiveness at compile time. If SwiftSecuencia.ColorSpace
       // gains new cases, the compiler will require this switch to be updated.
-      let pipelineNeoColorSpace: PipelineNeo.ColorSpace
+      let openFCPXMLColorSpace: OpenFCPXMLKit.ColorSpace
       switch colorSpace {
       case .rec709:
-        pipelineNeoColorSpace = .rec709
+        openFCPXMLColorSpace = .rec709
       case .rec2020:
-        pipelineNeoColorSpace = .rec2020
+        openFCPXMLColorSpace = .rec2020
       case .rec2020HLG:
-        pipelineNeoColorSpace = .rec2020HLG
+        openFCPXMLColorSpace = .rec2020HLG
       case .rec2020PQ:
-        pipelineNeoColorSpace = .rec2020PQ
+        openFCPXMLColorSpace = .rec2020PQ
       case .sRGB:
-        pipelineNeoColorSpace = .sRGB
+        openFCPXMLColorSpace = .sRGB
       }
 
-      return PipelineNeo.TimelineFormat(
+      return OpenFCPXMLKit.TimelineFormat(
         width: width,
         height: height,
         frameDuration: frameDuration.toCMTime(),
-        colorSpace: pipelineNeoColorSpace,
+        colorSpace: openFCPXMLColorSpace,
         interlaced: interlaced
       )
     }
@@ -273,13 +273,13 @@
 
   extension Optional where Wrapped == VideoFormat {
 
-    /// Converts an optional `VideoFormat` to a `PipelineNeo.TimelineFormat`.
+    /// Converts an optional `VideoFormat` to a `OpenFCPXMLKit.TimelineFormat`.
     ///
     /// When the format is `nil` (e.g., for audio-only timelines), returns the default
     /// HD 1080p format at 23.976fps with Rec. 709 color space. This matches Final Cut
     /// Pro's default timeline settings for new projects.
     ///
-    /// The default frame duration is expressed using timescale 600 (PipelineNeo's
+    /// The default frame duration is expressed using timescale 600 (OpenFCPXMLKit's
     /// preferred timescale per Sortie 0 research): `CMTimeMakeWithSeconds(1.0/23.976, 600)`.
     /// However, to preserve rational accuracy for 23.976fps (1001/24000s), we use the
     /// known exact rational: `CMTime(value: 1001, timescale: 24000)`.
@@ -292,17 +292,17 @@
     /// - Color space: Rec. 709
     /// - Scan type: Progressive
     ///
-    /// - Returns: A `PipelineNeo.TimelineFormat`.
+    /// - Returns: A `OpenFCPXMLKit.TimelineFormat`.
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if format has invalid dimensions.
-    func toPipelineNeoTimelineFormat() throws -> PipelineNeo.TimelineFormat {
+    func toOpenFCPXMLTimelineFormat() throws -> OpenFCPXMLKit.TimelineFormat {
       switch self {
       case .some(let format):
-        return try format.toPipelineNeoTimelineFormat()
+        return try format.toOpenFCPXMLTimelineFormat()
       case .none:
         // Default: HD 1080p @ 23.976fps, Rec. 709 — Final Cut Pro's default timeline format.
         // Use exact rational 1001/24000s (not seconds-based) to preserve frame accuracy.
         let defaultFrameDuration = CMTime(value: 1001, timescale: 24000)
-        return PipelineNeo.TimelineFormat(
+        return OpenFCPXMLKit.TimelineFormat(
           width: 1920,
           height: 1080,
           frameDuration: defaultFrameDuration,
@@ -317,7 +317,7 @@
 
   extension TimelineClip {
 
-    /// Converts this `SwiftSecuencia.TimelineClip` to a `PipelineNeo.TimelineClip`,
+    /// Converts this `SwiftSecuencia.TimelineClip` to a `OpenFCPXMLKit.TimelineClip`,
     /// using a `ResourceMap` to translate the `assetStorageId` UUID into a
     /// DTD-compliant r-prefixed resource ID (e.g. `"r2"`, `"r3"`).
     ///
@@ -337,7 +337,7 @@
     ///
     /// ## Property Mapping
     ///
-    /// | SwiftSecuencia       | PipelineNeo       | Notes                            |
+    /// | SwiftSecuencia       | OpenFCPXMLKit       | Notes                            |
     /// |----------------------|-------------------|----------------------------------|
     /// | `assetStorageId`     | `assetRef`        | UUID → ResourceMap lookup        |
     /// | `offset`             | `offset`          | `Timecode` → `CMTime`            |
@@ -353,8 +353,8 @@
     /// | `metadata`           | `metadata`        | Converted via adapter, or nil    |
     ///
     /// - Parameter resourceMap: A `ResourceMap` with asset UUIDs pre-registered.
-    /// - Returns: A `PipelineNeo.TimelineClip` with DTD-compliant asset reference.
-    func toPipelineNeoTimelineClip(resourceMap: ResourceMap) -> PipelineNeo.TimelineClip {
+    /// - Returns: A `OpenFCPXMLKit.TimelineClip` with DTD-compliant asset reference.
+    func toOpenFCPXMLTimelineClip(resourceMap: ResourceMap) -> OpenFCPXMLKit.TimelineClip {
       // Look up the r-prefixed resource ID. If not found, fall back to UUID string
       // with a runtime assertion to catch misconfigured export pipelines in development.
       let assetRef: String
@@ -362,13 +362,13 @@
         assetRef = mappedID
       } else {
         assertionFailure(
-          "TimelineClip.toPipelineNeoTimelineClip: asset UUID \(assetStorageId) was not registered in ResourceMap. "
+          "TimelineClip.toOpenFCPXMLTimelineClip: asset UUID \(assetStorageId) was not registered in ResourceMap. "
             + "Register all asset UUIDs before calling adapters. Falling back to UUID string."
         )
         assetRef = assetStorageId.uuidString
       }
 
-      return PipelineNeo.TimelineClip(
+      return OpenFCPXMLKit.TimelineClip(
         name: name,
         assetRef: assetRef,
         offset: offset.toCMTime(),
@@ -376,11 +376,11 @@
         start: sourceStart.toCMTime(),
         lane: lane,
         isVideoDisabled: isVideoDisabled,
-        markers: markers.map { $0.toPipelineNeoMarker() },
-        chapterMarkers: chapterMarkers.map { $0.toPipelineNeoChapterMarker() },
-        keywords: keywords.map { $0.toPipelineNeoKeyword() },
-        ratings: ratings.map { $0.toPipelineNeoRating() },
-        metadata: metadata?.toPipelineNeoMetadata()
+        markers: markers.map { $0.toOpenFCPXMLMarker() },
+        chapterMarkers: chapterMarkers.map { $0.toOpenFCPXMLChapterMarker() },
+        keywords: keywords.map { $0.toOpenFCPXMLKeyword() },
+        ratings: ratings.map { $0.toOpenFCPXMLRating() },
+        metadata: metadata?.toOpenFCPXMLMetadata()
       )
     }
   }
@@ -389,12 +389,12 @@
 
   extension Timeline {
 
-    /// Converts this `SwiftSecuencia.Timeline` to a `PipelineNeo.Timeline`,
+    /// Converts this `SwiftSecuencia.Timeline` to a `OpenFCPXMLKit.Timeline`,
     /// using a `ResourceMap` to translate asset UUID references in clips to
     /// DTD-compliant r-prefixed IDs.
     ///
     /// This is the primary adapter used before FCPXML export. The resulting
-    /// `PipelineNeo.Timeline` is an in-memory value type with no persistence.
+    /// `OpenFCPXMLKit.Timeline` is an in-memory value type with no persistence.
     ///
     /// ## ResourceMap Requirements
     ///
@@ -405,26 +405,26 @@
     /// ## Sequence-Level Metadata Handling (Bug B)
     ///
     /// Timeline-level markers, chapterMarkers, keywords, and ratings are NOT
-    /// included in the resulting PipelineNeo.Timeline. See the file-level comment
+    /// included in the resulting OpenFCPXMLKit.Timeline. See the file-level comment
     /// for the full explanation.
     ///
     /// Summary: The FCPXML DTD (v1.11) defines `sequence = (note?, spine, metadata?)`.
     /// Markers, keywords, ratings, and chapter-markers are NOT valid sequence children.
-    /// PipelineNeo places them there anyway (a known bug), which causes DTD validation
+    /// OpenFCPXMLKit places them there anyway (a known bug), which causes DTD validation
     /// failures. To produce DTD-valid output, we omit timeline-level markers/keywords/
     /// ratings/chapter-markers entirely and only preserve the `<metadata>` element,
     /// which IS valid as a sequence child.
     ///
     /// ## What IS Preserved
     ///
-    /// - `timeline.metadata` → included as `PipelineNeo.Timeline.metadata`
+    /// - `timeline.metadata` → included as `OpenFCPXMLKit.Timeline.metadata`
     ///   (`<metadata>` IS valid per DTD as the last child of `<sequence>`)
     /// - All clip-level markers, keywords, ratings, chapter-markers → preserved on clips
     ///   (valid per DTD inside `<asset-clip>`)
     ///
     /// ## Property Mapping
     ///
-    /// | SwiftSecuencia      | PipelineNeo         | Notes                                      |
+    /// | SwiftSecuencia      | OpenFCPXMLKit         | Notes                                      |
     /// |---------------------|---------------------|--------------------------------------------|
     /// | `name`              | `name`              | Copied directly                            |
     /// | `videoFormat`       | `format`            | `Optional<VideoFormat>` → `TimelineFormat` |
@@ -438,14 +438,14 @@
     /// | `modifiedAt`        | `modifiedAt`        | Copied directly (`Date`)                   |
     ///
     /// - Parameter resourceMap: A `ResourceMap` with all asset UUIDs pre-registered.
-    /// - Returns: A `PipelineNeo.Timeline` ready for FCPXML export.
+    /// - Returns: A `OpenFCPXMLKit.Timeline` ready for FCPXML export.
     /// - Throws: `VideoFormatConversionError.invalidDimensions` if the video format has
     ///   invalid dimensions.
-    func toPipelineNeoTimeline(resourceMap: ResourceMap) throws -> PipelineNeo.Timeline {
-      PipelineNeo.Timeline(
+    func toOpenFCPXMLTimeline(resourceMap: ResourceMap) throws -> OpenFCPXMLKit.Timeline {
+      OpenFCPXMLKit.Timeline(
         name: name,
-        format: try videoFormat.toPipelineNeoTimelineFormat(),
-        clips: clips.map { $0.toPipelineNeoTimelineClip(resourceMap: resourceMap) },
+        format: try videoFormat.toOpenFCPXMLTimelineFormat(),
+        clips: clips.map { $0.toOpenFCPXMLTimelineClip(resourceMap: resourceMap) },
         // Timeline-level markers, chapterMarkers, keywords, and ratings are intentionally
         // omitted. See the detailed explanation in the method documentation and the
         // file-level comment (Sequence-Level Metadata, Bug B).
@@ -454,7 +454,7 @@
         keywords: [],
         ratings: [],
         // <metadata> IS valid as a sequence child per DTD — preserve it.
-        metadata: metadata?.toPipelineNeoMetadata(),
+        metadata: metadata?.toOpenFCPXMLMetadata(),
         createdAt: createdAt,
         modifiedAt: modifiedAt
       )
