@@ -65,7 +65,7 @@ Use `#if os(macOS)` for FCPXML features (NOT `@available`):
 ## Queryable Codemap
 
 A prebuilt [graphify](https://pypi.org/project/graphifyy/) knowledge graph of this
-codebase lives in [`graphify-out/`](graphify-out/) (1786 nodes · 3201 edges). **Prefer
+codebase lives in [`graphify-out/`](graphify-out/) (2019 nodes · 3748 edges). **Prefer
 querying it before grepping** for architecture or "what connects to what" questions:
 
 ```bash
