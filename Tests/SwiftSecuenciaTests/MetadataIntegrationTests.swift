@@ -2,12 +2,12 @@
 //  MetadataIntegrationTests.swift
 //  SwiftSecuencia
 //
-//  Integration tests verifying that PipelineNeo exports metadata (markers, keywords,
+//  Integration tests verifying that OpenFCPXMLKit exports metadata (markers, keywords,
 //  ratings, chapter markers, and custom metadata) correctly through the
 //  SwiftSecuenciaExporter pipeline.
 //
-//  CRITICAL: These tests correct iteration 01's false conclusion that PipelineNeo
-//  does NOT export metadata. Sortie 0 research confirmed that PipelineNeo DOES export
+//  CRITICAL: These tests correct iteration 01's false conclusion that OpenFCPXMLKit
+//  does NOT export metadata. Sortie 0 research confirmed that OpenFCPXMLKit DOES export
 //  metadata (FCPXMLExporter.swift lines 143-193). These tests prove it end-to-end.
 //
 //  Test strategy:
@@ -70,7 +70,7 @@ func swiftSecuenciaExporterExportsClipMarkers() throws {
     ))
   timeline.insertClip(clip, at: .zero, lane: 0)
 
-  // Export through SwiftSecuenciaExporter (pipeline-neo path)
+  // Export through SwiftSecuenciaExporter (OpenFCPXMLKit path)
   let exporter = SwiftSecuenciaExporter(version: .v1_11)
   let provider = SwiftDataAssetProvider(modelContext: context)
   let fcpxml = try exporter.export(
@@ -81,7 +81,7 @@ func swiftSecuenciaExporterExportsClipMarkers() throws {
 
   // CRITICAL ASSERTIONS: Marker must appear in FCPXML
   #expect(
-    fcpxml.contains("<marker"), "FCPXML must contain <marker element -- PipelineNeo exports markers"
+    fcpxml.contains("<marker"), "FCPXML must contain <marker element -- OpenFCPXMLKit exports markers"
   )
   #expect(fcpxml.contains("Important Moment"), "Marker value must appear in FCPXML")
   #expect(fcpxml.contains("Review this section"), "Marker note must appear in FCPXML")
@@ -136,7 +136,7 @@ func swiftSecuenciaExporterExportsClipKeywords() throws {
   // CRITICAL ASSERTIONS: Keyword must appear in FCPXML
   #expect(
     fcpxml.contains("<keyword"),
-    "FCPXML must contain <keyword element -- PipelineNeo exports keywords")
+    "FCPXML must contain <keyword element -- OpenFCPXMLKit exports keywords")
   #expect(fcpxml.contains("Dialogue"), "Keyword value must appear in FCPXML")
 }
 
@@ -189,7 +189,7 @@ func swiftSecuenciaExporterExportsClipRatings() throws {
 
   // CRITICAL ASSERTIONS: Rating must appear in FCPXML
   #expect(
-    fcpxml.contains("<rating"), "FCPXML must contain <rating element -- PipelineNeo exports ratings"
+    fcpxml.contains("<rating"), "FCPXML must contain <rating element -- OpenFCPXMLKit exports ratings"
   )
   #expect(fcpxml.contains("favorite"), "Rating value must appear in FCPXML")
 }
@@ -330,13 +330,13 @@ func swiftSecuenciaExporterExportsAllMetadataTypes() throws {
   )
 
   // Verify ALL metadata types appear
-  #expect(fcpxml.contains("<marker"), "Markers must be exported via PipelineNeo")
+  #expect(fcpxml.contains("<marker"), "Markers must be exported via OpenFCPXMLKit")
   #expect(fcpxml.contains("Scene Change"), "Marker value must be in output")
-  #expect(fcpxml.contains("<keyword"), "Keywords must be exported via PipelineNeo")
+  #expect(fcpxml.contains("<keyword"), "Keywords must be exported via OpenFCPXMLKit")
   #expect(fcpxml.contains("Interview"), "Keyword value must be in output")
-  #expect(fcpxml.contains("<rating"), "Ratings must be exported via PipelineNeo")
+  #expect(fcpxml.contains("<rating"), "Ratings must be exported via OpenFCPXMLKit")
   #expect(fcpxml.contains("favorite"), "Rating value must be in output")
-  #expect(fcpxml.contains("<chapter-marker"), "Chapter markers must be exported via PipelineNeo")
+  #expect(fcpxml.contains("<chapter-marker"), "Chapter markers must be exported via OpenFCPXMLKit")
   #expect(fcpxml.contains("Chapter 1"), "Chapter marker value must be in output")
 
   // Verify two asset-clip elements

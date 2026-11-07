@@ -5,6 +5,52 @@ All notable changes to SwiftSecuencia will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-11-07
+
+### Breaking
+- **Pipeline Neo → OpenFCPXMLKit.** The FCPXML dependency is now
+  `TheAcharya/OpenFCPXMLKit` 3.3.15 (Pipeline Neo was renamed at 3.0.0). Module
+  `PipelineNeo` → `OpenFCPXMLKit`; the `FCPXMLVersion` typealias now points at
+  `OpenFCPXMLKit.FCPXMLVersion`. Requires a Swift 6.3+ toolchain to build (the
+  dependency's tools-version); this package's own tools-version is unchanged.
+- `PipelineNeoAssetProvider` → `OpenFCPXMLAssetProvider`.
+- `toPipelineNeo*` adapters → `toOpenFCPXML*` (`toOpenFCPXMLTimeline`,
+  `toOpenFCPXMLTimelineClip`, `toOpenFCPXMLTimelineFormat`, `toOpenFCPXMLMarker`,
+  `toOpenFCPXMLChapterMarker`, `toOpenFCPXMLKeyword`, `toOpenFCPXMLRating`,
+  `toOpenFCPXMLMetadata`).
+- `SwiftSecuenciaBundleExporter` (`.fcpbundle`) removed; use
+  `FCPXMLBundleExporter` (`.fcpxmld`). `secuencia build` now writes `.fcpxmld`.
+
+### Changed
+- Dependency floors: SwiftCompartido 7.4.0, swift-timecode 3.1.4,
+  swift-argument-parser 1.8.2.
+
+### Fixed (FCPXML writers)
+- **Silence trimming is opt-in** (`FCPXMLBundleExporter(trimsSilence:)`, default
+  `false`). When on, a trimmed clip's `offset` now moves later by the trimmed
+  lead-in; before, the audible audio landed earlier than the timeline placed it.
+- **Lossless audio option**: `FCPXMLBundleExporter(audioMediaMode: .passThrough)`
+  writes audio bytes as stored (WAV, CAF, ...). The default `.transcodeToM4A`
+  keeps the 3.x behaviour.
+- **No placeholder spine elements.** A clip trimmed to nothing is left out instead
+  of being written as an invalid `<comment>` child of `<spine>`.
+- **Per-clip gain and mute are exported**: `volumeDb` → `<adjust-volume amount="…dB"/>`
+  (omitted at 0 dB), `isMuted` → `enabled="0"`.
+- **DTD-valid child order.** `asset-clip` children are written as
+  `adjust-volume`, markers, then `metadata` last; `sequence` is `spine` then
+  `metadata`. Timeline-level markers, chapter markers, keywords and ratings are
+  no longer written onto `<sequence>`, where the DTD does not allow them.
+- **Bundle sequences carry `tcFormat`, `audioLayout` and `audioRate`.**
+- **Deterministic output.** Resource IDs and media processing follow sorted asset
+  UUIDs, so the same timeline exports byte-identical FCPXML.
+- **Asset durations round up** to whole frames (`Timecode.frameAlignedUp`), so an
+  asset is never declared shorter than its file.
+- **Absolute `src` URLs are percent-encoded** (`FCPXMLExporter`); a path with a
+  space produced an invalid URL.
+
+### Removed
+- Unused private ModelContext export paths in `FCPXMLBundleExporter`.
+
 ## [3.1.0] - 2026-03-15
 
 ### Added - Release Automation & Homebrew Distribution

@@ -24,10 +24,17 @@ timeline.rippleInsertClip(audioClip2, at: 30.0)
 Generate FCPXML bundles (`.fcpxmld`) with embedded media that import directly into Final Cut Pro.
 
 ```swift
-let exporter = FCPXMLBundleExporter(includeMedia: true)
+var exporter = FCPXMLBundleExporter(
+    includeMedia: true,
+    audioMediaMode: .passThrough,   // keep WAV/CAF lossless (default: .transcodeToM4A)
+    trimsSilence: false             // default; opt in to trim leading/trailing digital silence
+)
 try await exporter.exportBundle(timeline: timeline, ...)
 // Creates: Timeline.fcpxmld with Info.fcpxml + Media/
 ```
+
+Output is deterministic (the same timeline exports byte-identical FCPXML) and
+carries per-clip gain (`volumeDb` → `adjust-volume`) and mute (`isMuted` → `enabled="0"`).
 
 ### 3. 🎵 Export to M4A Audio (macOS + iOS)
 Convert timelines to high-quality M4A audio with **two performance modes** and **optional timing data** for karaoke-style text sync:
@@ -94,7 +101,7 @@ Add SwiftSecuencia to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "3.4.0")
+    .package(url: "https://github.com/intrusive-memory/SwiftSecuencia.git", from: "4.0.0")
 ]
 ```
 

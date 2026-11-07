@@ -6,8 +6,8 @@ updated: 2026-06-27
 
 # AI Agent Development Guidelines
 
-**Last Updated**: 2026-06-24
-**Version**: 3.5.0
+**Last Updated**: 2026-07-21
+**Version**: 4.0.0
 **Target Audience**: Claude, Gemini, and other AI development assistants
 
 ---
@@ -65,7 +65,7 @@ Use `#if os(macOS)` for FCPXML features (NOT `@available`):
 ## Queryable Codemap
 
 A prebuilt [graphify](https://pypi.org/project/graphifyy/) knowledge graph of this
-codebase lives in [`graphify-out/`](graphify-out/) (1786 nodes · 3201 edges). **Prefer
+codebase lives in [`graphify-out/`](graphify-out/) (2019 nodes · 3748 edges). **Prefer
 querying it before grepping** for architecture or "what connects to what" questions:
 
 ```bash
@@ -131,6 +131,141 @@ SwiftSecuencia/
 **Audio Exporters**:
 - `BackgroundAudioExporter` - UI responsive, uses `@ModelActor` background thread
 - `ForegroundAudioExporter` - Maximum speed, main thread, 19% faster
+
+---
+
+## FCPXML Export Formats
+
+SwiftSecuencia supports Final Cut Pro XML (FCPXML) export in two formats:
+
+### 1. Standalone FCPXML (`.fcpxml`)
+
+**Single XML file** containing timeline structure and references to external media files.
+
+**Structure**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.14">
+  <resources>
+    <format id="r1" name="FFVideoFormat1080p2398" .../>
+    <asset id="r2" src="file:///path/to/media.mov" .../>
+  </resources>
+  <library>
+    <event name="My Event">
+      <project name="My Project">
+        <sequence format="r1">
+          <spine>
+            <asset-clip ref="r2" offset="0s" duration="30s" .../>
+          </spine>
+        </sequence>
+      </project>
+    </event>
+  </library>
+</fcpxml>
+```
+
+**Use Cases**:
+- Media files already in FCP library
+- Network/shared storage workflows
+- Simple XML interchange
+
+**Export API**:
+```swift
+let exporter = FCPXMLExporter(version: .v1_14)
+let xmlString = try await exporter.export(
+    timeline: timeline,
+    assetProvider: assetProvider,
+    libraryName: "Exported Library",
+    eventName: "Exported Event"
+)
+try xmlString.write(to: outputURL, atomically: true, encoding: .utf8)
+```
+
+### 2. FCPXML Bundle (`.fcpxmld`) - Recommended
+
+**Bundle format** (macOS directory presented as single file) containing FCPXML + embedded media.
+
+**Official Apple Format**: Introduced in **DTD 1.10** (documented in [Apple Developer: FCPXML Bundle Reference](https://developer.apple.com/documentation/professional-video-applications/fcpxml-bundle-reference))
+
+**Bundle Structure**:
+```
+Timeline.fcpxmld/
+├── Info.plist        # Bundle metadata
+├── Info.fcpxml       # Main FCPXML document
+└── Media/            # Embedded media assets
+    ├── asset1.mov
+    ├── asset2.wav
+    └── ...
+```
+
+**Use Cases**:
+- Self-contained projects (no external dependencies)
+- Archiving/distribution
+- Cross-system workflows (avoids broken file paths)
+- App Intents / Shortcuts integration
+
+**Export API**:
+```swift
+var exporter = FCPXMLBundleExporter(
+    version: .v1_14,
+    includeMedia: true,
+    audioMediaMode: .transcodeToM4A,  // or .passThrough (lossless, bytes as stored)
+    trimsSilence: false               // opt-in; when on, offset moves by the trimmed lead-in
+)
+
+let bundleURL = try await exporter.exportBundle(
+    timeline: timeline,
+    assetProvider: assetProvider,
+    to: outputDirectory,
+    bundleName: "MyProject",  // Creates MyProject.fcpxmld
+    libraryName: "Exported Library",
+    eventName: "Exported Event",
+    projectName: "My Project",
+    progress: progress  // Optional: Foundation.Progress for UI
+)
+```
+
+### Supported FCPXML Versions
+
+| Version | Status | Features | Final Cut Pro |
+|---------|--------|----------|---------------|
+| **1.14** | ✅ **Default** | Spatial video support | FCP 12.0+ |
+| 1.13 | ✅ Supported | Enhanced metadata | FCP 11.0+ |
+| 1.12 | ✅ Supported | Additional elements | FCP 10.6+ |
+| 1.11 | ✅ Supported | Improved effects | FCP 10.5+ |
+| **1.10** | ✅ Supported | **Bundle support introduced** | FCP 10.4+ |
+| 1.9 | ✅ Legacy | Enhanced metadata | FCP 10.3+ |
+| 1.8 | ✅ Legacy | Basic FCPXML | FCP 10.2+ |
+
+**DTD Files**: All versions have DTD validation files in `Tests/*/Fixtures/FCPXMLv*.dtd`
+
+### Why Use .fcpxmld Bundles?
+
+1. **Self-Contained** - No broken file paths when moving projects
+2. **Official Apple Format** - Documented since DTD 1.10
+3. **FCP Native** - FCP exports/imports `.fcpxmld` by default
+4. **Archive-Ready** - Single file contains everything
+5. **Cross-Platform** - Works across different macOS systems
+
+### OpenFCPXMLKit Dependency
+
+SwiftSecuencia uses **[OpenFCPXMLKit](https://github.com/TheAcharya/OpenFCPXMLKit)** (3.3.15+; formerly Pipeline Neo, renamed at 3.0.0) for FCPXML generation:
+
+**What OpenFCPXMLKit Provides**:
+- Low-level FCPXML element construction (`format`, `asset`, `sequence`, `clip`)
+- DTD file management and validation (v1.8-v1.14)
+- XML namespace handling and attribute marshaling
+- Battle-tested implementation from production use
+
+**SwiftSecuencia's Role**:
+- High-level Timeline → FCPXML conversion
+- SwiftData integration
+- AssetProvider abstraction
+- Bundle creation (`.fcpxmld` structure)
+- Progress tracking and cancellation
+
+**License**: MIT License (Reuel Kim)
 
 ---
 
@@ -228,7 +363,7 @@ let outputURL = try await Task.detached(priority: .high) {
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| pipeline-neo | 2.4.1+ | FCPXML generation and DTD validation |
+| OpenFCPXMLKit (formerly pipeline-neo) | 3.3.15+ | FCPXML generation and DTD validation |
 | SwiftCompartido | development | TypedDataStorage (asset storage) |
 | SwiftFijos | development | Test fixture management |
 | swift-argument-parser | 1.7.0 | CLI argument parsing |
@@ -236,9 +371,9 @@ let outputURL = try await Task.detached(priority: .high) {
 | WebVTT | 1.0.0+ | Timing data export |
 | ZIPFoundation | 0.9.20 | Bundle compression |
 
-### Why pipeline-neo?
+### Why OpenFCPXMLKit?
 
-**Purpose**: pipeline-neo provides battle-tested FCPXML element construction and DTD validation.
+**Purpose**: OpenFCPXMLKit provides battle-tested FCPXML element construction and DTD validation.
 
 **What it provides**:
 - Low-level FCPXML element generation (format, asset, sequence, clip elements)

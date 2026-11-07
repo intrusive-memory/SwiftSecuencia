@@ -1,17 +1,17 @@
 //
-//  PipelineNeoAssetProvider.swift
+//  OpenFCPXMLAssetProvider.swift
 //  SwiftSecuencia
 //
-//  Converts SwiftSecuencia assets to PipelineNeo FCPXMLExportAsset structs
+//  Converts SwiftSecuencia assets to OpenFCPXMLKit FCPXMLExportAsset structs
 //  using ResourceMap for DTD-compliant r-prefixed resource ID assignment.
 //
 //  This adapter bridges SwiftSecuencia's AssetProvider protocol (which fetches
 //  asset metadata and file URLs from SwiftData or the file system) with
-//  PipelineNeo's FCPXMLExportAsset value type (which the exporter consumes).
+//  OpenFCPXMLKit's FCPXMLExportAsset value type (which the exporter consumes).
 //
 //  ## Architecture
 //
-//  SwiftSecuencia AssetProvider → PipelineNeoAssetProvider → [FCPXMLExportAsset]
+//  SwiftSecuencia AssetProvider → OpenFCPXMLAssetProvider → [FCPXMLExportAsset]
 //                                        ↑
 //                                   ResourceMap (UUID → "r2", "r3", ...)
 //
@@ -20,17 +20,17 @@
 //
 //  ## macOS Only
 //
-//  This file is guarded with `#if os(macOS)` because PipelineNeo is a macOS-only
+//  This file is guarded with `#if os(macOS)` because OpenFCPXMLKit is a macOS-only
 //  dependency. On iOS, FCPXML export is not available.
 
 #if os(macOS)
   import Foundation
   import CoreMedia
-  import PipelineNeo
+  import OpenFCPXMLKit
 
   // MARK: - Asset Conversion Error
 
-  /// Errors that can occur when converting SwiftSecuencia assets to PipelineNeo format.
+  /// Errors that can occur when converting SwiftSecuencia assets to OpenFCPXMLKit format.
   public enum AssetConversionError: Error, LocalizedError {
     /// The asset has no file URL and no binary data to resolve.
     case noFileURLOrData(id: UUID)
@@ -122,13 +122,13 @@
     }
   }
 
-  // MARK: - PipelineNeoAssetProvider
+  // MARK: - OpenFCPXMLAssetProvider
 
-  /// Provides PipelineNeo `FCPXMLExportAsset` instances from SwiftSecuencia's
+  /// Provides OpenFCPXMLKit `FCPXMLExportAsset` instances from SwiftSecuencia's
   /// `AssetProvider`, using `ResourceMap` for DTD-compliant resource ID assignment.
   ///
   /// This struct wraps any `AssetProvider` implementation (SwiftData-backed or file-based)
-  /// and converts assets into the format expected by `PipelineNeo.FCPXMLExporter.export()`.
+  /// and converts assets into the format expected by `OpenFCPXMLKit.FCPXMLExporter.export()`.
   ///
   /// ## Usage
   ///
@@ -136,7 +136,7 @@
   /// var resourceMap = ResourceMap()
   /// resourceMap.registerAssets(assetUUIDs)
   ///
-  /// let provider = PipelineNeoAssetProvider(
+  /// let provider = OpenFCPXMLAssetProvider(
   ///     assetProvider: swiftDataAssetProvider,
   ///     resourceMap: resourceMap
   /// )
@@ -154,11 +154,11 @@
   ///   The throwing variant `exportAsset(for:)` propagates the error.
   /// - Invalid resource IDs: Return `nil` from `exportAssetOrNil(forResourceID:)`.
   /// - SwiftData fetch errors: Propagated from the underlying `AssetProvider`.
-  public struct PipelineNeoAssetProvider {
+  public struct OpenFCPXMLAssetProvider {
     private let assetProvider: any AssetProvider
     private let resourceMap: ResourceMap
 
-    /// Creates a PipelineNeo asset provider.
+    /// Creates a OpenFCPXMLKit asset provider.
     ///
     /// - Parameters:
     ///   - assetProvider: The underlying asset provider (SwiftData, file-based, etc.).
@@ -170,7 +170,7 @@
 
     // MARK: - Single Asset Conversion
 
-    /// Converts a single asset to a `PipelineNeo.FCPXMLExportAsset`.
+    /// Converts a single asset to a `OpenFCPXMLKit.FCPXMLExportAsset`.
     ///
     /// The asset's UUID is looked up in the ResourceMap to obtain its r-prefixed
     /// resource ID. Metadata and file URL are fetched from the underlying AssetProvider.
@@ -178,17 +178,17 @@
     /// - Parameters:
     ///   - uuid: The asset's UUID.
     ///   - relativePath: Optional relative path for bundle exports (e.g., "Media/clip.mov").
-    /// - Returns: A `PipelineNeo.FCPXMLExportAsset` ready for FCPXML export.
+    /// - Returns: A `OpenFCPXMLKit.FCPXMLExportAsset` ready for FCPXML export.
     /// - Throws: `AssetProviderError` if the asset cannot be found,
     ///           `AssetConversionError` if conversion fails.
     public func exportAsset(
       for uuid: UUID,
       relativePath: String? = nil
-    ) throws -> PipelineNeo.FCPXMLExportAsset {
+    ) throws -> OpenFCPXMLKit.FCPXMLExportAsset {
       // Look up resource ID from ResourceMap
       guard let resourceID = resourceMap.assetResourceID(for: uuid) else {
         assertionFailure(
-          "PipelineNeoAssetProvider: UUID \(uuid) not registered in ResourceMap. "
+          "OpenFCPXMLAssetProvider: UUID \(uuid) not registered in ResourceMap. "
             + "Register all asset UUIDs before converting."
         )
         // Fall back to UUID string (will likely fail DTD validation)
@@ -207,17 +207,17 @@
     /// - Parameters:
     ///   - uuid: The asset's UUID.
     ///   - relativePath: Optional relative path for bundle exports.
-    /// - Returns: A `PipelineNeo.FCPXMLExportAsset`, or `nil` if the asset could not be resolved.
+    /// - Returns: A `OpenFCPXMLKit.FCPXMLExportAsset`, or `nil` if the asset could not be resolved.
     public func exportAssetOrNil(
       for uuid: UUID,
       relativePath: String? = nil
-    ) -> PipelineNeo.FCPXMLExportAsset? {
+    ) -> OpenFCPXMLKit.FCPXMLExportAsset? {
       do {
         return try exportAsset(for: uuid, relativePath: relativePath)
       } catch {
         // Log but don't propagate — let export continue with partial data
         print(
-          "PipelineNeoAssetProvider: Failed to convert asset \(uuid): \(error.localizedDescription)"
+          "OpenFCPXMLAssetProvider: Failed to convert asset \(uuid): \(error.localizedDescription)"
         )
         return nil
       }
@@ -231,11 +231,11 @@
     /// - Parameters:
     ///   - resourceID: The r-prefixed resource ID (e.g., `"r2"`).
     ///   - relativePath: Optional relative path for bundle exports.
-    /// - Returns: A `PipelineNeo.FCPXMLExportAsset`, or `nil` if the resource ID is not mapped.
+    /// - Returns: A `OpenFCPXMLKit.FCPXMLExportAsset`, or `nil` if the resource ID is not mapped.
     public func exportAssetOrNil(
       forResourceID resourceID: String,
       relativePath: String? = nil
-    ) -> PipelineNeo.FCPXMLExportAsset? {
+    ) -> OpenFCPXMLKit.FCPXMLExportAsset? {
       guard let uuid = resourceMap.uuid(for: resourceID) else {
         return nil
       }
@@ -248,19 +248,19 @@
     ///
     /// This is the primary batch entry point for FCPXML export. It extracts unique
     /// asset UUIDs from the timeline's clips, looks up their resource IDs in the
-    /// ResourceMap, and converts each to a `PipelineNeo.FCPXMLExportAsset`.
+    /// ResourceMap, and converts each to a `OpenFCPXMLKit.FCPXMLExportAsset`.
     ///
     /// - Parameters:
     ///   - timeline: The SwiftSecuencia timeline whose clips reference assets.
     ///   - includeMedia: If true, generates relative paths for bundle export
     ///     (e.g., "Media/filename.ext").
-    /// - Returns: An array of `PipelineNeo.FCPXMLExportAsset` structs.
+    /// - Returns: An array of `OpenFCPXMLKit.FCPXMLExportAsset` structs.
     /// - Throws: If any individual asset conversion fails.
     public func exportAssets(
       for timeline: Timeline,
       includeMedia: Bool = false
-    ) throws -> [PipelineNeo.FCPXMLExportAsset] {
-      let uniqueAssetIDs = Array(Set(timeline.clips.map { $0.assetStorageId }))
+    ) throws -> [OpenFCPXMLKit.FCPXMLExportAsset] {
+      let uniqueAssetIDs = FCPXMLBundleExporter.sortedUniqueAssetIDs(in: timeline)
       return try exportAssets(for: uniqueAssetIDs, includeMedia: includeMedia)
     }
 
@@ -269,12 +269,12 @@
     /// - Parameters:
     ///   - uuids: The asset UUIDs to convert.
     ///   - includeMedia: If true, generates relative paths for bundle export.
-    /// - Returns: An array of `PipelineNeo.FCPXMLExportAsset` structs.
+    /// - Returns: An array of `OpenFCPXMLKit.FCPXMLExportAsset` structs.
     /// - Throws: If any individual asset conversion fails.
     public func exportAssets(
       for uuids: [UUID],
       includeMedia: Bool = false
-    ) throws -> [PipelineNeo.FCPXMLExportAsset] {
+    ) throws -> [OpenFCPXMLKit.FCPXMLExportAsset] {
       try uuids.map { uuid in
         let relativePath: String?
         if includeMedia {
@@ -290,12 +290,12 @@
 
     // MARK: - Private Helpers
 
-    /// Builds a `PipelineNeo.FCPXMLExportAsset` from metadata and file URL.
+    /// Builds a `OpenFCPXMLKit.FCPXMLExportAsset` from metadata and file URL.
     private func buildExportAsset(
       for uuid: UUID,
       resourceID: String,
       relativePath: String?
-    ) throws -> PipelineNeo.FCPXMLExportAsset {
+    ) throws -> OpenFCPXMLKit.FCPXMLExportAsset {
       let metadata = try assetProvider.assetMetadata(for: uuid)
       let fileURL = try resolveFileURL(for: uuid, mimeType: metadata.mimeType)
 
@@ -305,7 +305,7 @@
         CMTime(seconds: $0, preferredTimescale: 600)
       }
 
-      return PipelineNeo.FCPXMLExportAsset(
+      return OpenFCPXMLKit.FCPXMLExportAsset(
         id: resourceID,
         name: metadata.name,
         src: fileURL,
