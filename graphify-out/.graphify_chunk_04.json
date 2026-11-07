@@ -1,0 +1,1066 @@
+{
+  "nodes": [
+    {
+      "id": "JSONGenerator",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Generator"
+      ]
+    },
+    {
+      "id": "WebVTTGenerator",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Generator"
+      ]
+    },
+    {
+      "id": "TimingData",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Codable"
+      ]
+    },
+    {
+      "id": "TimingSegment",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Codable"
+      ]
+    },
+    {
+      "id": "TimingMetadata",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Codable"
+      ]
+    },
+    {
+      "id": "TimingDataFormat",
+      "type": "enum",
+      "labels": [
+        "Model",
+        "Configuration"
+      ]
+    },
+    {
+      "id": "MockTelemetryReporter",
+      "type": "actor",
+      "labels": [
+        "Test",
+        "Mock"
+      ]
+    },
+    {
+      "id": "SecuenciaTelemetryReporter",
+      "type": "protocol",
+      "labels": [
+        "Protocol",
+        "Telemetry"
+      ]
+    },
+    {
+      "id": "SecuenciaTelemetryEvent",
+      "type": "enum",
+      "labels": [
+        "Model",
+        "Telemetry"
+      ]
+    },
+    {
+      "id": "ResourceMap",
+      "type": "struct",
+      "labels": [
+        "Component",
+        "Export"
+      ]
+    },
+    {
+      "id": "ScreenplayMetadata",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Screenplay"
+      ]
+    },
+    {
+      "id": "ScreenplayToTimelineConverter",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Converter"
+      ]
+    },
+    {
+      "id": "AudioExportFormat",
+      "type": "enum",
+      "labels": [
+        "Configuration",
+        "Export"
+      ]
+    },
+    {
+      "id": "TimelineAudioExporter",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Exporter"
+      ]
+    },
+    {
+      "id": "BackgroundAudioExporter",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Exporter"
+      ]
+    },
+    {
+      "id": "AudioExportError",
+      "type": "enum",
+      "labels": [
+        "Error",
+        "Export"
+      ]
+    },
+    {
+      "id": "ConverterError",
+      "type": "enum",
+      "labels": [
+        "Error",
+        "Conversion"
+      ]
+    },
+    {
+      "id": "TestUtilities",
+      "type": "enum",
+      "labels": [
+        "Test",
+        "Utilities"
+      ]
+    },
+    {
+      "id": "Marker",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "ChapterMarker",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "Keyword",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "Rating",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "Metadata",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Metadata"
+      ]
+    },
+    {
+      "id": "SwiftSecuenciaExporter",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Exporter"
+      ]
+    },
+    {
+      "id": "FCPXMLDTDValidator",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Validator"
+      ]
+    },
+    {
+      "id": "RippleInsert",
+      "type": "feature",
+      "labels": [
+        "Feature",
+        "Timeline"
+      ]
+    },
+    {
+      "id": "ClipPlacement",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Timeline"
+      ]
+    },
+    {
+      "id": "ClipShift",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Timeline"
+      ]
+    },
+    {
+      "id": "RippleLaneOption",
+      "type": "enum",
+      "labels": [
+        "Configuration",
+        "Timeline"
+      ]
+    },
+    {
+      "id": "TDD",
+      "type": "methodology",
+      "labels": [
+        "Process",
+        "Development"
+      ]
+    },
+    {
+      "id": "MultiTimelineExport",
+      "type": "feature",
+      "labels": [
+        "Feature",
+        "Export"
+      ]
+    },
+    {
+      "id": "ChapterRange",
+      "type": "struct",
+      "labels": [
+        "Model",
+        "Export"
+      ]
+    },
+    {
+      "id": "TestCoverage",
+      "type": "metric",
+      "labels": [
+        "Quality",
+        "Testing"
+      ]
+    },
+    {
+      "id": "SwiftTesting",
+      "type": "framework",
+      "labels": [
+        "Testing",
+        "Framework"
+      ]
+    },
+    {
+      "id": "XCTest",
+      "type": "framework",
+      "labels": [
+        "Testing",
+        "Framework"
+      ]
+    },
+    {
+      "id": "JSONGenerationTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "MetadataIntegrationTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "MetadataTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "ResourceMapTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "RippleInsertTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "ScreenplayMetadataTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "ScreenplayToTimelineConverterTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimelineAudioExporterTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimelineErrorTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimelineTelemetryTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimelineTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimingDataFormatTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimingDataModelTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "VideoFormatTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "WebVTTGenerationTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "TimecodeTests",
+      "type": "test_suite",
+      "labels": [
+        "Test"
+      ]
+    },
+    {
+      "id": "AVFoundation",
+      "type": "framework",
+      "labels": [
+        "Framework",
+        "Apple"
+      ]
+    },
+    {
+      "id": "AVAssetExportSession",
+      "type": "class",
+      "labels": [
+        "Apple",
+        "Audio"
+      ]
+    },
+    {
+      "id": "AVAssetWriter",
+      "type": "class",
+      "labels": [
+        "Apple",
+        "Audio"
+      ]
+    },
+    {
+      "id": "say_command",
+      "type": "tool",
+      "labels": [
+        "macOS",
+        "Audio"
+      ]
+    },
+    {
+      "id": "TestingMethodology",
+      "type": "document",
+      "labels": [
+        "Documentation",
+        "Testing"
+      ]
+    },
+    {
+      "id": "CoverageGaps",
+      "type": "issue",
+      "labels": [
+        "Quality",
+        "Testing"
+      ]
+    },
+    {
+      "id": "FlakyTests",
+      "type": "issue",
+      "labels": [
+        "Quality",
+        "Testing"
+      ]
+    },
+    {
+      "id": "Thread.sleep",
+      "type": "pattern",
+      "labels": [
+        "AntiPattern",
+        "Testing"
+      ]
+    },
+    {
+      "id": "SwiftData",
+      "type": "framework",
+      "labels": [
+        "Framework",
+        "Apple"
+      ]
+    },
+    {
+      "id": "SwiftDataAssetProvider",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Provider"
+      ]
+    },
+    {
+      "id": "FileAssetProvider",
+      "type": "class",
+      "labels": [
+        "Component",
+        "Provider"
+      ]
+    },
+    {
+      "id": "Progress",
+      "type": "class",
+      "labels": [
+        "Apple",
+        "UI"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "JSONGenerator",
+      "target": "Timeline",
+      "type": "GENERATES_FROM",
+      "label": "exports"
+    },
+    {
+      "source": "JSONGenerator",
+      "target": "TimingData",
+      "type": "PRODUCES",
+      "label": "creates"
+    },
+    {
+      "source": "JSONGenerator",
+      "target": "TypedDataStorage",
+      "type": "USES",
+      "label": "reads audio from"
+    },
+    {
+      "source": "WebVTTGenerator",
+      "target": "Timeline",
+      "type": "GENERATES_FROM",
+      "label": "exports"
+    },
+    {
+      "source": "WebVTTGenerator",
+      "target": "TypedDataStorage",
+      "type": "USES",
+      "label": "reads audio from"
+    },
+    {
+      "source": "TimingData",
+      "target": "TimingSegment",
+      "type": "CONTAINS",
+      "label": "has segments"
+    },
+    {
+      "source": "TimingSegment",
+      "target": "TimingMetadata",
+      "type": "HAS",
+      "label": "has metadata"
+    },
+    {
+      "source": "TimingMetadata",
+      "target": "TimelineClip",
+      "type": "DESCRIBES",
+      "label": "clip metadata"
+    },
+    {
+      "source": "MockTelemetryReporter",
+      "target": "SecuenciaTelemetryReporter",
+      "type": "IMPLEMENTS",
+      "label": "conforms to"
+    },
+    {
+      "source": "MockTelemetryReporter",
+      "target": "SecuenciaTelemetryEvent",
+      "type": "CAPTURES",
+      "label": "records"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "SecuenciaTelemetryReporter",
+      "type": "USES",
+      "label": "reports to"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "Timeline",
+      "type": "CREATES",
+      "label": "produces"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "TypedDataStorage",
+      "type": "CONSUMES",
+      "label": "converts from"
+    },
+    {
+      "source": "ScreenplayToTimelineConverter",
+      "target": "ConverterError",
+      "type": "THROWS",
+      "label": "may throw"
+    },
+    {
+      "source": "ScreenplayMetadata",
+      "target": "Metadata",
+      "type": "CONVERTS_TO",
+      "label": "serializes to"
+    },
+    {
+      "source": "ScreenplayMetadata",
+      "target": "TimelineClip",
+      "type": "ATTACHES_TO",
+      "label": "enriches"
+    },
+    {
+      "source": "ResourceMap",
+      "target": "FCPXML",
+      "type": "MANAGES_IDS_FOR",
+      "label": "resource tracking"
+    },
+    {
+      "source": "ResourceMap",
+      "target": "TypedDataStorage",
+      "type": "TRACKS",
+      "label": "asset IDs"
+    },
+    {
+      "source": "TimelineAudioExporter",
+      "target": "Timeline",
+      "type": "EXPORTS",
+      "label": "processes"
+    },
+    {
+      "source": "TimelineAudioExporter",
+      "target": "AudioExportFormat",
+      "type": "USES",
+      "label": "format specification"
+    },
+    {
+      "source": "TimelineAudioExporter",
+      "target": "AudioExportError",
+      "type": "THROWS",
+      "label": "may throw"
+    },
+    {
+      "source": "TimelineAudioExporter",
+      "target": "AVFoundation",
+      "type": "DEPENDS_ON",
+      "label": "uses framework"
+    },
+    {
+      "source": "TimelineAudioExporter",
+      "target": "Progress",
+      "type": "REPORTS_TO",
+      "label": "progress tracking"
+    },
+    {
+      "source": "BackgroundAudioExporter",
+      "target": "Timeline",
+      "type": "EXPORTS",
+      "label": "background processing"
+    },
+    {
+      "source": "BackgroundAudioExporter",
+      "target": "AudioExportError",
+      "type": "THROWS",
+      "label": "may throw"
+    },
+    {
+      "source": "BackgroundAudioExporter",
+      "target": "CoverageGaps",
+      "type": "HAS",
+      "label": "0% coverage"
+    },
+    {
+      "source": "AudioExportFormat",
+      "target": "AVAssetExportSession",
+      "type": "CONFIGURES",
+      "label": "preset"
+    },
+    {
+      "source": "Marker",
+      "target": "TimelineClip",
+      "type": "ANNOTATES",
+      "label": "clip marker"
+    },
+    {
+      "source": "ChapterMarker",
+      "target": "Timeline",
+      "type": "ANNOTATES",
+      "label": "timeline chapter"
+    },
+    {
+      "source": "Keyword",
+      "target": "TimelineClip",
+      "type": "TAGS",
+      "label": "clip keyword"
+    },
+    {
+      "source": "Rating",
+      "target": "TimelineClip",
+      "type": "RATES",
+      "label": "clip rating"
+    },
+    {
+      "source": "Metadata",
+      "target": "TimelineClip",
+      "type": "DESCRIBES",
+      "label": "custom metadata"
+    },
+    {
+      "source": "Metadata",
+      "target": "ScreenplayMetadata",
+      "type": "STORES",
+      "label": "screenplay data"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "FCPXML",
+      "type": "GENERATES",
+      "label": "exports"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "Marker",
+      "type": "EXPORTS",
+      "label": "includes"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "ChapterMarker",
+      "type": "EXPORTS",
+      "label": "includes"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "Keyword",
+      "type": "EXPORTS",
+      "label": "includes"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "Rating",
+      "type": "EXPORTS",
+      "label": "includes"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "Metadata",
+      "type": "EXPORTS",
+      "label": "includes"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "SwiftDataAssetProvider",
+      "type": "USES",
+      "label": "asset provider"
+    },
+    {
+      "source": "SwiftSecuenciaExporter",
+      "target": "FileAssetProvider",
+      "type": "USES",
+      "label": "asset provider"
+    },
+    {
+      "source": "FCPXMLDTDValidator",
+      "target": "FCPXML",
+      "type": "VALIDATES",
+      "label": "DTD validation"
+    },
+    {
+      "source": "FCPXMLDTDValidator",
+      "target": "CoverageGaps",
+      "type": "HAS",
+      "label": "0% coverage"
+    },
+    {
+      "source": "Timeline",
+      "target": "RippleInsert",
+      "type": "SUPPORTS",
+      "label": "feature"
+    },
+    {
+      "source": "RippleInsert",
+      "target": "ClipShift",
+      "type": "PRODUCES",
+      "label": "shift result"
+    },
+    {
+      "source": "RippleInsert",
+      "target": "RippleLaneOption",
+      "type": "USES",
+      "label": "lane selection"
+    },
+    {
+      "source": "Timeline",
+      "target": "ClipPlacement",
+      "type": "RETURNS",
+      "label": "placement info"
+    },
+    {
+      "source": "TestUtilities",
+      "target": "say_command",
+      "type": "USES",
+      "label": "audio generation"
+    },
+    {
+      "source": "TestUtilities",
+      "target": "Thread.sleep",
+      "type": "USES",
+      "label": "polling"
+    },
+    {
+      "source": "TestUtilities",
+      "target": "FlakyTests",
+      "type": "CAUSES",
+      "label": "timing issues"
+    },
+    {
+      "source": "TDD",
+      "target": "TestingMethodology",
+      "type": "DEFINES",
+      "label": "development approach"
+    },
+    {
+      "source": "MultiTimelineExport",
+      "target": "ChapterMarker",
+      "type": "USES",
+      "label": "splitting strategy"
+    },
+    {
+      "source": "MultiTimelineExport",
+      "target": "ChapterRange",
+      "type": "CREATES",
+      "label": "chapter ranges"
+    },
+    {
+      "source": "ChapterRange",
+      "target": "Timeline",
+      "type": "REPRESENTS_SLICE_OF",
+      "label": "time range"
+    },
+    {
+      "source": "SwiftTesting",
+      "target": "XCTest",
+      "type": "REPLACES",
+      "label": "modern framework"
+    },
+    {
+      "source": "SwiftSecuencia",
+      "target": "SwiftTesting",
+      "type": "USES",
+      "label": "test framework"
+    },
+    {
+      "source": "JSONGenerationTests",
+      "target": "JSONGenerator",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "MetadataIntegrationTests",
+      "target": "SwiftSecuenciaExporter",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "MetadataIntegrationTests",
+      "target": "Marker",
+      "type": "TESTS",
+      "label": "validates export"
+    },
+    {
+      "source": "MetadataIntegrationTests",
+      "target": "ChapterMarker",
+      "type": "TESTS",
+      "label": "validates export"
+    },
+    {
+      "source": "MetadataIntegrationTests",
+      "target": "Keyword",
+      "type": "TESTS",
+      "label": "validates export"
+    },
+    {
+      "source": "MetadataIntegrationTests",
+      "target": "Rating",
+      "type": "TESTS",
+      "label": "validates export"
+    },
+    {
+      "source": "MetadataTests",
+      "target": "Marker",
+      "type": "TESTS",
+      "label": "unit tests"
+    },
+    {
+      "source": "MetadataTests",
+      "target": "ChapterMarker",
+      "type": "TESTS",
+      "label": "unit tests"
+    },
+    {
+      "source": "MetadataTests",
+      "target": "Keyword",
+      "type": "TESTS",
+      "label": "unit tests"
+    },
+    {
+      "source": "MetadataTests",
+      "target": "Rating",
+      "type": "TESTS",
+      "label": "unit tests"
+    },
+    {
+      "source": "MetadataTests",
+      "target": "Metadata",
+      "type": "TESTS",
+      "label": "unit tests"
+    },
+    {
+      "source": "ResourceMapTests",
+      "target": "ResourceMap",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "RippleInsertTests",
+      "target": "RippleInsert",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "ScreenplayMetadataTests",
+      "target": "ScreenplayMetadata",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "ScreenplayToTimelineConverterTests",
+      "target": "ScreenplayToTimelineConverter",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineAudioExporterTests",
+      "target": "TimelineAudioExporter",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineAudioExporterTests",
+      "target": "AudioExportFormat",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineErrorTests",
+      "target": "TimelineError",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineTelemetryTests",
+      "target": "ScreenplayToTimelineConverter",
+      "type": "TESTS",
+      "label": "telemetry validation"
+    },
+    {
+      "source": "TimelineTelemetryTests",
+      "target": "MockTelemetryReporter",
+      "type": "USES",
+      "label": "test mock"
+    },
+    {
+      "source": "TimelineTests",
+      "target": "Timeline",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineTests",
+      "target": "TimelineClip",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimelineTests",
+      "target": "RippleInsert",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimingDataFormatTests",
+      "target": "TimingDataFormat",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimingDataModelTests",
+      "target": "TimingData",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimingDataModelTests",
+      "target": "TimingSegment",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimingDataModelTests",
+      "target": "TimingMetadata",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "VideoFormatTests",
+      "target": "VideoFormat",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "WebVTTGenerationTests",
+      "target": "WebVTTGenerator",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TimecodeTests",
+      "target": "Timecode",
+      "type": "TESTS",
+      "label": "validates"
+    },
+    {
+      "source": "TestCoverage",
+      "target": "SwiftSecuencia",
+      "type": "MEASURES",
+      "label": "quality metric"
+    },
+    {
+      "source": "TestingMethodology",
+      "target": "TestCoverage",
+      "type": "TARGETS",
+      "label": "80%+ goal"
+    },
+    {
+      "source": "CoverageGaps",
+      "target": "BackgroundAudioExporter",
+      "type": "IDENTIFIES",
+      "label": "0% coverage"
+    },
+    {
+      "source": "CoverageGaps",
+      "target": "FCPXMLDTDValidator",
+      "type": "IDENTIFIES",
+      "label": "0% coverage"
+    },
+    {
+      "source": "CoverageGaps",
+      "target": "BuildCommand",
+      "type": "IDENTIFIES",
+      "label": "3.85% coverage"
+    },
+    {
+      "source": "FlakyTests",
+      "target": "Thread.sleep",
+      "type": "CAUSED_BY",
+      "label": "polling pattern"
+    },
+    {
+      "source": "SwiftData",
+      "target": "Timeline",
+      "type": "PERSISTS",
+      "label": "storage"
+    },
+    {
+      "source": "SwiftData",
+      "target": "TimelineClip",
+      "type": "PERSISTS",
+      "label": "storage"
+    },
+    {
+      "source": "SwiftData",
+      "target": "TypedDataStorage",
+      "type": "PERSISTS",
+      "label": "storage"
+    }
+  ],
+  "input_tokens": 110938,
+  "output_tokens": 0
+}

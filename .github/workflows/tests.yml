@@ -13,11 +13,11 @@ jobs:
   # Step 1: Code Quality (runs first)
   code-quality:
     name: Code Quality
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Install SwiftLint
         run: brew install swiftlint
@@ -71,7 +71,7 @@ jobs:
   # Step 2: iOS Unit Tests (DISABLED - TODO: Fix iOS testing setup)
   # unit-tests-ios:
   #   name: iOS Unit Tests
-  #   runs-on: macos-26
+  #   runs-on: xcode-27
   #   needs: [code-quality]
   #
   #   steps:
@@ -90,7 +90,7 @@ jobs:
   #         xcodebuild build \
   #           -scheme SwiftSecuencia \
   #           -sdk iphonesimulator \
-  #           -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+  #           -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
   #           -quiet \
   #           CODE_SIGNING_ALLOWED=NO
   #
@@ -117,7 +117,7 @@ jobs:
   #         xcodebuild test \
   #           -scheme SwiftSecuencia \
   #           -sdk iphonesimulator \
-  #           -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+  #           -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
   #           -enableCodeCoverage YES \
   #           -parallel-testing-enabled NO \
   #           $SKIP_ARGS \
@@ -140,12 +140,15 @@ jobs:
   # Step 3: macOS Unit Tests (runs after code quality passes)
   unit-tests-macos:
     name: macOS Unit Tests
-    runs-on: macos-26
+    runs-on: xcode-27
     needs: [code-quality]
+    # Healthy runs take 3-5 min including the build. A hang otherwise burns
+    # GitHub's 6 h job maximum (see TEST_ANALYSIS.md, Pass 4).
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Show Swift version
         run: swift --version
@@ -177,12 +180,12 @@ jobs:
   # Step 4: Integration Test - CLI Binary (runs after unit tests pass)
   integration-test-cli:
     name: CLI Integration Test
-    runs-on: macos-26
+    runs-on: xcode-27
     needs: [unit-tests-macos]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Build CLI binary
         run: |

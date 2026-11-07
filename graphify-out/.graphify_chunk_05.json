@@ -1,0 +1,533 @@
+{
+  "entities": [
+    {
+      "name": "TODO-final-timeline-fadeout",
+      "type": "Documentation",
+      "description": "Feature specification for adding optional whole-timeline fade-out to audio exporter"
+    },
+    {
+      "name": "FinalFadeOutFeature",
+      "type": "Feature",
+      "description": "Optional master timeline fade-out over final N seconds of exported audio, completed 2026-06-27"
+    },
+    {
+      "name": "ForegroundAudioExporter",
+      "type": "Class",
+      "description": "Audio exporter with final fade-out support via AVMutableAudioMix volume ramps"
+    },
+    {
+      "name": "finalFadeOut",
+      "type": "Parameter",
+      "description": "TimeInterval parameter (default 0) controlling duration of final fade-out ramp"
+    },
+    {
+      "name": "makeAudioMix",
+      "type": "Method",
+      "description": "Builds AVMutableAudioMixInputParameters with optional volume ramp for fade-out"
+    },
+    {
+      "name": "FinalFadeOutTests",
+      "type": "TestSuite",
+      "description": "Unit tests for fade-out feature: no fade, all tracks, window clamping, integration"
+    },
+    {
+      "name": "OPERATION_BLOODHOUND_AUTOPSY",
+      "type": "Mission",
+      "description": "Mission iteration 1 for telemetry instrumentation, started 2026-05-06 on commit 8dbb75d"
+    },
+    {
+      "name": "TelemetryInstrumentation",
+      "type": "WorkUnit",
+      "description": "Work unit with 4 sorties for instrumenting SwiftSecuencia components, completed"
+    },
+    {
+      "name": "SUPERVISOR_STATE.md",
+      "type": "StateTracking",
+      "description": "Mission supervisor state document tracking sorties, agents, and decisions"
+    },
+    {
+      "name": "Sortie1-TelemetryFoundation",
+      "type": "Sortie",
+      "description": "Foundation sortie (complexity 9, sonnet) creating base infrastructure, commit 259b615"
+    },
+    {
+      "name": "Sortie2-ForegroundExporter",
+      "type": "Sortie",
+      "description": "Instrumentation of ForegroundAudioExporter (complexity 5, haiku then sonnet), commit e19b462"
+    },
+    {
+      "name": "Sortie3-ScreenplayConverter",
+      "type": "Sortie",
+      "description": "ScreenplayToTimelineConverter instrumentation (complexity 5, haiku), commit f15d18c"
+    },
+    {
+      "name": "Sortie4-TestInfrastructure",
+      "type": "Sortie",
+      "description": "Test infrastructure creation (complexity 6, sonnet), final sortie, commit ed573ab"
+    },
+    {
+      "name": "OPERATION_PIPELINE_EXODUS_02",
+      "type": "Mission",
+      "description": "Mission for resolving type collisions between SwiftSecuencia and PipelineNeo"
+    },
+    {
+      "name": "Sortie0-TypeCollisionCatalog",
+      "type": "Analysis",
+      "description": "Catalog of 24 confirmed type name collisions between modules, dated 2026-03-01"
+    },
+    {
+      "name": "Timeline-TypeCollision",
+      "type": "Collision",
+      "description": "SS: @Model class with Timecode/VideoFormat; PN: struct with CMTime/TimelineFormat"
+    },
+    {
+      "name": "TimelineClip-TypeCollision",
+      "type": "Collision",
+      "description": "SS: @Model class with Timecode/TypedDataStorage; PN: struct with CMTime/String ID"
+    },
+    {
+      "name": "Marker-TypeCollision",
+      "type": "Collision",
+      "description": "Both are struct; SS has Codable+Timecode, PN has CMTime+completed flag"
+    },
+    {
+      "name": "ChapterMarker-TypeCollision",
+      "type": "Collision",
+      "description": "Both structs in Timeline/Annotations with different timing representations"
+    },
+    {
+      "name": "Keyword-TypeCollision",
+      "type": "Collision",
+      "description": "SS: Codable struct with Timecode; PN: struct with CMTime and value String"
+    },
+    {
+      "name": "Rating-TypeCollision",
+      "type": "Collision",
+      "description": "SS: Codable struct with Timecode; PN: struct with CMTime and RatingValue enum"
+    },
+    {
+      "name": "Metadata-TypeCollision",
+      "type": "Collision",
+      "description": "Both Codable structs with key-value pairs; PN includes Apple standard keys"
+    },
+    {
+      "name": "ColorSpace-TypeCollision",
+      "type": "Collision",
+      "description": "SS: 7 cases including appleLog; PN: 5 cases (rec709/2020/HLG/PQ/sRGB)"
+    },
+    {
+      "name": "FCPXMLExporter-TypeCollision",
+      "type": "Collision",
+      "description": "Different implementations in Export/ folders with different capabilities"
+    },
+    {
+      "name": "FCPXMLBundleExporter-TypeCollision",
+      "type": "Collision",
+      "description": "Different implementations in Export/ folders"
+    },
+    {
+      "name": "ValidationError-TypeCollision",
+      "type": "Collision",
+      "description": "Different error structures in Validation/ folders"
+    },
+    {
+      "name": "PipelineNeoTypeAliases",
+      "type": "Strategy",
+      "description": "Resolution strategy using fully-qualified PipelineNeo. prefix in production code"
+    },
+    {
+      "name": "SwiftSecuencia",
+      "type": "Library",
+      "description": "Swift library for professional media timeline generation and export to FCPXML and M4A"
+    },
+    {
+      "name": "README.md",
+      "type": "Documentation",
+      "description": "Main project documentation covering timeline generation, FCPXML export, and M4A audio export"
+    },
+    {
+      "name": "CoreFunctions",
+      "type": "Capability",
+      "description": "Three distinct functions: Timeline Generation, FCPXML Export (macOS), M4A Export (macOS+iOS)"
+    },
+    {
+      "name": "BackgroundAudioExporter",
+      "type": "Class",
+      "description": "UI-responsive audio exporter using @ModelActor, ~12s for 50 clips, recommended for large timelines"
+    },
+    {
+      "name": "ForegroundAudioExporter-Performance",
+      "type": "Class",
+      "description": "Maximum-speed audio exporter, ~10s for 50 clips, blocks UI, 15-20% faster than background"
+    },
+    {
+      "name": "TimingDataExport",
+      "type": "Feature",
+      "description": "Optional WebVTT/JSON timing data generation for karaoke-style text synchronization"
+    },
+    {
+      "name": "DualDialogueSupport",
+      "type": "Feature",
+      "description": "Simultaneous multi-speaker dialogue with automatic lane assignment and audio mixing"
+    },
+    {
+      "name": "ScreenplayMetadata",
+      "type": "Model",
+      "description": "Metadata containing elementType, characterName, isDualDialogue, dualDialogueIndex, dualDialogueGroupId"
+    },
+    {
+      "name": "ScreenplayToTimelineConverter",
+      "type": "Class",
+      "description": "Converts screenplay audio elements with metadata to Timeline with multi-lane support"
+    },
+    {
+      "name": "secuencia-CLI",
+      "type": "Tool",
+      "description": "Command-line tool with build/validate/schema subcommands for FCPXML generation from JSON"
+    },
+    {
+      "name": "FCPXMLVersions",
+      "type": "Specification",
+      "description": "Supports FCPXML 1.8-1.14, default 1.14 for Final Cut Pro 12.0+, with DTD validation"
+    },
+    {
+      "name": "TimelineJSONSchema",
+      "type": "Schema",
+      "description": "JSON schema defining timeline format, clips array, and time string formats (s, decimal, rational)"
+    },
+    {
+      "name": "ClipTypes",
+      "type": "Enumeration",
+      "description": "Supported clip types: video, audio, image, marker with automatic MIME type derivation"
+    },
+    {
+      "name": "ChapterMarkerCaveat",
+      "type": "Limitation",
+      "description": "Chapter markers pass validation but are not yet emitted by secuencia build to FCPXML"
+    },
+    {
+      "name": "WorkDirectoryParameter",
+      "type": "Feature",
+      "description": "v3.3.0 caller-owned work directory for staging WAV files, supports sandboxed apps"
+    },
+    {
+      "name": "ParallelFileIO",
+      "type": "Optimization",
+      "description": "v1.0.6 parallel file I/O with .high priority, 3-4x faster than serial writes"
+    },
+    {
+      "name": "AppIntentsSupport",
+      "type": "Integration",
+      "description": "Shortcuts integration via App Intents for automated screenplay to FCPXML workflows"
+    },
+    {
+      "name": "GenerateFCPXMLBundleIntent",
+      "type": "AppIntent",
+      "description": "Creates .fcpxmld bundle from screenplay elements with audio for Final Cut Pro import"
+    },
+    {
+      "name": "PlatformSupport",
+      "type": "Matrix",
+      "description": "FCPXML export macOS-only (XMLDocument API), audio export macOS+iOS, iOS 26+ fully tested in CI"
+    },
+    {
+      "name": "SwiftCompartido",
+      "type": "Dependency",
+      "description": "Required dependency providing TypedDataStorage for asset management"
+    },
+    {
+      "name": "exists.txt",
+      "type": "TestFixture",
+      "description": "Text file fixture for CLI media validation tests"
+    },
+    {
+      "name": "test-audio.m4a",
+      "type": "TestFixture",
+      "description": "M4A audio fixture for CLI audio clip tests"
+    },
+    {
+      "name": "test-audio.wav",
+      "type": "TestFixture",
+      "description": "WAV audio fixture for CLI audio clip tests"
+    },
+    {
+      "name": "test-video.mov",
+      "type": "TestFixture",
+      "description": "MOV video fixture for CLI video clip tests"
+    }
+  ],
+  "relations": [
+    {
+      "from": "TODO-final-timeline-fadeout",
+      "to": "FinalFadeOutFeature",
+      "type": "DOCUMENTS"
+    },
+    {
+      "from": "FinalFadeOutFeature",
+      "to": "ForegroundAudioExporter",
+      "type": "IMPLEMENTED_IN"
+    },
+    {
+      "from": "ForegroundAudioExporter",
+      "to": "makeAudioMix",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "makeAudioMix",
+      "to": "finalFadeOut",
+      "type": "ACCEPTS"
+    },
+    {
+      "from": "FinalFadeOutFeature",
+      "to": "FinalFadeOutTests",
+      "type": "TESTED_BY"
+    },
+    {
+      "from": "SUPERVISOR_STATE.md",
+      "to": "OPERATION_BLOODHOUND_AUTOPSY",
+      "type": "TRACKS"
+    },
+    {
+      "from": "OPERATION_BLOODHOUND_AUTOPSY",
+      "to": "TelemetryInstrumentation",
+      "type": "CONTAINS"
+    },
+    {
+      "from": "TelemetryInstrumentation",
+      "to": "Sortie1-TelemetryFoundation",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "TelemetryInstrumentation",
+      "to": "Sortie2-ForegroundExporter",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "TelemetryInstrumentation",
+      "to": "Sortie3-ScreenplayConverter",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "TelemetryInstrumentation",
+      "to": "Sortie4-TestInfrastructure",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "Sortie2-ForegroundExporter",
+      "to": "ForegroundAudioExporter",
+      "type": "INSTRUMENTS"
+    },
+    {
+      "from": "Sortie3-ScreenplayConverter",
+      "to": "ScreenplayToTimelineConverter",
+      "type": "INSTRUMENTS"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "OPERATION_PIPELINE_EXODUS_02",
+      "type": "PART_OF"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "Timeline-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "TimelineClip-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "Marker-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "ChapterMarker-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "Keyword-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "Rating-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "Metadata-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "ColorSpace-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "FCPXMLExporter-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "FCPXMLBundleExporter-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "Sortie0-TypeCollisionCatalog",
+      "to": "ValidationError-TypeCollision",
+      "type": "IDENTIFIES"
+    },
+    {
+      "from": "PipelineNeoTypeAliases",
+      "to": "Sortie0-TypeCollisionCatalog",
+      "type": "RESOLVES"
+    },
+    {
+      "from": "README.md",
+      "to": "SwiftSecuencia",
+      "type": "DOCUMENTS"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "CoreFunctions",
+      "type": "PROVIDES"
+    },
+    {
+      "from": "CoreFunctions",
+      "to": "BackgroundAudioExporter",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "CoreFunctions",
+      "to": "ForegroundAudioExporter-Performance",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "ForegroundAudioExporter-Performance",
+      "to": "TimingDataExport",
+      "type": "SUPPORTS"
+    },
+    {
+      "from": "BackgroundAudioExporter",
+      "to": "TimingDataExport",
+      "type": "SUPPORTS"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "DualDialogueSupport",
+      "type": "IMPLEMENTS"
+    },
+    {
+      "from": "DualDialogueSupport",
+      "to": "ScreenplayMetadata",
+      "type": "USES"
+    },
+    {
+      "from": "ScreenplayToTimelineConverter",
+      "to": "ScreenplayMetadata",
+      "type": "ACCEPTS"
+    },
+    {
+      "from": "ScreenplayToTimelineConverter",
+      "to": "DualDialogueSupport",
+      "type": "IMPLEMENTS"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "secuencia-CLI",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "secuencia-CLI",
+      "to": "TimelineJSONSchema",
+      "type": "VALIDATES"
+    },
+    {
+      "from": "TimelineJSONSchema",
+      "to": "ClipTypes",
+      "type": "DEFINES"
+    },
+    {
+      "from": "secuencia-CLI",
+      "to": "FCPXMLVersions",
+      "type": "SUPPORTS"
+    },
+    {
+      "from": "secuencia-CLI",
+      "to": "ChapterMarkerCaveat",
+      "type": "HAS_LIMITATION"
+    },
+    {
+      "from": "WorkDirectoryParameter",
+      "to": "ForegroundAudioExporter-Performance",
+      "type": "CONFIGURES"
+    },
+    {
+      "from": "WorkDirectoryParameter",
+      "to": "BackgroundAudioExporter",
+      "type": "CONFIGURES"
+    },
+    {
+      "from": "ParallelFileIO",
+      "to": "BackgroundAudioExporter",
+      "type": "OPTIMIZES"
+    },
+    {
+      "from": "ParallelFileIO",
+      "to": "ForegroundAudioExporter-Performance",
+      "type": "OPTIMIZES"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "AppIntentsSupport",
+      "type": "PROVIDES"
+    },
+    {
+      "from": "AppIntentsSupport",
+      "to": "GenerateFCPXMLBundleIntent",
+      "type": "INCLUDES"
+    },
+    {
+      "from": "GenerateFCPXMLBundleIntent",
+      "to": "ScreenplayMetadata",
+      "type": "ACCEPTS"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "PlatformSupport",
+      "type": "HAS"
+    },
+    {
+      "from": "SwiftSecuencia",
+      "to": "SwiftCompartido",
+      "type": "DEPENDS_ON"
+    },
+    {
+      "from": "exists.txt",
+      "to": "secuencia-CLI",
+      "type": "TESTS"
+    },
+    {
+      "from": "test-audio.m4a",
+      "to": "secuencia-CLI",
+      "type": "TESTS"
+    },
+    {
+      "from": "test-audio.wav",
+      "to": "secuencia-CLI",
+      "type": "TESTS"
+    },
+    {
+      "from": "test-video.mov",
+      "to": "secuencia-CLI",
+      "type": "TESTS"
+    }
+  ],
+  "input_tokens": 38370,
+  "output_tokens": 0
+}

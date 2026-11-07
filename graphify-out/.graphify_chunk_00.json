@@ -1,0 +1,588 @@
+{
+  "nodes": [
+    {
+      "id": "claude_settings",
+      "label": "Claude Settings",
+      "file_type": "document",
+      "source_file": ".claude/settings.json",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "claude_settings_local",
+      "label": "Claude Local Settings",
+      "file_type": "document",
+      "source_file": ".claude/settings.local.json",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "package_swift",
+      "label": "Package.swift",
+      "file_type": "code",
+      "source_file": "Package.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "scripts_generate_motion_titles",
+      "label": "Motion Titles Generator Script",
+      "file_type": "code",
+      "source_file": "Scripts/generate-motion-titles.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "commands_buildcommand",
+      "label": "BuildCommand",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "models_timelinedefinition",
+      "label": "TimelineDefinition",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Models/TimelineDefinition.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "parsing_fileresolver",
+      "label": "FileResolver",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Parsing/FileResolver.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "parsing_framerateparser",
+      "label": "FrameRateParser",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Parsing/FrameRateParser.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "parsing_mediaprobe",
+      "label": "MediaProbe",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Parsing/MediaProbe.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "parsing_timestringparser",
+      "label": "TimeStringParser",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/Parsing/TimeStringParser.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "resources_schema",
+      "label": "JSON Schema",
+      "file_type": "document",
+      "source_file": "Sources/SecuenciaCLICore/Resources/schema.json",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "secuenciaclicore_schemaresource",
+      "label": "SchemaResource",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/SchemaResource.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "swiftdata_swiftdatabootstrap",
+      "label": "SwiftDataBootstrap",
+      "file_type": "code",
+      "source_file": "Sources/SecuenciaCLICore/SwiftData/SwiftDataBootstrap.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_pipelineneoassetprovider",
+      "label": "PipelineNeoAssetProvider",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_resourcemap",
+      "label": "ResourceMap",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Adapters/ResourceMap.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "adapters_timelineadapters",
+      "label": "TimelineAdapters",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "appintents_exporttimelineaudiointent",
+      "label": "ExportTimelineAudioIntent",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/AppIntents/ExportTimelineAudioIntent.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "appintents_generatefcpxmlbundleintent",
+      "label": "GenerateFCPXMLBundleIntent",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/AppIntents/GenerateFCPXMLBundleIntent.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "converters_screenplaytotimelineconverter",
+      "label": "ScreenplayToTimelineConverter",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Converters/ScreenplayToTimelineConverter.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "errors_timelineerror",
+      "label": "TimelineError",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Errors/TimelineError.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "export_exporterrormapping",
+      "label": "ExportErrorMapping",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Export/ExportErrorMapping.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "export_jsongenerator",
+      "label": "JSONGenerator",
+      "file_type": "code",
+      "source_file": "Sources/SwiftSecuencia/Export/JSONGenerator.swift",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "cli_pipeline_conversion",
+      "label": "CLI Pipeline Architecture",
+      "file_type": "concept",
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "lines 54-97",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "resource_id_mapping_strategy",
+      "label": "Resource ID Mapping Strategy",
+      "file_type": "rationale",
+      "source_file": "Sources/SwiftSecuencia/Adapters/ResourceMap.swift",
+      "source_location": "lines 1-29",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "sequence_level_metadata_bug",
+      "label": "Sequence-Level Metadata DTD Bug",
+      "file_type": "rationale",
+      "source_file": "Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift",
+      "source_location": "lines 33-56",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "dual_dialogue_architecture",
+      "label": "Dual Dialogue Lane Architecture",
+      "file_type": "concept",
+      "source_file": "Sources/SwiftSecuencia/Converters/ScreenplayToTimelineConverter.swift",
+      "source_location": "lines 77-88",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "error_mapping_boundary",
+      "label": "Error Mapping Boundary Pattern",
+      "file_type": "concept",
+      "source_file": "Sources/SwiftSecuencia/Export/ExportErrorMapping.swift",
+      "source_location": "lines 1-34",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "commands_buildcommand",
+      "target": "models_timelinedefinition",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "line 58",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_buildcommand",
+      "target": "parsing_fileresolver",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "line 62",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_buildcommand",
+      "target": "parsing_mediaprobe",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "line 70",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_buildcommand",
+      "target": "swiftdata_swiftdatabootstrap",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "lines 73-74",
+      "weight": 1.0
+    },
+    {
+      "source": "parsing_fileresolver",
+      "target": "models_timelinedefinition",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Parsing/FileResolver.swift",
+      "source_location": "line 50",
+      "weight": 1.0
+    },
+    {
+      "source": "parsing_mediaprobe",
+      "target": "models_timelinedefinition",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Parsing/MediaProbe.swift",
+      "source_location": "line 77",
+      "weight": 1.0
+    },
+    {
+      "source": "parsing_timestringparser",
+      "target": "parsing_framerateparser",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Sources/SecuenciaCLICore/Parsing",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "secuenciaclicore_schemaresource",
+      "target": "resources_schema",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/SchemaResource.swift",
+      "source_location": "line 7",
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_pipelineneoassetprovider",
+      "target": "adapters_resourcemap",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift",
+      "source_location": "lines 158-169",
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_timelineadapters",
+      "target": "adapters_resourcemap",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift",
+      "source_location": "lines 320-396",
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_pipelineneoassetprovider",
+      "target": "resource_id_mapping_strategy",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters/PipelineNeoAssetProvider.swift",
+      "source_location": "lines 12-19",
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_resourcemap",
+      "target": "resource_id_mapping_strategy",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters/ResourceMap.swift",
+      "source_location": "lines 1-29",
+      "weight": 1.0
+    },
+    {
+      "source": "adapters_timelineadapters",
+      "target": "sequence_level_metadata_bug",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters/TimelineAdapters.swift",
+      "source_location": "lines 390-462",
+      "weight": 1.0
+    },
+    {
+      "source": "appintents_exporttimelineaudiointent",
+      "target": "appintents_generatefcpxmlbundleintent",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Sources/SwiftSecuencia/AppIntents",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "converters_screenplaytotimelineconverter",
+      "target": "dual_dialogue_architecture",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Converters/ScreenplayToTimelineConverter.swift",
+      "source_location": "lines 158-327",
+      "weight": 1.0
+    },
+    {
+      "source": "export_exporterrormapping",
+      "target": "error_mapping_boundary",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Export/ExportErrorMapping.swift",
+      "source_location": "lines 246-296",
+      "weight": 1.0
+    },
+    {
+      "source": "export_jsongenerator",
+      "target": "converters_screenplaytotimelineconverter",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "Sources/SwiftSecuencia",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "commands_buildcommand",
+      "target": "cli_pipeline_conversion",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift",
+      "source_location": "lines 54-97",
+      "weight": 1.0
+    },
+    {
+      "source": "parsing_fileresolver",
+      "target": "cli_pipeline_conversion",
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Sources/SecuenciaCLICore",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "parsing_mediaprobe",
+      "target": "cli_pipeline_conversion",
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Sources/SecuenciaCLICore",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "swiftdata_swiftdatabootstrap",
+      "target": "cli_pipeline_conversion",
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Sources/SecuenciaCLICore",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "package_swift",
+      "target": "commands_buildcommand",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "Package.swift",
+      "source_location": "lines 17-24",
+      "weight": 1.0
+    },
+    {
+      "source": "package_swift",
+      "target": "adapters_pipelineneoassetprovider",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Package.swift",
+      "source_location": "line 40",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_generate_motion_titles",
+      "target": "appintents_generatefcpxmlbundleintent",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "Scripts/generate-motion-titles.swift",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "cli_pipeline_flow",
+      "label": "CLI Pipeline Flow",
+      "nodes": [
+        "commands_buildcommand",
+        "parsing_fileresolver",
+        "parsing_mediaprobe",
+        "swiftdata_swiftdatabootstrap"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SecuenciaCLICore/Commands/BuildCommand.swift"
+    },
+    {
+      "id": "resource_mapping_ecosystem",
+      "label": "Resource Mapping Ecosystem",
+      "nodes": [
+        "adapters_resourcemap",
+        "adapters_pipelineneoassetprovider",
+        "adapters_timelineadapters"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Sources/SwiftSecuencia/Adapters"
+    },
+    {
+      "id": "timeline_conversion_flow",
+      "label": "Timeline Conversion Flow",
+      "nodes": [
+        "models_timelinedefinition",
+        "parsing_fileresolver",
+        "parsing_mediaprobe",
+        "swiftdata_swiftdatabootstrap"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "Sources/SecuenciaCLICore"
+    }
+  ],
+  "input_tokens": 94481,
+  "output_tokens": 0
+}

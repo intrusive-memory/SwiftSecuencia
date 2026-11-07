@@ -49,10 +49,19 @@ build: check-arch
 test: check-arch
 	@echo "🧪 Running SwiftSecuencia tests..."
 	@echo ""
+ifdef GITHUB_ACTIONS
+	@echo "CI detected: skipping FCPXMLBundleVideoMediaTests (placeholder video bytes hang AVFoundation on runners)"
+	xcodebuild test \
+		-scheme SwiftSecuencia-Package \
+		-destination 'platform=macOS,arch=arm64' \
+		-enableCodeCoverage YES \
+		-skip-testing:SwiftSecuenciaTests/FCPXMLBundleVideoMediaTests
+else
 	xcodebuild test \
 		-scheme SwiftSecuencia-Package \
 		-destination 'platform=macOS,arch=arm64' \
 		-enableCodeCoverage YES
+endif
 
 # Clean build artifacts
 clean:

@@ -120,18 +120,19 @@ public struct Build: AsyncParsableCommand {
           bundleName = definition.timeline.name
         }
 
-        let bundleURL = outputDir.appendingPathComponent("\(bundleName).fcpbundle")
-
-        let bundleExporter = SwiftSecuenciaBundleExporter(
-          version: .from(string: formatVersion)
+        var bundleExporter = FCPXMLBundleExporter(
+          version: .from(string: formatVersion),
+          includeMedia: true
         )
 
-        try await bundleExporter.exportBundle(
+        let bundleURL = try await bundleExporter.exportBundle(
           timeline: timeline,
-          projectName: definition.timeline.name,
+          assetProvider: assetProvider,
+          to: outputDir,
+          bundleName: bundleName,
+          libraryName: "SwiftSecuencia Export",
           eventName: definition.timeline.name,
-          bundleURL: bundleURL,
-          assetProvider: assetProvider
+          projectName: definition.timeline.name
         )
 
         return bundleURL
