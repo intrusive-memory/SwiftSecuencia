@@ -142,6 +142,9 @@ jobs:
     name: macOS Unit Tests
     runs-on: xcode-27
     needs: [code-quality]
+    # Healthy runs take 3-5 min including the build. A hang otherwise burns
+    # GitHub's 6 h job maximum (see TEST_ANALYSIS.md, Pass 4).
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
